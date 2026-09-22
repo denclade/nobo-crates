@@ -121,6 +121,13 @@ pub struct AgendaContributor {
     /// The feature's id, for logs and for switching it off.
     pub source: &'static str,
     pub entries: fn(&Vault, day: &str) -> Vec<AgendaEntry>,
+    /// Which days between FROM and TO (ISO, inclusive) this feature has
+    /// something on -- the dots in a month view (see [`busy_days`]).
+    ///
+    /// Its own function rather than `entries` once per day: a month is
+    /// thirty days, and building thirty lists of entries to ask each one
+    /// whether it is empty is thirty passes over the mirrors.
+    pub days: fn(&Vault, from: &str, to: &str) -> Vec<String>,
 }
 
 inventory::collect!(AgendaContributor);
@@ -196,7 +203,12 @@ fn flatten_projects(nodes: &[Heading], project: Option<&str>, out: &mut Vec<Agen
 
 /// Every task this vault knows, from both files, plus what features
 /// contribute for `day`.
-fn all_entries(vault: &Vault, projects_file: &Path, actions_file: &Path, day: &str) -> Vec<AgendaEntry> {
+/// The vault's own headings: the projects tree and the actions file.
+///
+/// Apart from the features, because they are the part that is the same
+/// whichever day is being asked about -- a heading carries the stamps
+/// that place it, and nothing has to be filtered to collect it.
+fn vault_entries(vault: &Vault, projects_file: &Path, actions_file: &Path) -> Vec<AgendaEntry> {
     let mut entries = Vec::new();
 
     let projects = crate::core::heading_utils::projects_tree(vault.headings(projects_file));
@@ -211,7 +223,11 @@ fn all_entries(vault: &Vault, projects_file: &Path, actions_file: &Path, day: &s
         calendar: None,
         color: None,
     }));
+    entries
+}
 
+fn all_entries(vault: &Vault, projects_file: &Path, actions_file: &Path, day: &str) -> Vec<AgendaEntry> {
+    let mut entries = vault_entries(vault, projects_file, actions_file);
     for contributor in inventory::iter::<AgendaContributor> {
         entries.extend((contributor.entries)(vault, day));
     }
@@ -297,7 +313,7 @@ pub fn day(vault: &Vault, projects_file: &Path, actions_file: &Path, day: &str) 
 /// asks for thirty days at once, and thirty full agendas would parse the
 /// projects tree thirty times.
 pub fn busy_days(vault: &Vault, projects_file: &Path, actions_file: &Path, from: &str, to: &str) -> AgendaMonth {
-    let entries = all_entries(vault, projects_file, actions_file, from);
+    let entries = vault_entries(vault, projects_file, actions_file);
     let mut days: Vec<String> = Vec::new();
     for entry in &entries {
         for stamp in [entry.when.as_ref(), entry.heading.scheduled.as_ref(), entry.heading.deadline.as_ref(), entry.heading.occurrence.as_ref()]
@@ -311,6 +327,16 @@ pub fn busy_days(vault: &Vault, projects_file: &Path, actions_file: &Path, from:
                 days.push(stamp.start_date.clone());
             }
         }
+    }
+    // The features are asked for the range rather than read out of
+    // `entries`: what a calendar has on a day is in its mirror files,
+    // and a contributor is the only thing that knows which those are.
+    for contributor in inventory::iter::<AgendaContributor> {
+        days.extend(
+            (contributor.days)(vault, from, to)
+                .into_iter()
+                .filter(|day| day.as_str() >= from && day.as_str() <= to),
+        );
     }
     days.sort();
     days.dedup();

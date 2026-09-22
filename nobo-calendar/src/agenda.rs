@@ -18,6 +18,7 @@ inventory::submit! {
     AgendaContributor {
         source: "calendar",
         entries: entries_for,
+        days: days_for,
     }
 }
 
@@ -49,6 +50,22 @@ fn entries_for(vault: &Vault, day: &str) -> Vec<AgendaEntry> {
                 })
                 .collect::<Vec<_>>()
         })
+        .collect()
+}
+
+/// The days between FROM and TO a mirrored event starts on.
+///
+/// Its start day only, the same rule the core's own dots follow: a dot
+/// says "something begins here", and a week-long holiday would otherwise
+/// paint the whole week.
+fn days_for(vault: &Vault, from: &str, to: &str) -> Vec<String> {
+    vault
+        .files_of_kind(crate::MIRROR_KIND)
+        .into_iter()
+        .flat_map(|(path, _)| vault.headings(&path))
+        .filter_map(|heading| heading.occurrence)
+        .filter(|stamp| stamp.start_date.as_str() >= from && stamp.start_date.as_str() <= to)
+        .map(|stamp| stamp.start_date)
         .collect()
 }
 
@@ -124,6 +141,19 @@ mod tests {
         assert_eq!(entries_for(&vault, "2026-09-25").len(), 1);
         assert!(entries_for(&vault, "2026-09-28").is_empty());
         assert!(!entries_for(&vault, "2026-09-25")[0].timed, "a whole-day range carries no time");
+    }
+
+    /// What the month view draws its dots from: the days a calendar has
+    /// something starting on, over a whole range rather than one day.
+    #[test]
+    fn the_days_of_a_range_are_the_days_events_start_on() {
+        let (dir, index) = vault_with(MIRROR);
+        let vault = Vault::new(&index, dir.path());
+
+        assert_eq!(days_for(&vault, "2026-09-01", "2026-09-30"), vec!["2026-09-22", "2026-09-24"]);
+        // The range's own days, not every day it covers.
+        assert!(!days_for(&vault, "2026-09-01", "2026-09-30").contains(&"2026-09-25".to_string()));
+        assert!(days_for(&vault, "2026-10-01", "2026-10-31").is_empty());
     }
 
     #[test]
