@@ -801,6 +801,34 @@ fn resolve_effort_presets(file_content: Option<&str>, settings_presets_org: Opti
 /// missing/unreadable file is treated the same as "no directive" rather
 /// than an error -- this is a read-only convenience lookup, not a
 /// correctness-critical operation.
+/// Every `:CATEGORY:` the vault already uses, alphabetically.
+///
+/// The area of a task is a closed list in practice: a vault accumulates a
+/// handful of them, and free text is how it ends up with both "Arbeit"
+/// and "arbeit". So a picker offers what is there and lets a new one be
+/// typed, which is also what nobo's own CategoryPicker does -- this is
+/// the list behind it.
+///
+/// Counted off the index rather than handed out as headings: the
+/// alternative is serialising every heading in the vault so that a caller
+/// can look at one property of each.
+pub fn list_categories(index_state: &IndexManager) -> Vec<String> {
+    let Ok(read_lock) = index_state.index.read() else { return Vec::new() };
+    let mut found: Vec<String> = read_lock
+        .headings
+        .values()
+        .flatten()
+        .filter_map(|heading| nobo_core::core::models::property_value(&heading.properties, "CATEGORY"))
+        .map(|value| value.to_string())
+        .collect();
+    // Case-insensitively, because org's drawer keys are and because
+    // "Arbeit" and "arbeit" are one area to everybody but a byte
+    // comparison.
+    found.sort_by_key(|value| value.to_lowercase());
+    found.dedup_by_key(|value| value.to_lowercase());
+    found
+}
+
 pub fn get_effort_presets(file_path: String) -> Result<Vec<u32>, String> {
     let file_content = std::fs::read_to_string(&file_path).ok();
     let settings_presets_org = Config::load().map(|c| c.effort_presets_org);
