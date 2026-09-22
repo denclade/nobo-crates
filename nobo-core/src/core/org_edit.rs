@@ -361,6 +361,7 @@ fn marker_for(kind: org_ast::InlineKind) -> &'static str {
         org_ast::InlineKind::Italic => "/",
         org_ast::InlineKind::Strikethrough => "+",
         org_ast::InlineKind::Monospace => "~",
+        org_ast::InlineKind::Underline => "_",
         org_ast::InlineKind::Link => "",
     }
 }

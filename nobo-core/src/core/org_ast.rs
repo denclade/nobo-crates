@@ -37,6 +37,7 @@ pub enum InlineKind {
     Italic,
     Strikethrough,
     Monospace,
+    Underline,
     Link,
 }
 
@@ -73,6 +74,8 @@ pub struct Segment {
     pub strike: bool,
     #[serde(default, skip_serializing_if = "is_false")]
     pub mono: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub underline: bool,
     /// Set on the visible part of a link; carries its raw target.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<String>,
@@ -266,11 +269,16 @@ fn chars_with_offsets(text: &str) -> (Vec<char>, Vec<u32>) {
 // Inline markup
 // ---------------------------------------------------------------------
 
-const MARKERS: [(char, InlineKind); 4] = [
+const MARKERS: [(char, InlineKind); 6] = [
     ('*', InlineKind::Bold),
     ('/', InlineKind::Italic),
     ('+', InlineKind::Strikethrough),
     ('~', InlineKind::Monospace),
+    // Org's other two, which were missing: `=verbatim=` is monospace
+    // like `~code~` (org keeps them apart for export; on a screen they
+    // read the same), and `_underline_` had no rendering at all.
+    ('=', InlineKind::Monospace),
+    ('_', InlineKind::Underline),
 ];
 
 /// A marker only opens after a line start or whitespace, only closes after
@@ -396,6 +404,7 @@ struct CharStyle {
     italic: bool,
     strike: bool,
     mono: bool,
+    underline: bool,
     link: Option<usize>,
     hidden: bool,
 }
@@ -455,6 +464,7 @@ pub fn segments(text: &str) -> Vec<Segment> {
                         InlineKind::Italic => style.italic = true,
                         InlineKind::Strikethrough => style.strike = true,
                         InlineKind::Monospace => style.mono = true,
+                        InlineKind::Underline => style.underline = true,
                         InlineKind::Link => {}
                     }
                 }
@@ -492,6 +502,7 @@ fn finish_segment(style: CharStyle, text: String, targets: &[String]) -> Segment
         italic: style.italic,
         strike: style.strike,
         mono: style.mono,
+        underline: style.underline,
         link: style.link.and_then(|i| targets.get(i).cloned()),
     }
 }
@@ -1446,6 +1457,37 @@ mod tests {
         let link = out.iter().find(|s| s.link.is_some()).expect("link segment");
         assert_eq!(link.text, "a note");
         assert_eq!(link.link.as_deref(), Some("id:20240101T000000"));
+    }
+
+    /// Org's other two inline markers, which had no rendering at all:
+    /// `=verbatim=` came out with its equals signs showing, and
+    /// `_underline_` with its underscores.
+    #[test]
+    fn verbatim_is_monospace_like_code() {
+        let out = segments("try =python3= and ~bash~");
+        let rendered: String = out.iter().map(|s| s.text.as_str()).collect();
+        assert_eq!(rendered, "try python3 and bash");
+        assert!(out.iter().any(|s| s.mono && s.text == "python3"));
+        assert!(out.iter().any(|s| s.mono && s.text == "bash"));
+    }
+
+    #[test]
+    fn underscores_around_a_word_underline_it() {
+        let out = segments("that is _important_ here");
+        let rendered: String = out.iter().map(|s| s.text.as_str()).collect();
+        assert_eq!(rendered, "that is important here");
+        assert!(out.iter().any(|s| s.underline && s.text == "important"));
+    }
+
+    /// The guard that keeps a marker from eating ordinary text: an
+    /// underscore inside a word opens nothing, the same way a slash in a
+    /// path does not start italics.
+    #[test]
+    fn an_underscore_inside_a_word_is_just_an_underscore() {
+        let out = segments("the file_path_name stays");
+        let rendered: String = out.iter().map(|s| s.text.as_str()).collect();
+        assert_eq!(rendered, "the file_path_name stays");
+        assert!(out.iter().all(|s| !s.underline));
     }
 
     #[test]

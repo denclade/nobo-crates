@@ -441,6 +441,7 @@ fn markup_spans(line: &str) -> Vec<Span> {
             InlineKind::Italic => "italic",
             InlineKind::Strikethrough => "strike",
             InlineKind::Monospace => "mono",
+            InlineKind::Underline => "underline",
             InlineKind::Link => "link",
         };
         spans.push(span("marker", found.from, found.from + marker));
