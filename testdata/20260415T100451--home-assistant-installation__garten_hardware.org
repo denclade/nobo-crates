@@ -1,0 +1,9 @@
+#+TITLE:      Home Assistant Installation
+#+DATE:       [2026-04-15 Mi 10:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :garten:hardware:
+#+IDENTIFIER: 20260415T100451
+
+* Home Assistant Installation
+
+Noch offen: genaue Details klären. Wichtig: vor dem nächsten Schritt nochmal prüfen.

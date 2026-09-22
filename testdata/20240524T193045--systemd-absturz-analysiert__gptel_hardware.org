@@ -1,0 +1,9 @@
+#+TITLE:      systemd Absturz analysiert
+#+DATE:       [2024-05-24 Fr 19:30]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:hardware:
+#+IDENTIFIER: 20240524T193045
+
+* systemd Absturz analysiert
+
+Kurz notiert, bevor ich es vergesse.

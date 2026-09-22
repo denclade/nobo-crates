@@ -1,0 +1,9 @@
+#+TITLE:      Artikel: Homelab Stromverbrauch
+#+DATE:       [2025-07-20 So 00:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :projekt:
+#+IDENTIFIER: 20250720T002507
+
+* Artikel: Homelab Stromverbrauch
+
+Ergebnis war nicht ganz wie erhofft.

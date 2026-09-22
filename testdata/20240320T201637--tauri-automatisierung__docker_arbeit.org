@@ -1,0 +1,8 @@
+#+TITLE:      Tauri Automatisierung
+#+DATE:       [2024-03-20 Mi 20:16]
+#+FILETAGS:   :docker:arbeit:
+#+IDENTIFIER: 20240320T201637
+
+* Tauri Automatisierung
+
+Klingt nach einer guten Idee für nächste Woche. Todo: Screenshot ergänzen.

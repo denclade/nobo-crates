@@ -1,0 +1,12 @@
+#+TITLE:      Chef Urlaub geplant
+#+DATE:       [2025-04-18 Fr 08:14]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rust:artikel:
+#+IDENTIFIER: 20250418T081424
+
+* Chef Urlaub geplant
+
+Ein Blick zurück lohnt sich hier.
+
+** Weiteres Vorgehen
+Wichtig: vor dem nächsten Schritt nochmal prüfen.

@@ -1,0 +1,12 @@
+#+TITLE:      Ansible Workaround
+#+DATE:       [2024-05-24 Fr 05:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zigbee:
+#+IDENTIFIER: 20240524T050416
+
+* Ansible Workaround
+
+Hat länger gedauert als gedacht. Erster Eindruck ist positiv.
+
+** Weiteres Vorgehen
+Ergebnis war nicht ganz wie erhofft.

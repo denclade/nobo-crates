@@ -1,0 +1,15 @@
+[package]
+name = "nobo-ical"
+version = "0.1.0"
+description = "The RFC 5545 chores two features share: properties, parameters, escaping, folding, and what a date-time means locally."
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# Its own crate for the same reason as nobo-webdav: two features speak
+# iCalendar (ICS calendar feeds and CalDAV task lists), so the format
+# belongs to neither of them -- and to the core least of all, which has no
+# idea what a VEVENT is.
+[dependencies]
+ical = { workspace = true }
+chrono = { workspace = true }
+chrono-tz = { workspace = true }

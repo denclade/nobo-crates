@@ -1,0 +1,69 @@
+#+TITLE: Rezepte mit Teilschritten
+#+NOBO_TYPE: cookbook
+
+Rezepte, deren Zubereitung selbst noch einmal unterteilt ist -- Teig und
+Füllung getrennt, mehrere Komponenten. Auch die Zutatenliste ist hier
+gegliedert.
+
+* Zwiebelkuchen                                                    :herbst:backen:
+:PROPERTIES:
+:CUSTOM_ID: h:rec-zwiebelkuchen
+:SERVINGS: 8
+:PREP-TIME: 40
+:COOK-TIME: 45
+:END:
+
+Klassiker zum neuen Wein.
+
+** Zutaten
+*** Für den Teig
+- 300 g Mehl
+- 1 Würfel frische Hefe
+- 150 ml lauwarme Milch
+- 50 g Butter
+- 1 TL Salz
+
+*** Für den Belag
+- 1 kg Zwiebeln
+- 150 g Speckwürfel
+- 200 g Schmand
+- 2 Eier
+- 1 EL Kümmel
+
+** Zubereitung
+*** Teig
+1. Hefe in der lauwarmen Milch auflösen.
+2. Mit Mehl, Butter und Salz zu einem glatten Teig kneten.
+3. Zugedeckt 45 Minuten gehen lassen.
+
+*** Belag
+1. Zwiebeln in feine Ringe schneiden.
+2. Speck auslassen, Zwiebeln darin glasig dünsten, abkühlen lassen.
+3. Schmand und Eier verquirlen, unter die Zwiebeln heben.
+
+*** Backen
+1. Teig auf ein Blech ausrollen, Belag verteilen, mit Kümmel bestreuen.
+2. Bei 200 °C etwa 45 Minuten backen.
+
+* Bananenbrot                                                              :backen:
+:PROPERTIES:
+:CUSTOM_ID: h:rec-bananenbrot
+:SERVINGS: 1
+:PREP-TIME: 15
+:COOK-TIME: 60
+:END:
+
+** Zutaten
+- 3 sehr reife Bananen
+- 200 g Mehl
+- 100 g Zucker
+- 75 g Butter
+- 2 Eier
+- 1 TL Backpulver
+- ¼ TL Natron
+
+** Zubereitung
+1. Bananen mit der Gabel zerdrücken.
+2. Butter und Zucker schaumig rühren, Eier einzeln unterrühren.
+3. Bananen, Mehl, Backpulver und Natron unterheben.
+4. In eine gefettete Kastenform füllen und bei 175 °C eine Stunde backen.

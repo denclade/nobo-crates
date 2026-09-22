@@ -1,0 +1,13 @@
+#+TITLE:      Island Packliste
+#+DATE:       [2024-06-17 Mo 15:31]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rust:
+#+IDENTIFIER: 20240617T153130
+
+* Island Packliste
+
+Funktioniert soweit wie erwartet. Muss ich nochmal genauer testen. Siehe auch die letzte Notiz zu diesem Thema.
+
+- Backup vorher gemacht
+- Mit zweitem Gerät getestet
+- Nächsten Termin vorgemerkt

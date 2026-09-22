@@ -1,0 +1,12 @@
+#+TITLE:      Kubernetes Installation
+#+DATE:       [2026-07-14 Di 03:30]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :software:meeting:
+#+IDENTIFIER: 20260714T033043
+
+* Kubernetes Installation
+
+Noch offen: genaue Details klären.
+
+** Weiteres Vorgehen
+Läuft seit dem Update stabil.

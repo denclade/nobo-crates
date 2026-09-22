@@ -1,0 +1,9 @@
+#+TITLE:      FreeBSD Vergleich
+#+DATE:       [2024-12-16 Mo 08:02]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sport:idee:auto:
+#+IDENTIFIER: 20241216T080241
+
+* FreeBSD Vergleich
+
+Läuft seit dem Update stabil. Quelle: Gespräch von heute Vormittag. Kurzes Fazit nach dem ersten Test.

@@ -1,0 +1,17 @@
+#+TITLE:      Podcast Notizen: Denote Workflow
+#+DATE:       [2024-04-26 Fr 19:14]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :blog:schule:
+#+IDENTIFIER: 20240426T191417
+
+* Podcast Notizen: Denote Workflow
+
+Details stehen noch aus. Ergebnis war nicht ganz wie erhofft.
+
+- Nächsten Termin vorgemerkt
+- Mit zweitem Gerät getestet
+- Logs geprüft
+- Config-Datei gesichert
+
+** Weiteres Vorgehen
+War einfacher als erwartet.

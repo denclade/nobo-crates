@@ -1,0 +1,9 @@
+#+TITLE:      WireGuard Workaround
+#+DATE:       [2026-07-14 Di 16:55]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :auto:backup:buch:
+#+IDENTIFIER: 20260714T165537
+
+* WireGuard Workaround
+
+Klingt nach einer guten Idee für nächste Woche.

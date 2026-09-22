@@ -1,0 +1,9 @@
+#+TITLE:      SolidJS erste Schritte
+#+DATE:       [2024-08-21 Mi 19:23]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :wifi:ssh:
+#+IDENTIFIER: 20240821T192338
+
+* SolidJS erste Schritte
+
+Auf Nachfrage nochmal nachhaken.

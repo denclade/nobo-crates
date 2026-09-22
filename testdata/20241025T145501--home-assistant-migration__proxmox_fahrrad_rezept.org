@@ -1,0 +1,16 @@
+#+TITLE:      Home Assistant Migration
+#+DATE:       [2024-10-25 Fr 14:55]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :proxmox:fahrrad:rezept:
+#+IDENTIFIER: 20241025T145501
+
+* Home Assistant Migration
+
+Läuft seit dem Update stabil. Funktioniert soweit wie erwartet.
+
+- Backup vorher gemacht
+- Ergebnis mit Team geteilt
+- Dokumentation verlinkt
+
+** Weiteres Vorgehen
+Ein Blick zurück lohnt sich hier.

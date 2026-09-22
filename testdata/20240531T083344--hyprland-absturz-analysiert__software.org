@@ -1,0 +1,9 @@
+#+TITLE:      Hyprland Absturz analysiert
+#+DATE:       [2024-05-31 Fr 08:33]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :software:
+#+IDENTIFIER: 20240531T083344
+
+* Hyprland Absturz analysiert
+
+War einfacher als erwartet. Kurzes Fazit nach dem ersten Test. Wichtig: vor dem nächsten Schritt nochmal prüfen.

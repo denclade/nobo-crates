@@ -1,0 +1,13 @@
+#+TITLE:      Restic Update
+#+DATE:       [2025-12-21 So 12:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ha:python:familie:
+#+IDENTIFIER: 20251221T122504
+
+* Restic Update
+
+Siehe auch die letzte Notiz zu diesem Thema. Quelle: Gespräch von heute Vormittag. Klingt nach einer guten Idee für nächste Woche.
+
+- Config-Datei gesichert
+- Logs geprüft
+- Nächsten Termin vorgemerkt

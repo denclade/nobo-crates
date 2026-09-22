@@ -1,0 +1,14 @@
+#+TITLE:      Papa Steuererklärung
+#+DATE:       [2026-03-08 So 15:30]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:
+#+IDENTIFIER: 20260308T153039
+
+* Papa Steuererklärung
+
+Referenz für später aufgehoben.
+
+- Backup vorher gemacht
+- Dokumentation verlinkt
+- Logs geprüft
+- Config-Datei gesichert

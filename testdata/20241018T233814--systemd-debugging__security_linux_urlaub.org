@@ -1,0 +1,13 @@
+#+TITLE:      systemd Debugging
+#+DATE:       [2024-10-18 Fr 23:38]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :security:linux:urlaub:
+#+IDENTIFIER: 20241018T233814
+
+* systemd Debugging
+
+Nächster Schritt: Ergebnis dokumentieren. War einfacher als erwartet. Noch offen: genaue Details klären.
+
+- Screenshot gemacht
+- Config-Datei gesichert
+- Backup vorher gemacht

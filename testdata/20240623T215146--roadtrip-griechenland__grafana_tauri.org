@@ -1,0 +1,9 @@
+#+TITLE:      Roadtrip Griechenland
+#+DATE:       [2024-06-23 So 21:51]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :grafana:tauri:
+#+IDENTIFIER: 20240623T215146
+
+* Roadtrip Griechenland
+
+Noch offen: genaue Details klären. Läuft seit dem Update stabil.

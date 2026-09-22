@@ -1,0 +1,9 @@
+#+TITLE:      PocketBase Konfiguration
+#+DATE:       [2024-05-16 Do 13:54]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :fahrrad:
+#+IDENTIFIER: 20240516T135424
+
+* PocketBase Konfiguration
+
+Klingt nach einer guten Idee für nächste Woche.

@@ -1,0 +1,8 @@
+#+TITLE:      Home Assistant Update
+#+DATE:       [2026-05-06 Mi 02:24]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260506T022418
+
+* Home Assistant Update
+
+Noch offen: genaue Details klären. Ein Blick zurück lohnt sich hier. Nächster Schritt: Ergebnis dokumentieren.

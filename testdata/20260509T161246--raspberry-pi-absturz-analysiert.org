@@ -1,0 +1,11 @@
+#+TITLE:      Raspberry Pi Absturz analysiert
+#+DATE:       [2026-05-09 Sa 16:12]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260509T161246
+
+* Raspberry Pi Absturz analysiert
+
+Erster Eindruck ist positiv.
+
+** Weiteres Vorgehen
+Klingt nach einer guten Idee für nächste Woche.

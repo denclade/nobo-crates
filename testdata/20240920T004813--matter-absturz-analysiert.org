@@ -1,0 +1,15 @@
+#+TITLE:      Matter Absturz analysiert
+#+DATE:       [2024-09-20 Fr 00:48]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240920T004813
+
+* Matter Absturz analysiert
+
+Auf Nachfrage nochmal nachhaken. Ein Blick zurück lohnt sich hier.
+
+- Ergebnis mit Team geteilt
+- Dokumentation verlinkt
+- Mit zweitem Gerät getestet
+
+** Weiteres Vorgehen
+Nächster Schritt: Ergebnis dokumentieren.

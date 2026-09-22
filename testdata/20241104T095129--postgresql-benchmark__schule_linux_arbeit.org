@@ -1,0 +1,9 @@
+#+TITLE:      PostgreSQL Benchmark
+#+DATE:       [2024-11-04 Mo 09:51]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :schule:linux:arbeit:
+#+IDENTIFIER: 20241104T095129
+
+* PostgreSQL Benchmark
+
+Siehe auch die letzte Notiz zu diesem Thema. Quelle: Gespräch von heute Vormittag.

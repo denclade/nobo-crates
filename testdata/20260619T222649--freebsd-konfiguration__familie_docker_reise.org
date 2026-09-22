@@ -1,0 +1,9 @@
+#+TITLE:      FreeBSD Konfiguration
+#+DATE:       [2026-06-19 Fr 22:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :familie:docker:reise:
+#+IDENTIFIER: 20260619T222649
+
+* FreeBSD Konfiguration
+
+Auf Nachfrage nochmal nachhaken. Hat länger gedauert als gedacht. Siehe auch die letzte Notiz zu diesem Thema.

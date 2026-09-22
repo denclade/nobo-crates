@@ -1,0 +1,9 @@
+#+TITLE:      KDE Integration
+#+DATE:       [2026-03-07 Sa 14:20]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :config:
+#+IDENTIFIER: 20260307T142052
+
+* KDE Integration
+
+Ein Blick zurück lohnt sich hier. Kurzes Fazit nach dem ersten Test. Ergebnis war nicht ganz wie erhofft.

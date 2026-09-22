@@ -1,0 +1,9 @@
+#+TITLE:      Restic Notizen
+#+DATE:       [2024-03-15 Fr 05:41]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :finanzen:
+#+IDENTIFIER: 20240315T054158
+
+* Restic Notizen
+
+Details stehen noch aus. War einfacher als erwartet. Todo: Screenshot ergänzen.

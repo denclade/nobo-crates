@@ -1,0 +1,9 @@
+#+TITLE:      ZFS Cheatsheet
+#+DATE:       [2024-11-16 Sa 07:12]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :garten:ki:unterricht:
+#+IDENTIFIER: 20241116T071250
+
+* ZFS Cheatsheet
+
+Funktioniert soweit wie erwartet. Nächster Schritt: Ergebnis dokumentieren.

@@ -1,0 +1,8 @@
+#+TITLE:      Proxmox Benchmark
+#+DATE:       [2025-04-20 So 18:33]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250420T183310
+
+* Proxmox Benchmark
+
+Läuft seit dem Update stabil.

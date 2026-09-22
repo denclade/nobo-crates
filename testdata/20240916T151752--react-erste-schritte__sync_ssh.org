@@ -1,0 +1,12 @@
+#+TITLE:      React erste Schritte
+#+DATE:       [2024-09-16 Mo 15:17]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sync:ssh:
+#+IDENTIFIER: 20240916T151752
+
+* React erste Schritte
+
+Funktioniert soweit wie erwartet. Noch offen: genaue Details klären.
+
+- Backup vorher gemacht
+- Mit zweitem Gerät getestet

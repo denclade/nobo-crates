@@ -1,0 +1,8 @@
+#+TITLE:      systemd Installation
+#+DATE:       [2026-06-19 Fr 09:01]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260619T090109
+
+* systemd Installation
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Funktioniert soweit wie erwartet.

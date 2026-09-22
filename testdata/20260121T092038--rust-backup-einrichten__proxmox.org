@@ -1,0 +1,9 @@
+#+TITLE:      Rust Backup einrichten
+#+DATE:       [2026-01-21 Mi 09:20]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :proxmox:
+#+IDENTIFIER: 20260121T092038
+
+* Rust Backup einrichten
+
+Kurzes Fazit nach dem ersten Test. Wichtig: vor dem nächsten Schritt nochmal prüfen. Referenz für später aufgehoben.

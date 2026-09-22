@@ -1,0 +1,9 @@
+#+TITLE:      SQLite Fehler beheben
+#+DATE:       [2025-11-18 Di 08:55]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :security:ha:
+#+IDENTIFIER: 20251118T085515
+
+* SQLite Fehler beheben
+
+Ergebnis war nicht ganz wie erhofft. Läuft seit dem Update stabil. Nächster Schritt: Ergebnis dokumentieren.

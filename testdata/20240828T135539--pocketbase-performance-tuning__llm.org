@@ -1,0 +1,9 @@
+#+TITLE:      PocketBase Performance-Tuning
+#+DATE:       [2024-08-28 Mi 13:55]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :llm:
+#+IDENTIFIER: 20240828T135539
+
+* PocketBase Performance-Tuning
+
+Nächster Schritt: Ergebnis dokumentieren.

@@ -1,0 +1,8 @@
+#+TITLE:      WireGuard erste Schritte
+#+DATE:       [2024-04-15 Mo 04:13]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240415T041316
+
+* WireGuard erste Schritte
+
+Muss ich nochmal genauer testen.

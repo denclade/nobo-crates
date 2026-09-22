@@ -1,0 +1,9 @@
+#+TITLE:      GNOME Automatisierung
+#+DATE:       [2026-03-10 Di 06:18]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rust:
+#+IDENTIFIER: 20260310T061820
+
+* GNOME Automatisierung
+
+Kurzes Fazit nach dem ersten Test.

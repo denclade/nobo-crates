@@ -1,0 +1,9 @@
+#+TITLE:      Prometheus Notizen
+#+DATE:       [2026-07-16 Do 21:53]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :config:vpn:security:
+#+IDENTIFIER: 20260716T215330
+
+* Prometheus Notizen
+
+Kurzes Fazit nach dem ersten Test. Auf Nachfrage nochmal nachhaken.

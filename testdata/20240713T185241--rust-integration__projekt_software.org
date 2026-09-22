@@ -1,0 +1,12 @@
+#+TITLE:      Rust Integration
+#+DATE:       [2024-07-13 Sa 18:52]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :projekt:software:
+#+IDENTIFIER: 20240713T185241
+
+* Rust Integration
+
+Muss ich nochmal genauer testen. Hat länger gedauert als gedacht. Nächster Schritt: Ergebnis dokumentieren.
+
+** Weiteres Vorgehen
+Klingt nach einer guten Idee für nächste Woche.

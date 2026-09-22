@@ -1,0 +1,8 @@
+#+TITLE:      Python Speicherplatz voll
+#+DATE:       [2026-03-10 Di 02:08]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260310T020845
+
+* Python Speicherplatz voll
+
+Referenz für später aufgehoben.

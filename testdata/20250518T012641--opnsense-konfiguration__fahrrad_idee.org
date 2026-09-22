@@ -1,0 +1,12 @@
+#+TITLE:      OPNsense Konfiguration
+#+DATE:       [2025-05-18 So 01:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :fahrrad:idee:
+#+IDENTIFIER: 20250518T012641
+
+* OPNsense Konfiguration
+
+Hat länger gedauert als gedacht. War einfacher als erwartet.
+
+** Weiteres Vorgehen
+Ergebnis war nicht ganz wie erhofft.

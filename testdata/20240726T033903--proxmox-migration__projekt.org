@@ -1,0 +1,9 @@
+#+TITLE:      Proxmox Migration
+#+DATE:       [2024-07-26 Fr 03:39]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :projekt:
+#+IDENTIFIER: 20240726T033903
+
+* Proxmox Migration
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen.

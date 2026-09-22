@@ -1,0 +1,14 @@
+#+TITLE:      Python Benchmark
+#+DATE:       [2024-07-09 Di 12:31]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :docker:familie:
+#+IDENTIFIER: 20240709T123120
+
+* Python Benchmark
+
+Todo: Screenshot ergänzen. Ergebnis war nicht ganz wie erhofft. Referenz für später aufgehoben.
+
+- Nächsten Termin vorgemerkt
+- Backup vorher gemacht
+- Screenshot gemacht
+- Logs geprüft

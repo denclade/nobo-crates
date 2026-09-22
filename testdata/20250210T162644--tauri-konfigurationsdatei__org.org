@@ -1,0 +1,12 @@
+#+TITLE:      Tauri Konfigurationsdatei
+#+DATE:       [2025-02-10 Mo 16:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :org:
+#+IDENTIFIER: 20250210T162644
+
+* Tauri Konfigurationsdatei
+
+Muss ich nochmal genauer testen. Funktioniert soweit wie erwartet. Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+- Nächsten Termin vorgemerkt
+- Backup vorher gemacht

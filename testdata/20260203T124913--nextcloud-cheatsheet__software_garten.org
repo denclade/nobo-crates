@@ -1,0 +1,9 @@
+#+TITLE:      Nextcloud Cheatsheet
+#+DATE:       [2026-02-03 Di 12:49]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :software:garten:
+#+IDENTIFIER: 20260203T124913
+
+* Nextcloud Cheatsheet
+
+Muss ich nochmal genauer testen. Kurzes Fazit nach dem ersten Test.

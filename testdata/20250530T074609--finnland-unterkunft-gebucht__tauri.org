@@ -1,0 +1,14 @@
+#+TITLE:      Finnland Unterkunft gebucht
+#+DATE:       [2025-05-30 Fr 07:46]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :tauri:
+#+IDENTIFIER: 20250530T074609
+
+* Finnland Unterkunft gebucht
+
+Ergebnis war nicht ganz wie erhofft.
+
+- Mit zweitem Gerät getestet
+- Ergebnis mit Team geteilt
+- Logs geprüft
+- Dokumentation verlinkt

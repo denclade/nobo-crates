@@ -1,0 +1,9 @@
+#+TITLE:      SQLite Shortcuts
+#+DATE:       [2026-03-26 Do 01:30]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :home:technik:
+#+IDENTIFIER: 20260326T013053
+
+* SQLite Shortcuts
+
+Erster Eindruck ist positiv. Wichtig: vor dem nächsten Schritt nochmal prüfen. Noch offen: genaue Details klären.

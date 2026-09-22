@@ -1,0 +1,57 @@
+[package]
+name = "nobo-core"
+version = "0.1.0"
+description = "Everything nobo is made of that is not a feature: org files, the index, search, file kinds, secrets, migrations, settings."
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# Versions come from the workspace (see ../../Cargo.toml) so this crate
+# and the app can never disagree about one. What is listed here is what
+# the core genuinely uses -- a dependency it does not need is one a
+# feature crate would inherit for nothing.
+#
+# Nothing here talks to a network: reqwest, quick-xml and the TLS stack
+# left with core::http and core::webdav (now crates/nobo-http and
+# crates/nobo-webdav), so a purely local build does not carry them.
+#
+# And nothing here knows what a Tauri app is. There used to be a `tauri`
+# feature carrying an `IndexListener` for `AppHandle`, the securestore
+# keychain, the notification delivery, the fs scopes and the mobile config
+# dir -- all of it one host answering the seams below, none of it core
+# logic. It moved to crates/nobo-tauri, so this crate is now the same
+# crate for every host: the Tauri app, the background worker, and the
+# Sailfish OS port that links it as a static library under a Qt/Silica UI
+# (harbour-nobo). What the hosts differ in goes through plain traits and
+# functions they fill in -- `IndexListener`, `KeychainBackend`,
+# `set_config_dir`.
+#
+# No `[features]` section at all, therefore, and that is the point: there
+# is nothing here anyone would want to switch off.
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+dirs = { workspace = true }
+ignore = { workspace = true }
+rayon = { workspace = true }
+notify = { workspace = true }
+chrono = { workspace = true }
+similar = { workspace = true }
+diffy = { workspace = true }
+log = { workspace = true }
+unicode-normalization = { workspace = true }
+rusqlite = { workspace = true }
+flate2 = { workspace = true }
+specta = { workspace = true }
+specta-typescript = { workspace = true }
+# `sync` (broadcast, oneshot) and `time` are what core::secrets uses, plus
+# `rt` for the throwaway runtime `spawn_detached` builds. Named here
+# because nothing pulls a runtime in for this crate any more -- it used to
+# arrive transitively through Tauri's own tokio.
+tokio = { workspace = true, features = ["sync", "time", "rt"] }
+uuid = { workspace = true }
+inventory = { workspace = true }
+async-trait = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

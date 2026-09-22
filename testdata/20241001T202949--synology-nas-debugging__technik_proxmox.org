@@ -1,0 +1,9 @@
+#+TITLE:      Synology NAS Debugging
+#+DATE:       [2024-10-01 Di 20:29]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :technik:proxmox:
+#+IDENTIFIER: 20241001T202949
+
+* Synology NAS Debugging
+
+Ein Blick zurück lohnt sich hier.

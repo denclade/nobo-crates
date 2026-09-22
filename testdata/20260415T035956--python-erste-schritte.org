@@ -1,0 +1,8 @@
+#+TITLE:      Python erste Schritte
+#+DATE:       [2026-04-15 Mi 03:59]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260415T035956
+
+* Python erste Schritte
+
+Auf Nachfrage nochmal nachhaken.

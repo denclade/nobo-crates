@@ -1,0 +1,9 @@
+#+TITLE:      Nextcloud Backup einrichten
+#+DATE:       [2025-06-29 So 01:52]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :freizeit:python:ha:
+#+IDENTIFIER: 20250629T015241
+
+* Nextcloud Backup einrichten
+
+Läuft seit dem Update stabil.

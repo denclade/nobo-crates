@@ -1,0 +1,11 @@
+#+TITLE:      OPNsense Zertifikat erneuert
+#+DATE:       [2024-04-01 Mo 05:18]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240401T051817
+
+* OPNsense Zertifikat erneuert
+
+Muss ich nochmal genauer testen.
+
+** Weiteres Vorgehen
+Funktioniert soweit wie erwartet.

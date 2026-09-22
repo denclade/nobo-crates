@@ -1,0 +1,13 @@
+#+TITLE:      Ansible Debugging
+#+DATE:       [2025-07-30 Mi 23:38]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :emacs:rezept:
+#+IDENTIFIER: 20250730T233830
+
+* Ansible Debugging
+
+Muss ich nochmal genauer testen. Ergebnis war nicht ganz wie erhofft. Ein Blick zurück lohnt sich hier.
+
+- Screenshot gemacht
+- Backup vorher gemacht
+- Nächsten Termin vorgemerkt

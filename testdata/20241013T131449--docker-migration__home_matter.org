@@ -1,0 +1,9 @@
+#+TITLE:      Docker Migration
+#+DATE:       [2024-10-13 So 13:14]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :home:matter:
+#+IDENTIFIER: 20241013T131449
+
+* Docker Migration
+
+Details stehen noch aus.

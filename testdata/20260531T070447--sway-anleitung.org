@@ -1,0 +1,11 @@
+#+TITLE:      Sway Anleitung
+#+DATE:       [2026-05-31 So 07:04]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260531T070447
+
+* Sway Anleitung
+
+Muss ich nochmal genauer testen.
+
+** Weiteres Vorgehen
+Nächster Schritt: Ergebnis dokumentieren.

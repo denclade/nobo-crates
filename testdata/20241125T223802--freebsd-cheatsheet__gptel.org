@@ -1,0 +1,13 @@
+#+TITLE:      FreeBSD Cheatsheet
+#+DATE:       [2024-11-25 Mo 22:38]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:
+#+IDENTIFIER: 20241125T223802
+
+* FreeBSD Cheatsheet
+
+Muss ich nochmal genauer testen. Läuft seit dem Update stabil. Noch offen: genaue Details klären.
+
+- Config-Datei gesichert
+- Backup vorher gemacht
+- Ergebnis mit Team geteilt

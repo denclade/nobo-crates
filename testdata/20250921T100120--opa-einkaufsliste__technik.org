@@ -1,0 +1,9 @@
+#+TITLE:      Opa Einkaufsliste
+#+DATE:       [2025-09-21 So 10:01]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :technik:
+#+IDENTIFIER: 20250921T100120
+
+* Opa Einkaufsliste
+
+Funktioniert soweit wie erwartet. Wichtig: vor dem nächsten Schritt nochmal prüfen.

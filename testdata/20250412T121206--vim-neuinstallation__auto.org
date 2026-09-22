@@ -1,0 +1,14 @@
+#+TITLE:      Vim Neuinstallation
+#+DATE:       [2025-04-12 Sa 12:12]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :auto:
+#+IDENTIFIER: 20250412T121206
+
+* Vim Neuinstallation
+
+Ein Blick zurück lohnt sich hier. Klingt nach einer guten Idee für nächste Woche.
+
+- Config-Datei gesichert
+- Nächsten Termin vorgemerkt
+- Screenshot gemacht
+- Mit zweitem Gerät getestet

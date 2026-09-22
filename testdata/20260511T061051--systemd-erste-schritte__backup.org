@@ -1,0 +1,9 @@
+#+TITLE:      systemd erste Schritte
+#+DATE:       [2026-05-11 Mo 06:10]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :backup:
+#+IDENTIFIER: 20260511T061051
+
+* systemd erste Schritte
+
+Erster Eindruck ist positiv.

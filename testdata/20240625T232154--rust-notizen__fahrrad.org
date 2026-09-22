@@ -1,0 +1,9 @@
+#+TITLE:      Rust Notizen
+#+DATE:       [2024-06-25 Di 23:21]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :fahrrad:
+#+IDENTIFIER: 20240625T232154
+
+* Rust Notizen
+
+Hat länger gedauert als gedacht. Nächster Schritt: Ergebnis dokumentieren. War einfacher als erwartet.

@@ -1,0 +1,9 @@
+#+TITLE:      WireGuard Automatisierung
+#+DATE:       [2026-06-02 Di 17:44]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :kernel:
+#+IDENTIFIER: 20260602T174444
+
+* WireGuard Automatisierung
+
+Quelle: Gespräch von heute Vormittag. Siehe auch die letzte Notiz zu diesem Thema. Nächster Schritt: Ergebnis dokumentieren.

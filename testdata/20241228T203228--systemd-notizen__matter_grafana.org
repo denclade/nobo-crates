@@ -1,0 +1,13 @@
+#+TITLE:      systemd Notizen
+#+DATE:       [2024-12-28 Sa 20:32]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :matter:grafana:
+#+IDENTIFIER: 20241228T203228
+
+* systemd Notizen
+
+Funktioniert soweit wie erwartet.
+
+- Config-Datei gesichert
+- Screenshot gemacht
+- Dokumentation verlinkt

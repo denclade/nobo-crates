@@ -1,0 +1,9 @@
+#+TITLE:      SolidJS Setup
+#+DATE:       [2025-08-19 Di 12:39]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :home:tauri:
+#+IDENTIFIER: 20250819T123911
+
+* SolidJS Setup
+
+War einfacher als erwartet. Erster Eindruck ist positiv. Funktioniert soweit wie erwartet.

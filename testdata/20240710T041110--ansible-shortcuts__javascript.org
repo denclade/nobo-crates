@@ -1,0 +1,9 @@
+#+TITLE:      Ansible Shortcuts
+#+DATE:       [2024-07-10 Mi 04:11]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :javascript:
+#+IDENTIFIER: 20240710T041110
+
+* Ansible Shortcuts
+
+Referenz für später aufgehoben. Details stehen noch aus.

@@ -1,0 +1,12 @@
+#+TITLE:      React Update fehlgeschlagen
+#+DATE:       [2025-05-01 Do 01:02]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :artikel:
+#+IDENTIFIER: 20250501T010245
+
+* React Update fehlgeschlagen
+
+War einfacher als erwartet. Noch offen: genaue Details klären.
+
+** Weiteres Vorgehen
+Kurz notiert, bevor ich es vergesse.

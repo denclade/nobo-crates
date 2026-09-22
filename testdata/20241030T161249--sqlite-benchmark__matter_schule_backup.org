@@ -1,0 +1,9 @@
+#+TITLE:      SQLite Benchmark
+#+DATE:       [2024-10-30 Mi 16:12]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :matter:schule:backup:
+#+IDENTIFIER: 20241030T161249
+
+* SQLite Benchmark
+
+Todo: Screenshot ergänzen. Referenz für später aufgehoben.

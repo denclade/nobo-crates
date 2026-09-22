@@ -1,0 +1,9 @@
+#+TITLE:      Ansible Update
+#+DATE:       [2025-01-11 Sa 05:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :projekt:
+#+IDENTIFIER: 20250111T050416
+
+* Ansible Update
+
+Referenz für später aufgehoben. Details stehen noch aus.

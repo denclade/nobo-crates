@@ -1,0 +1,16 @@
+#+TITLE:      ZFS Fehler beheben
+#+DATE:       [2025-05-04 So 13:37]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :backup:
+#+IDENTIFIER: 20250504T133718
+
+* ZFS Fehler beheben
+
+Auf Nachfrage nochmal nachhaken. Siehe auch die letzte Notiz zu diesem Thema.
+
+- Ergebnis mit Team geteilt
+- Mit zweitem Gerät getestet
+- Nächsten Termin vorgemerkt
+
+** Weiteres Vorgehen
+Siehe auch die letzte Notiz zu diesem Thema.

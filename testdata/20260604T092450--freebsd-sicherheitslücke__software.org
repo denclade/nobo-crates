@@ -1,0 +1,12 @@
+#+TITLE:      FreeBSD Sicherheitslücke
+#+DATE:       [2026-06-04 Do 09:24]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :software:
+#+IDENTIFIER: 20260604T092450
+
+* FreeBSD Sicherheitslücke
+
+Details stehen noch aus. Auf Nachfrage nochmal nachhaken.
+
+** Weiteres Vorgehen
+Ein Blick zurück lohnt sich hier.

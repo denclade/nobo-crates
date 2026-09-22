@@ -1,0 +1,9 @@
+#+TITLE:      Borg Debugging
+#+DATE:       [2025-02-21 Fr 22:29]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :wifi:kochen:
+#+IDENTIFIER: 20250221T222947
+
+* Borg Debugging
+
+War einfacher als erwartet.

@@ -1,0 +1,16 @@
+#+TITLE:      BTRFS Debugging
+#+DATE:       [2025-06-04 Mi 03:49]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arbeit:sync:
+#+IDENTIFIER: 20250604T034933
+
+* BTRFS Debugging
+
+Funktioniert soweit wie erwartet. Details stehen noch aus. Referenz für später aufgehoben.
+
+- Config-Datei gesichert
+- Dokumentation verlinkt
+- Mit zweitem Gerät getestet
+
+** Weiteres Vorgehen
+Hat länger gedauert als gedacht.

@@ -1,0 +1,12 @@
+#+TITLE:      Papa Handwerker beauftragt
+#+DATE:       [2024-04-25 Do 16:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sport:zigbee:
+#+IDENTIFIER: 20240425T165632
+
+* Papa Handwerker beauftragt
+
+Ergebnis war nicht ganz wie erhofft.
+
+- Screenshot gemacht
+- Logs geprüft

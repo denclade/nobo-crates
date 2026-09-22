@@ -1,0 +1,313 @@
+#+TITLE: Ultra-Performance Rendering Stress-Test
+#+AUTHOR: nobo Dev Team
+#+DATE: [2026-08-21 Fri]
+#+TAGS: benchmark stress-test performance scroll-test
+#+DESCRIPTION: Diese Datei ist extrem lang und testet das DOM-Rendering, Virtualisierung und Syntax-Highlighting unter Volllast.
+
+* 1. Die Textwüste (DOM Wrapping und Rendering Test)
+Dieser Abschnitt enthält absichtlich extrem lange Textblöcke. Auf mobilen Geräten muss die Rendering-Engine hier hunderte von Zeilen umbrechen, was oft zu Rucklern beim schnellen Scrollen führt, wenn der Editor nicht sauber virtualisiert ist.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida. Duis ac tellus et risus vulputate vehicula. Donec lobortis risus a elit. Etiam tempor. Ut ullamcorper, ligula eu tempor congue, eros est euismod turpis, id tincidunt sapien risus a quam. Maecenas fermentum consequat mi. Donec fermentum. Pellentesque malesuada nulla a mi. Duis sapien sem, aliquet nec, commodo eget, consequat quis, neque. Aliquam faucibus, elit ut dictum aliquet, felis nisl adipiscing sapien, sed malesuada diam lacus eget erat. Cras mollis scelerisque nunc. Nullam arcu. Aliquam consequat.
+
+** 1.1 Weiterer Textblock mit Formatierungen
+In diesem Abschnitt mischen wir /kursive/, *fette*, _unterstrichene_ und =monospaced= Elemente in einen langen Fließtext. Das zwingt den Parser dazu, ständig zwischen verschiedenen DOM-Nodes zu wechseln. Wenn man eine App baut, die *Offline First* ist und lokale Daten speichert, muss man sich intensiv mit der Architektur von SQLite oder IndexedDB auseinandersetzen. Besonders wenn man /CRDTs/ (Conflict-free Replicated Data Types) für die Synchronisation verwendet. Ein typischer Fehler ist es, den gesamten AST (Abstract Syntax Tree) in einen einzigen React- oder Solid-State zu werfen, was bei jedem Tastendruck zu einem Re-Render der gesamten Seite führt. Stattdessen sollte man granulare Updates verwenden. =const update = (id, value) => store.set(id, value)= ist hier ein guter Ansatz. Aber zurück zum Text: Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus.
+
+** 1.2 Die Wand aus Text (Absichtliche Monotonie)
+Es folgt ein extremer Textblock ohne Absätze, um den Layout-Reflow des Browsers zu testen. Wenn du das Fenster in der Breite veränderst (Resize), sollte das Neuanordnen des Textes nicht die gesamte App einfrieren.
+Phasellus ultrices nulla quis nibh. Quisque a lectus. Donec consectetuer ligula vulputate sem tristique cursus. Nam nulla quam, gravida non, commodo a, sodales sit amet, nisi. Pellentesque fermentum dolor. Aliquam quam lectus, facilisis auctor, ultrices ut, elementum vulputate, nunc. Sed adipiscing ornare risus. Morbi est est, blandit sit amet, sagittis vel, euismod vel, velit. Pellentesque egestas sem. Suspendisse commodo ullamcorper magna. Ut aliquam sollicitudin leo. Cras iaculis ultricies nulla. Donec quis tortor. Suspendisse in orci enim. Phasellus rhoncus. Aenean id metus id velit ullamcorper pulvinar. Vestibulum fermentum tortor id mi. Pellentesque ipsum. Nulla non arcu lacinia neque faucibus fringilla. Nulla non lectus sed nisl molestie malesuada. Proin in tellus sit amet nibh dignissim sagittis. Vivamus luctus egestas leo. Pellentesque enim. Praesent et diam, non arcu lacinia neque faucibus fringilla, sapien non elit. Aenean id metus id velit ullamcorper pulvinar. Vestibulum fermentum tortor id mi. Pellentesque ipsum. Nulla non arcu lacinia neque faucibus fringilla. Nulla non lectus sed nisl molestie malesuada. Proin in tellus sit amet nibh dignissim sagittis. Vivamus luctus egestas leo. Pellentesque enim. Praesent et diam, non arcu lacinia neque faucibus fringilla, sapien non elit. Aenean id metus id velit ullamcorper pulvinar. Vestibulum fermentum tortor id mi. Pellentesque ipsum. Nulla non arcu lacinia neque faucibus fringilla. Nulla non lectus sed nisl molestie malesuada.
+
+* 2. Die ewige Liste (Virtualisierungs-Test)
+Listen mit hunderten Einträgen sind der Tod für nicht-virtualisierte UIs. Hier sind über 50 Checkboxen.
+- [ ] Feature 1: Dark Mode Toggle
+- [X] Feature 2: Offline Support via SQLite
+- [ ] Feature 3: CRDT Sync Engine
+- [ ] Feature 4: End-to-End Encryption
+- [X] Feature 5: Tauri v2 Migration
+- [X] Feature 6: SolidJS Store Refactoring
+- [ ] Feature 7: Android Widget
+- [ ] Feature 8: iOS App Release
+- [ ] Feature 9: WebDAV Support
+- [ ] Feature 10: S3 Bucket Sync
+- [X] Feature 11: Markdown Export
+- [ ] Feature 12: PDF Export
+- [ ] Feature 13: Image Drag & Drop
+- [X] Feature 14: Keyboard Shortcuts
+- [ ] Feature 15: Command Palette (Ctrl+K)
+- [ ] Feature 16: Biometric Lock (Fingerprint)
+- [ ] Feature 17: Theme Customization
+- [ ] Feature 18: Font Size Settings
+- [ ] Feature 19: Focus Mode
+- [X] Feature 20: Sidebar Toggle
+- [ ] Feature 21: Multi-Window Support
+- [ ] Feature 22: System Tray Icon
+- [ ] Feature 23: Auto-Updater
+- [ ] Feature 24: Crash Reporting (Opt-in)
+- [X] Feature 25: Localized UI (i18n)
+- [ ] Feature 26: RTL Language Support
+- [ ] Feature 27: Voice Memos
+- [ ] Feature 28: OCR for Images
+- [ ] Feature 29: Tag Manager
+- [ ] Feature 30: Nested Folders
+- [X] Feature 31: Fulltext Search
+- [ ] Feature 32: Fuzzy Search via Fuse.js
+- [ ] Feature 33: Regex Search
+- [ ] Feature 34: Saved Searches
+- [ ] Feature 35: Graph View
+- [ ] Feature 36: Kanban Board View
+- [ ] Feature 37: Calendar View
+- [ ] Feature 38: Pomodoro Timer
+- [ ] Feature 39: Time Tracking Export
+- [ ] Feature 40: Habit Tracker
+- [X] Feature 41: Daily Notes
+- [ ] Feature 42: Templates
+- [ ] Feature 43: Macros
+- [ ] Feature 44: Plugin API
+- [ ] Feature 45: Custom CSS
+- [ ] Feature 46: Vim Keybindings
+- [ ] Feature 47: Emacs Keybindings
+- [ ] Feature 48: Typewriter Mode
+- [ ] Feature 49: Word Count
+- [X] Feature 50: Reading Time Estimator
+
+* 3. Die gigantische Tabelle
+Diese Tabelle testet sowohl das horizontale (wenn das Display zu schmal ist) als auch das vertikale Scroll-Verhalten des Editors. Sie ist absichtlich hoeher als ein Bildschirm: mitten in ihr ist weder ihr Anfang noch ihr Ende zu sehen, und die waagerechte Leiste muss trotzdem erreichbar bleiben.
+
+| ID  | Timestamp           | Event Type | User ID | IP Address      | Status | Latency (ms) | Endpoint               | User Agent                                                                 | Node |
+|-----+---------------------+------------+---------+-----------------+--------+--------------+------------------------+----------------------------------------------------------------------------+------|
+| 001 | 2026-08-21T10:00:01 | LOGIN_ATT  | u_7891  | 192.168.1.100   | OK     | 120          | /api/v1/auth           | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36               | EU-1 |
+| 002 | 2026-08-21T10:00:05 | SYNC_START | u_7891  | 192.168.1.100   | OK     | 45           | /api/v1/sync           | nobo-app/2.1.0 (Android 15)                                                | EU-1 |
+| 003 | 2026-08-21T10:00:06 | PUSH_DATA  | u_7891  | 192.168.1.100   | OK     | 890          | /api/v1/sync/push      | nobo-app/2.1.0 (Android 15)                                                | EU-1 |
+| 004 | 2026-08-21T10:01:12 | LOGIN_ATT  | u_9921  | 10.0.0.5        | FAIL   | 310          | /api/v1/auth           | curl/8.1.2                                                                 | US-2 |
+| 005 | 2026-08-21T10:01:15 | LOGIN_ATT  | u_9921  | 10.0.0.5        | FAIL   | 280          | /api/v1/auth           | curl/8.1.2                                                                 | US-2 |
+| 006 | 2026-08-21T10:01:18 | LOGIN_ATT  | u_9921  | 10.0.0.5        | BLOCK  | 15           | /api/v1/auth           | curl/8.1.2                                                                 | US-2 |
+| 007 | 2026-08-21T10:05:00 | CRON_RUN   | SYSTEM  | 127.0.0.1       | OK     | 15400        | internal/cron/cleanup  | Node.js/24.0.0                                                             | EU-1 |
+| 008 | 2026-08-21T10:12:33 | FETCH_DOC  | u_1120  | 172.16.254.1    | OK     | 85           | /api/v1/docs/get       | Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15          | EU-3 |
+| 009 | 2026-08-21T10:12:35 | UPLOAD_IMG | u_1120  | 172.16.254.1    | OK     | 2100         | /api/v1/assets/upload  | Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15          | EU-3 |
+| 010 | 2026-08-21T10:15:00 | DB_BACKUP  | SYSTEM  | 127.0.0.1       | OK     | 45000        | internal/db/dump       | pg_dump 16.3                                                               | DB-1 |
+| 011 | 2026-08-21T10:20:11 | SYNC_START | u_4411  | 8.8.8.8         | OK     | 50           | /api/v1/sync           | nobo-app/2.1.0 (iOS 18.1)                                                  | US-1 |
+| 012 | 2026-08-21T10:20:12 | PULL_DATA  | u_4411  | 8.8.8.8         | OK     | 320          | /api/v1/sync/pull      | nobo-app/2.1.0 (iOS 18.1)                                                  | US-1 |
+| 013 | 2026-08-21T10:22:05 | ERROR_500  | u_7891  | 192.168.1.100   | ERR    | 5000         | /api/v1/sync/merge     | nobo-app/2.1.0 (Android 15)                                                | EU-1 |
+| 014 | 2026-08-21T10:22:10 | RETRY_SYNC | u_7891  | 192.168.1.100   | OK     | 1200         | /api/v1/sync/merge     | nobo-app/2.1.0 (Android 15)                                                | EU-1 |
+| 015 | 2026-08-21T10:25:00 | CRON_RUN   | SYSTEM  | 127.0.0.1       | OK     | 200          | internal/cron/ping     | Node.js/24.0.0                                                             | EU-1 |
+| 016 | 2026-08-21T10:30:00 | REPORT_GEN | u_ADMIN | 10.10.10.10     | OK     | 18500        | /api/v1/admin/stats    | Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36                         | IN-1 |
+| 017 | 2026-08-21T10:35:12 | LOGOUT     | u_1120  | 172.16.254.1    | OK     | 12           | /api/v1/auth/logout    | Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15          | EU-3 |
+| 018 | 2026-08-21T10:40:01 | LOGIN_ATT  | u_8822  | 192.168.178.20  | OK     | 150          | /api/v1/auth           | nobo-desktop/2.1.0 (Windows 11)                                            | EU-2 |
+| 019 | 2026-08-21T10:40:05 | SYNC_FULL  | u_8822  | 192.168.178.20  | OK     | 8500         | /api/v1/sync/init      | nobo-desktop/2.1.0 (Windows 11)                                            | EU-2 |
+| 020 | 2026-08-21T10:45:00 | CRON_RUN   | SYSTEM  | 127.0.0.1       | OK     | 180          | internal/cron/ping     | Node.js/24.0.0                                                             | EU-1 |
+| 021 | 2026-08-21T10:48:27 | SYNC_START | u_4411  | 8.8.8.8         | OK     | 60           | /api/v1/sync           | nobo-app/2.1.0 (iOS 18.1)                                                  | US-1 |
+| 022 | 2026-08-21T10:51:34 | PUSH_DATA  | u_4411  | 8.8.8.8         | OK     | 740          | /api/v1/sync/push      | nobo-app/2.1.0 (iOS 18.1)                                                  | US-1 |
+| 023 | 2026-08-21T10:54:41 | FETCH_DOC  | u_1120  | 172.16.254.1    | OK     | 92           | /api/v1/docs/get       | Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15          | EU-3 |
+| 024 | 2026-08-21T10:57:48 | ERROR_500  | u_8822  | 192.168.178.20  | ERR    | 5200         | /api/v1/sync/merge     | nobo-desktop/2.1.0 (Windows 11)                                            | EU-2 |
+| 025 | 2026-08-21T11:00:55 | RETRY_SYNC | u_8822  | 192.168.178.20  | OK     | 1350         | /api/v1/sync/merge     | nobo-desktop/2.1.0 (Windows 11)                                            | EU-2 |
+| 026 | 2026-08-21T11:03:02 | CRON_RUN   | SYSTEM  | 127.0.0.1       | OK     | 210          | internal/cron/ping     | Node.js/24.0.0                                                             | EU-1 |
+| 027 | 2026-08-21T11:06:09 | REPORT_GEN | u_ADMIN | 10.10.10.10     | OK     | 19100        | /api/v1/admin/stats    | Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36                         | IN-1 |
+| 028 | 2026-08-21T11:09:16 | UPLOAD_IMG | u_7891  | 192.168.1.100   | OK     | 2400         | /api/v1/assets/upload  | nobo-app/2.1.0 (Android 15)                                                | EU-1 |
+| 029 | 2026-08-21T11:12:23 | LOGIN_ATT  | u_3310  | 203.0.113.7     | OK     | 133          | /api/v1/auth           | nobo-app/2.1.0 (Android 15)                                                | AP-1 |
+| 030 | 2026-08-21T11:15:30 | SYNC_FULL  | u_3310  | 203.0.113.7     | OK     | 9100         | /api/v1/sync/init      | nobo-app/2.1.0 (Android 15)                                                | AP-1 |
+| 031 | 2026-08-21T11:18:37 | DB_BACKUP  | SYSTEM  | 127.0.0.1       | OK     | 46200        | internal/db/dump       | pg_dump 16.3                                                               | DB-1 |
+| 032 | 2026-08-21T11:21:44 | LOGOUT     | u_4411  | 8.8.8.8         | OK     | 14           | /api/v1/auth/logout    | nobo-app/2.1.0 (iOS 18.1)                                                  | US-1 |
+| 033 | 2026-08-21T11:24:51 | LOGIN_ATT  | u_9921  | 10.0.0.5        | BLOCK  | 16           | /api/v1/auth           | curl/8.1.2                                                                 | US-2 |
+| 034 | 2026-08-21T11:27:58 | CRON_RUN   | SYSTEM  | 127.0.0.1       | OK     | 195          | internal/cron/cleanup  | Node.js/24.0.0                                                             | EU-1 |
+| 035 | 2026-08-21T11:30:05 | FETCH_DOC  | u_8822  | 192.168.178.20  | OK     | 88           | /api/v1/docs/get       | nobo-desktop/2.1.0 (Windows 11)                                            | EU-2 |
+| 036 | 2026-08-21T11:33:12 | PULL_DATA  | u_1120  | 172.16.254.1    | OK     | 355          | /api/v1/sync/pull      | Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15          | EU-3 |
+| 037 | 2026-08-21T11:36:19 | ERROR_429  | u_9921  | 10.0.0.5        | ERR    | 20           | /api/v1/auth           | curl/8.1.2                                                                 | US-2 |
+| 038 | 2026-08-21T11:39:26 | SYNC_START | u_7891  | 192.168.1.100   | OK     | 48           | /api/v1/sync           | nobo-app/2.1.0 (Android 15)                                                | EU-1 |
+| 039 | 2026-08-21T11:42:33 | PUSH_DATA  | u_7891  | 192.168.1.100   | OK     | 910          | /api/v1/sync/push      | nobo-app/2.1.0 (Android 15)                                                | EU-1 |
+| 040 | 2026-08-21T11:45:40 | REPORT_GEN | u_ADMIN | 10.10.10.10     | OK     | 20300        | /api/v1/admin/stats    | Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36                         | IN-1 |
+
+* 4. Der endlose JSON Payload (Syntax Highlighting Stress Test)
+Ein extrem langer Codeblock fordert PrismJS oder CodeMirror stark heraus, da hunderte von Tokens on-the-fly berechnet und eingefärbt werden müssen. Auf Handys führt ein zu großer Codeblock ohne Virtualisierung oft zu Lags beim Tippen an völlig anderen Stellen im Dokument.
+
+#+BEGIN_SRC json
+{
+  "metadata": {
+    "generatedAt": "2026-08-21T12:00:00Z",
+    "version": "v2.1.0",
+    "exportType": "full_backup",
+    "user": "u_7891_dev",
+    "statistics": {
+      "totalNodes": 15420,
+      "totalLinks": 3205,
+      "totalTags": 142
+    }
+  },
+  "preferences": {
+    "theme": "system",
+    "editor": {
+      "lineNumbers": false,
+      "wordWrap": true,
+      "fontSize": 14,
+      "fontFamily": "Fira Code, monospace",
+      "vimMode": false,
+      "autoSave": true,
+      "autoSaveInterval": 3000
+    },
+    "sync": {
+      "enabled": true,
+      "provider": "nobo_cloud",
+      "lastSync": "2026-08-21T11:55:00Z",
+      "conflictResolution": "manual"
+    }
+  },
+  "tags": [
+    { "id": "t1", "name": "project", "color": "#ff0000" },
+    { "id": "t2", "name": "work", "color": "#00ff00" },
+    { "id": "t3", "name": "private", "color": "#0000ff" },
+    { "id": "t4", "name": "dev", "color": "#ff00ff" },
+    { "id": "t5", "name": "design", "color": "#00ffff" },
+    { "id": "t6", "name": "meeting", "color": "#ffff00" },
+    { "id": "t7", "name": "urgent", "color": "#ff8800" },
+    { "id": "t8", "name": "someday", "color": "#888888" },
+    { "id": "t9", "name": "reference", "color": "#444444" },
+    { "id": "t10", "name": "book", "color": "#a52a2a" }
+  ],
+  "nodes": [
+    {
+      "id": "n_001",
+      "title": "Welcome to nobo",
+      "type": "note",
+      "content": "This is the root note. Enjoy your stay.",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2026-08-01T12:00:00Z",
+      "tags": ["t9"],
+      "children": ["n_002", "n_003"]
+    },
+    {
+      "id": "n_002",
+      "title": "Setup Instructions",
+      "type": "note",
+      "content": "Install Tauri, run pnpm install, enjoy.",
+      "createdAt": "2024-01-02T00:00:00Z",
+      "updatedAt": "2026-08-02T12:00:00Z",
+      "tags": ["t4", "t9"],
+      "children": []
+    },
+    {
+      "id": "n_003",
+      "title": "Project Alpha",
+      "type": "project",
+      "content": "Top secret project.",
+      "createdAt": "2025-05-01T00:00:00Z",
+      "updatedAt": "2026-08-20T12:00:00Z",
+      "tags": ["t1", "t2"],
+      "status": "IN-PROGRESS",
+      "progress": 45,
+      "children": ["n_004", "n_005", "n_006"]
+    },
+    {
+      "id": "n_004",
+      "title": "Database Schema",
+      "type": "task",
+      "content": "Design the new SQLite schema for v2.",
+      "createdAt": "2025-05-02T00:00:00Z",
+      "updatedAt": "2025-05-10T12:00:00Z",
+      "tags": ["t4"],
+      "status": "DONE",
+      "completedAt": "2025-05-10T12:00:00Z",
+      "children": []
+    },
+    {
+      "id": "n_005",
+      "title": "API Endpoints",
+      "type": "task",
+      "content": "Build the sync endpoints in Rust.",
+      "createdAt": "2025-05-02T00:00:00Z",
+      "updatedAt": "2026-08-20T12:00:00Z",
+      "tags": ["t4"],
+      "status": "IN-PROGRESS",
+      "children": []
+    },
+    {
+      "id": "n_006",
+      "title": "UI Overhaul",
+      "type": "task",
+      "content": "Migrate from React to SolidJS.",
+      "createdAt": "2025-05-02T00:00:00Z",
+      "updatedAt": "2026-08-21T10:00:00Z",
+      "tags": ["t5"],
+      "status": "NEXT",
+      "children": ["n_007", "n_008"]
+    },
+    {
+      "id": "n_007",
+      "title": "Sidebar Component",
+      "type": "task",
+      "content": "Implement virtualized scrolling.",
+      "createdAt": "2026-08-01T00:00:00Z",
+      "updatedAt": "2026-08-21T10:00:00Z",
+      "tags": ["t4", "t5"],
+      "status": "TODO",
+      "children": []
+    },
+    {
+      "id": "n_008",
+      "title": "Editor Component",
+      "type": "task",
+      "content": "Integrate CodeMirror 6.",
+      "createdAt": "2026-08-01T00:00:00Z",
+      "updatedAt": "2026-08-21T10:00:00Z",
+      "tags": ["t4", "t5"],
+      "status": "TODO",
+      "children": []
+    },
+    {
+      "id": "n_009",
+      "title": "Groceries",
+      "type": "list",
+      "content": "- Apples\n- Bananas\n- Milk",
+      "createdAt": "2026-08-21T08:00:00Z",
+      "updatedAt": "2026-08-21T08:00:00Z",
+      "tags": ["t3"],
+      "children": []
+    }
+  ]
+}
+#+END_SRC
+
+* 5. Extreme Verschachtelung (Hierarchy Stress Test)
+Ein guter Parser und ein gutes UI müssen mit endlosen Einrückungen umgehen können, ohne dass der Text rechts aus dem Bildschirm herausgedrückt wird. Die folgenden Ebenen enthalten jeweils eigenen Text, um zu prüfen, wie das UI Padding und Wrapping pro Ebene berechnet.
+
+** Ebene 2
+Dies ist der Text auf Ebene 2. Er sollte eine normale Einrückung haben und gut lesbar sein. Ein einfacher Absatz, um den Abstand zum übergeordneten Heading zu testen.
+
+*** Ebene 3
+Hier befinden wir uns auf Ebene 3. Das UI sollte langsam anfangen, das Padding auf mobilen Geräten effizient zu verwalten, damit nicht zu viel Platz auf der linken Seite verschwendet wird.
+
+**** Ebene 4
+Ebene 4 fügt weitere Tiefe hinzu. Text-Wrapping ist hier entscheidend. Wenn die Wörter das Ende des Bildschirms erreichen, müssen sie sauber umbrechen, anstatt die Ansicht breiter zu machen.
+
+***** Ebene 5
+Wir erreichen Ebene 5. Die Ränder auf der linken Seite werden immer breiter. Wie sieht es mit dem Platz für den Fließtext aus? Kann man hier noch vernünftig ganze Sätze lesen?
+
+****** Ebene 6
+Ebene 6. In vielen unoptimierten Standard-Renderern wird der Textbereich hier schon verdächtig schmal, besonders auf einem schmalen Smartphone-Display im Hochformat.
+
+******* Ebene 7
+Ebene 7. Jeder zusätzliche Stern bedeutet mehr Komplexität für den DOM-Baum. Wir testen, ob der Rendering-Tree stabil bleibt und keine unnötigen Re-Renders auslöst, wenn man in diesem Absatz tippt.
+
+******** Ebene 8
+Ebene 8. Wenn wir hier Checkboxen hätten, würden die Einrückung plus die Checkbox fast ein Drittel der Bildschirmbreite auf kleinen Handys einnehmen. Das ist der Punkt, an dem intelligentes CSS gefragt ist.
+
+********* Ebene 9
+Ebene 9. Hier testen wir lange, ungetrennte Wörter. Was passiert bei einem Donaudampfschifffahrtsgesellschaftskapitän? Bricht das Wort sauber um oder zerschießt es das CSS-Grid/Flexbox-Layout?
+
+********** Ebene 10
+Ebene 10. Zweistellige Sternchen-Anzahl! Der Parser muss das immer noch verlässlich als Heading-Level 10 erkennen und darf es nicht versehentlich als fettgedruckten Text interpretieren.
+
+*********** Ebene 11
+Hier ist Ebene 11. Wenn das UI hier noch nutzbar ist und der Text sauber umbricht, anstatt einen horizontalen Scrollbalken für den ganzen Bildschirm zu erzwingen, ist das CSS sauber (Stichwort: ~word-wrap: break-word~ oder ~overflow-wrap: anywhere~ und sinnvolle Padding-Reduzierung auf tiefen Ebenen).
+
+* 6. Blockquotes und Metadaten-Blöcke
+Ein langes Zitat, um die Rand-Formatierung zu prüfen.
+
+#+BEGIN_QUOTE
+Die Entwicklung von Software ist ein ständiger Kampf gegen die Komplexität. 
+Jedes Feature, das hinzugefügt wird, erhöht die Entropie des Systems. 
+Daher ist es die wichtigste Aufgabe eines Entwicklers, nicht einfach Code zu schreiben, sondern Code zu löschen, Abstraktionen zu hinterfragen und das UI so simpel wie möglich zu halten. 
+
+Wenn ein Nutzer nicht innerhalb von 3 Sekunden versteht, wie ein Screen funktioniert, ist das Design gescheitert. 
+Das gilt besonders für Notiz-Apps, bei denen die kognitive Last des Nutzers auf dem Schreiben liegen sollte, nicht auf der Bedienung des Werkzeugs.
+#+END_QUOTE
+
+* 7. Abschluss
+Herzlichen Glückwunsch, wenn du flüssig bis hier unten scrollen konntest, ohne dass der Editor geruckelt hat oder die Tastatur beim Tippen laggt! Dein virtuelles Scrolling und das DOM-Management funktionieren hervorragend.

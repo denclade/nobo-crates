@@ -1,0 +1,9 @@
+#+TITLE:      Emacs Integration
+#+DATE:       [2024-08-16 Fr 16:50]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :backup:
+#+IDENTIFIER: 20240816T165025
+
+* Emacs Integration
+
+Muss ich nochmal genauer testen. Klingt nach einer guten Idee für nächste Woche.

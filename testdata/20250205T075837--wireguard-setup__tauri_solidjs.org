@@ -1,0 +1,14 @@
+#+TITLE:      WireGuard Setup
+#+DATE:       [2025-02-05 Mi 07:58]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :tauri:solidjs:
+#+IDENTIFIER: 20250205T075837
+
+* WireGuard Setup
+
+Klingt nach einer guten Idee für nächste Woche. Nächster Schritt: Ergebnis dokumentieren. Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+- Dokumentation verlinkt
+- Backup vorher gemacht
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt

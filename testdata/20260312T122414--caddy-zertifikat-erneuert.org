@@ -1,0 +1,8 @@
+#+TITLE:      Caddy Zertifikat erneuert
+#+DATE:       [2026-03-12 Do 12:24]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260312T122414
+
+* Caddy Zertifikat erneuert
+
+Details stehen noch aus. Noch offen: genaue Details klären. Todo: Screenshot ergänzen.

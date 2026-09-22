@@ -1,0 +1,12 @@
+#+TITLE:      Ansible Problem gelöst
+#+DATE:       [2026-02-15 So 16:38]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :proxmox:debug:
+#+IDENTIFIER: 20260215T163850
+
+* Ansible Problem gelöst
+
+War einfacher als erwartet.
+
+** Weiteres Vorgehen
+Ein Blick zurück lohnt sich hier.

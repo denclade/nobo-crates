@@ -1,0 +1,9 @@
+#+TITLE:      KDE Migration
+#+DATE:       [2026-05-13 Mi 04:38]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :wifi:emacs:
+#+IDENTIFIER: 20260513T043833
+
+* KDE Migration
+
+Ein Blick zurück lohnt sich hier.

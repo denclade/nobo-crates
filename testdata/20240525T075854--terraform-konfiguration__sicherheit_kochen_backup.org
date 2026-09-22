@@ -1,0 +1,12 @@
+#+TITLE:      Terraform Konfiguration
+#+DATE:       [2024-05-25 Sa 07:58]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:kochen:backup:
+#+IDENTIFIER: 20240525T075854
+
+* Terraform Konfiguration
+
+Auf Nachfrage nochmal nachhaken. Kurzes Fazit nach dem ersten Test.
+
+** Weiteres Vorgehen
+Kurzes Fazit nach dem ersten Test.

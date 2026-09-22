@@ -1,0 +1,9 @@
+#+TITLE:      Roadtrip Portugal
+#+DATE:       [2024-06-19 Mi 21:58]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :python:rust:
+#+IDENTIFIER: 20240619T215839
+
+* Roadtrip Portugal
+
+Ein Blick zurück lohnt sich hier. Läuft seit dem Update stabil.

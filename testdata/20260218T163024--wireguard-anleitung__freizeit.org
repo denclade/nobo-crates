@@ -1,0 +1,12 @@
+#+TITLE:      WireGuard Anleitung
+#+DATE:       [2026-02-18 Mi 16:30]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :freizeit:
+#+IDENTIFIER: 20260218T163024
+
+* WireGuard Anleitung
+
+Todo: Screenshot ergänzen.
+
+** Weiteres Vorgehen
+Auf Nachfrage nochmal nachhaken.

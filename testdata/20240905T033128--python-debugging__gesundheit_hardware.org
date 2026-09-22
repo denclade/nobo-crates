@@ -1,0 +1,9 @@
+#+TITLE:      Python Debugging
+#+DATE:       [2024-09-05 Do 03:31]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gesundheit:hardware:
+#+IDENTIFIER: 20240905T033128
+
+* Python Debugging
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Kurzes Fazit nach dem ersten Test.

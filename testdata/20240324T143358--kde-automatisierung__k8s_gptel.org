@@ -1,0 +1,14 @@
+#+TITLE:      KDE Automatisierung
+#+DATE:       [2024-03-24 So 14:33]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:gptel:
+#+IDENTIFIER: 20240324T143358
+
+* KDE Automatisierung
+
+Nächster Schritt: Ergebnis dokumentieren.
+
+- Screenshot gemacht
+- Ergebnis mit Team geteilt
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert

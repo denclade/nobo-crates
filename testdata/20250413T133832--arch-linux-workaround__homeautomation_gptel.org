@@ -1,0 +1,9 @@
+#+TITLE:      Arch Linux Workaround
+#+DATE:       [2025-04-13 So 13:38]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :homeautomation:gptel:
+#+IDENTIFIER: 20250413T133832
+
+* Arch Linux Workaround
+
+Kurzes Fazit nach dem ersten Test.

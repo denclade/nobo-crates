@@ -1,0 +1,9 @@
+#+TITLE:      OPNsense Backup einrichten
+#+DATE:       [2025-06-15 So 13:52]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zfs:
+#+IDENTIFIER: 20250615T135256
+
+* OPNsense Backup einrichten
+
+War einfacher als erwartet. Läuft seit dem Update stabil.

@@ -1,0 +1,12 @@
+#+TITLE:      Docker Backup einrichten
+#+DATE:       [2024-10-05 Sa 03:07]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :unterricht:arbeit:
+#+IDENTIFIER: 20241005T030731
+
+* Docker Backup einrichten
+
+Muss ich nochmal genauer testen. Klingt nach einer guten Idee für nächste Woche.
+
+** Weiteres Vorgehen
+Wichtig: vor dem nächsten Schritt nochmal prüfen.

@@ -1,0 +1,13 @@
+#+TITLE:      SQLite Best Practices
+#+DATE:       [2025-10-10 Fr 19:39]
+#+FILETAGS:   :kochen:arch:
+#+IDENTIFIER: 20251010T193940
+
+* SQLite Best Practices
+
+Quelle: Gespräch von heute Vormittag. Referenz für später aufgehoben. Funktioniert soweit wie erwartet.
+
+- Logs geprüft
+- Screenshot gemacht
+- Mit zweitem Gerät getestet
+- Nächsten Termin vorgemerkt

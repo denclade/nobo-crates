@@ -1,0 +1,9 @@
+#+TITLE:      Synology NAS Sicherheitslücke
+#+DATE:       [2024-05-09 Do 12:47]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :projekt:artikel:urlaub:
+#+IDENTIFIER: 20240509T124709
+
+* Synology NAS Sicherheitslücke
+
+Funktioniert soweit wie erwartet.

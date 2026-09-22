@@ -1,0 +1,9 @@
+#+TITLE:      Home Assistant Sicherheitslücke
+#+DATE:       [2025-02-25 Di 22:06]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :homeautomation:arbeit:matter:
+#+IDENTIFIER: 20250225T220615
+
+* Home Assistant Sicherheitslücke
+
+Ein Blick zurück lohnt sich hier.

@@ -1,0 +1,12 @@
+#+TITLE:      Tailscale Vergleich
+#+DATE:       [2026-03-02 Mo 01:54]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ki:ha:
+#+IDENTIFIER: 20260302T015439
+
+* Tailscale Vergleich
+
+Siehe auch die letzte Notiz zu diesem Thema. Kurz notiert, bevor ich es vergesse.
+
+- Ergebnis mit Team geteilt
+- Nächsten Termin vorgemerkt

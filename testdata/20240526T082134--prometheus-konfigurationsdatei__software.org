@@ -1,0 +1,8 @@
+#+TITLE:      Prometheus Konfigurationsdatei
+#+DATE:       [2024-05-26 So 08:21]
+#+FILETAGS:   :software:
+#+IDENTIFIER: 20240526T082134
+
+* Prometheus Konfigurationsdatei
+
+Klingt nach einer guten Idee für nächste Woche. Hat länger gedauert als gedacht. Nächster Schritt: Ergebnis dokumentieren.

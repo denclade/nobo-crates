@@ -1,0 +1,13 @@
+#+TITLE:      Restic Integration
+#+DATE:       [2024-05-29 Mi 09:12]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sport:
+#+IDENTIFIER: 20240529T091242
+
+* Restic Integration
+
+Kurzes Fazit nach dem ersten Test. Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+- Screenshot gemacht
+- Logs geprüft
+- Config-Datei gesichert

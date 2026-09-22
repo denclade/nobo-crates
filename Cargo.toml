@@ -1,0 +1,84 @@
+# nobo's Rust crates: everything the apps are built out of, and nothing
+# that is an app.
+#
+# Its own workspace, and meant to become its own repository -- the
+# Sailfish OS port (harbour-nobo) links these same crates under a
+# Qt/Silica UI and has no use for the Tauri app around them. What lives
+# here therefore points at nothing outside this directory: no `../plugins`,
+# no `../src-tauri`. Every Tauri dependency below comes from crates.io,
+# and every crate that has one keeps it behind a `tauri` feature that is
+# default-on for this repo's app and switched off by any other host.
+#
+# `nobo-tauri` is deliberately NOT here: it is this repo's answer to the
+# core's seams (an index listener, the keychain, the notifications) and
+# reaches local Tauri plugins by path. It lives next to the app, in
+# ../src-tauri/crates/.
+[workspace]
+# Named rather than `*`: `testdata/` sits alongside the crates (the tests
+# in here read it as `../testdata`) and is not one.
+members = ["nobo-*"]
+resolver = "2"
+
+# Only for building these crates on their own -- `cargo test` in here.
+# The app's own profile governs the app's build, because a dependency's
+# workspace profile is ignored; see ../src-tauri/Cargo.toml.
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true
+
+# One version list for every crate here, so they cannot drift apart. The
+# app keeps its own (../src-tauri/Cargo.toml) for what only it uses --
+# the local plugins, the Tauri plugins for the window, the dialogs, the
+# log and the clipboard, and `jni` for the Android worker.
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "6.0.0"
+ignore = "0.4.31"
+rayon = "1.12.0"
+notify = "8.2.0"
+chrono = "0.4.45"
+chrono-tz = "0.10.4"
+similar = "3.1.1"
+diffy = "0.5.1"
+log = "0.4"
+tempfile = "3.27.0"
+unicode-normalization = "0.1"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
+rusqlite = { version = "0.31", features = ["bundled"] }
+flate2 = "1"
+argon2 = { version = "0.5.3", features = ["std", "zeroize"] }
+chacha20poly1305 = { version = "0.10", features = ["stream"] }
+rand = "0.8"
+uuid = { version = "1", features = ["v4", "v5"] }
+zeroize = { version = "1.9.0", features = ["derive"] }
+blake3 = "1.8.6"
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "rustls", "multipart", "stream", "query"] }
+rustls = "0.23"
+webpki-roots = "1"
+async-trait = "0.1.92"
+tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread", "fs", "io-util", "time"] }
+hex = "0.4.3"
+quick-xml = "0.41.0"
+base64ct = { version = "1.8.3", features = ["alloc"] }
+futures-util = "0.3.33"
+ical = { version = "0.11.0", default-features = false, features = ["ical"] }
+inventory = "0.3.24"
+wiremock = "0.6.5"
+
+# The Tauri half, all of it from crates.io and all of it optional in the
+# crates that name it. A host without a webview switches the `tauri`
+# feature off and compiles none of this.
+#
+# `protocol-asset` and not `image-png`: the icon decoding is the app's
+# business, and the app's own list asks for it.
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-notification = "2.3.3"
+# `derive` explicitly: a crate compiled on its own (cargo check -p
+# nobo-core) has no tauri-specta in its graph and would lose
+# `specta::Type`.
+specta = { version = "=2.0.0-rc.25", features = ["derive"] }
+specta-typescript = "0.0.12"
+tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }

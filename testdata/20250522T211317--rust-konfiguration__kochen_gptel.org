@@ -1,0 +1,9 @@
+#+TITLE:      Rust Konfiguration
+#+DATE:       [2025-05-22 Do 21:13]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :kochen:gptel:
+#+IDENTIFIER: 20250522T211317
+
+* Rust Konfiguration
+
+Läuft seit dem Update stabil.

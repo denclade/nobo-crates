@@ -1,0 +1,9 @@
+#+TITLE:      Bash Neuinstallation
+#+DATE:       [2024-12-23 Mo 17:27]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :blog:buch:tauri:
+#+IDENTIFIER: 20241223T172725
+
+* Bash Neuinstallation
+
+Läuft seit dem Update stabil.

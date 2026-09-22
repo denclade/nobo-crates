@@ -1,0 +1,8 @@
+#+TITLE:      BTRFS Best Practices
+#+DATE:       [2026-03-10 Di 15:09]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260310T150937
+
+* BTRFS Best Practices
+
+Erster Eindruck ist positiv.

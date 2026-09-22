@@ -1,0 +1,9 @@
+#+TITLE:      Podcast Notizen: Local First Software
+#+DATE:       [2025-04-23 Mi 15:48]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :docker:software:
+#+IDENTIFIER: 20250423T154818
+
+* Podcast Notizen: Local First Software
+
+Siehe auch die letzte Notiz zu diesem Thema. Referenz für später aufgehoben. War einfacher als erwartet.

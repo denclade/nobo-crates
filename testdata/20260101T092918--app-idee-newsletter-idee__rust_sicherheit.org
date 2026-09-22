@@ -1,0 +1,9 @@
+#+TITLE:      App Idee: Newsletter Idee
+#+DATE:       [2026-01-01 Do 09:29]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rust:sicherheit:
+#+IDENTIFIER: 20260101T092918
+
+* App Idee: Newsletter Idee
+
+Erster Eindruck ist positiv. Nächster Schritt: Ergebnis dokumentieren. Funktioniert soweit wie erwartet.

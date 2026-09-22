@@ -1,0 +1,14 @@
+#+TITLE:      Let's Encrypt Cheatsheet
+#+DATE:       [2024-06-11 Di 12:03]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :tauri:
+#+IDENTIFIER: 20240611T120331
+
+* Let's Encrypt Cheatsheet
+
+Noch offen: genaue Details klären. Klingt nach einer guten Idee für nächste Woche. War einfacher als erwartet.
+
+- Backup vorher gemacht
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt
+- Dokumentation verlinkt

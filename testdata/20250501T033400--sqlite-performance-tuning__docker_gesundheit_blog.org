@@ -1,0 +1,9 @@
+#+TITLE:      SQLite Performance-Tuning
+#+DATE:       [2025-05-01 Do 03:34]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :docker:gesundheit:blog:
+#+IDENTIFIER: 20250501T033400
+
+* SQLite Performance-Tuning
+
+Hat länger gedauert als gedacht. Läuft seit dem Update stabil.

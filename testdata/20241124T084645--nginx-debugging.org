@@ -1,0 +1,11 @@
+#+TITLE:      Nginx Debugging
+#+DATE:       [2024-11-24 So 08:46]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20241124T084645
+
+* Nginx Debugging
+
+Muss ich nochmal genauer testen.
+
+- Mit zweitem Gerät getestet
+- Ergebnis mit Team geteilt

@@ -1,0 +1,9 @@
+#+TITLE:      Nextcloud Shortcuts
+#+DATE:       [2025-04-15 Di 01:51]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zigbee:debug:
+#+IDENTIFIER: 20250415T015137
+
+* Nextcloud Shortcuts
+
+Todo: Screenshot ergänzen. War einfacher als erwartet. Hat länger gedauert als gedacht.

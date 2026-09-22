@@ -1,0 +1,12 @@
+#+TITLE:      Kubernetes Backup einrichten
+#+DATE:       [2025-09-22 Mo 15:44]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :artikel:zfs:pbs:
+#+IDENTIFIER: 20250922T154437
+
+* Kubernetes Backup einrichten
+
+Nächster Schritt: Ergebnis dokumentieren. War einfacher als erwartet. Kurzes Fazit nach dem ersten Test.
+
+- Config-Datei gesichert
+- Backup vorher gemacht

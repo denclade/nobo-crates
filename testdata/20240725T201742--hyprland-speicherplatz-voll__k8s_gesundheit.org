@@ -1,0 +1,9 @@
+#+TITLE:      Hyprland Speicherplatz voll
+#+DATE:       [2024-07-25 Do 20:17]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:gesundheit:
+#+IDENTIFIER: 20240725T201742
+
+* Hyprland Speicherplatz voll
+
+Muss ich nochmal genauer testen. Ergebnis war nicht ganz wie erhofft.

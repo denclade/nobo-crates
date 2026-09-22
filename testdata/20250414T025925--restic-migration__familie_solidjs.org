@@ -1,0 +1,9 @@
+#+TITLE:      Restic Migration
+#+DATE:       [2025-04-14 Mo 02:59]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :familie:solidjs:
+#+IDENTIFIER: 20250414T025925
+
+* Restic Migration
+
+Muss ich nochmal genauer testen. Ergebnis war nicht ganz wie erhofft. Noch offen: genaue Details klären.

@@ -1,0 +1,14 @@
+#+TITLE:      Roadtrip Spanien
+#+DATE:       [2024-10-01 Di 07:21]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:
+#+IDENTIFIER: 20241001T072144
+
+* Roadtrip Spanien
+
+Erster Eindruck ist positiv. Quelle: Gespräch von heute Vormittag. Noch offen: genaue Details klären.
+
+- Mit zweitem Gerät getestet
+- Ergebnis mit Team geteilt
+- Dokumentation verlinkt
+- Config-Datei gesichert

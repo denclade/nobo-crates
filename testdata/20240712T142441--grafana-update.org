@@ -1,0 +1,12 @@
+#+TITLE:      Grafana Update
+#+DATE:       [2024-07-12 Fr 14:24]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240712T142441
+
+* Grafana Update
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Hat länger gedauert als gedacht. Kurzes Fazit nach dem ersten Test.
+
+- Dokumentation verlinkt
+- Ergebnis mit Team geteilt
+- Config-Datei gesichert

@@ -1,0 +1,12 @@
+#+TITLE:      Familie Auto Werkstatt Termin
+#+DATE:       [2024-11-21 Do 13:15]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20241121T131518
+
+* Familie Auto Werkstatt Termin
+
+Noch offen: genaue Details klären. Ein Blick zurück lohnt sich hier. Hat länger gedauert als gedacht.
+
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt
+- Dokumentation verlinkt

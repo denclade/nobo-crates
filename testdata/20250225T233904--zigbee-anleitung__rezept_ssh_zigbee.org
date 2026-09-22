@@ -1,0 +1,12 @@
+#+TITLE:      Zigbee Anleitung
+#+DATE:       [2025-02-25 Di 23:39]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rezept:ssh:zigbee:
+#+IDENTIFIER: 20250225T233904
+
+* Zigbee Anleitung
+
+Funktioniert soweit wie erwartet.
+
+** Weiteres Vorgehen
+Noch offen: genaue Details klären.

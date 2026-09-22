@@ -1,0 +1,9 @@
+#+TITLE:      Zigbee Integration
+#+DATE:       [2025-06-07 Sa 00:31]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :llm:meeting:
+#+IDENTIFIER: 20250607T003100
+
+* Zigbee Integration
+
+Läuft seit dem Update stabil. Todo: Screenshot ergänzen. Wichtig: vor dem nächsten Schritt nochmal prüfen.

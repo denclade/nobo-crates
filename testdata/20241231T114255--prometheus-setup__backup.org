@@ -1,0 +1,9 @@
+#+TITLE:      Prometheus Setup
+#+DATE:       [2024-12-31 Di 11:42]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :backup:
+#+IDENTIFIER: 20241231T114255
+
+* Prometheus Setup
+
+Klingt nach einer guten Idee für nächste Woche.

@@ -1,0 +1,9 @@
+#+TITLE:      Synology NAS Konfigurationsdatei
+#+DATE:       [2024-12-29 So 21:06]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arbeit:docker:
+#+IDENTIFIER: 20241229T210652
+
+* Synology NAS Konfigurationsdatei
+
+Muss ich nochmal genauer testen.

@@ -1,0 +1,13 @@
+#+TITLE:      SolidJS Zertifikat erneuert
+#+DATE:       [2025-06-15 So 13:09]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250615T130916
+
+* SolidJS Zertifikat erneuert
+
+Auf Nachfrage nochmal nachhaken.
+
+- Logs geprüft
+- Backup vorher gemacht
+- Config-Datei gesichert
+- Screenshot gemacht

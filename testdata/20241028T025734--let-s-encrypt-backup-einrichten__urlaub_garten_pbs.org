@@ -1,0 +1,9 @@
+#+TITLE:      Let's Encrypt Backup einrichten
+#+DATE:       [2024-10-28 Mo 02:57]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :urlaub:garten:pbs:
+#+IDENTIFIER: 20241028T025734
+
+* Let's Encrypt Backup einrichten
+
+Noch offen: genaue Details klären. Todo: Screenshot ergänzen.

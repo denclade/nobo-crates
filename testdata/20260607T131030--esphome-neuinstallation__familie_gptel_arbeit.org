@@ -1,0 +1,12 @@
+#+TITLE:      ESPHome Neuinstallation
+#+DATE:       [2026-06-07 So 13:10]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :familie:gptel:arbeit:
+#+IDENTIFIER: 20260607T131030
+
+* ESPHome Neuinstallation
+
+Ergebnis war nicht ganz wie erhofft. Kurz notiert, bevor ich es vergesse.
+
+** Weiteres Vorgehen
+Nächster Schritt: Ergebnis dokumentieren.

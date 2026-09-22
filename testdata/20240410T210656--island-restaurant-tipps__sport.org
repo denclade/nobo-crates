@@ -1,0 +1,12 @@
+#+TITLE:      Island Restaurant Tipps
+#+DATE:       [2024-04-10 Mi 21:06]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sport:
+#+IDENTIFIER: 20240410T210656
+
+* Island Restaurant Tipps
+
+Referenz für später aufgehoben. Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+- Logs geprüft
+- Config-Datei gesichert

@@ -1,0 +1,9 @@
+#+TITLE:      Rust Automatisierung
+#+DATE:       [2024-03-06 Mi 08:42]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sync:tauri:
+#+IDENTIFIER: 20240306T084232
+
+* Rust Automatisierung
+
+Todo: Screenshot ergänzen. Läuft seit dem Update stabil. Quelle: Gespräch von heute Vormittag.

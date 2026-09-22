@@ -1,0 +1,9 @@
+#+TITLE:      Docker Installation
+#+DATE:       [2024-07-22 Mo 00:13]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :kernel:kochen:
+#+IDENTIFIER: 20240722T001309
+
+* Docker Installation
+
+Nächster Schritt: Ergebnis dokumentieren.

@@ -1,0 +1,9 @@
+#+TITLE:      Home Assistant Setup
+#+DATE:       [2026-01-31 Sa 23:45]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :freizeit:urlaub:nextcloud:
+#+IDENTIFIER: 20260131T234541
+
+* Home Assistant Setup
+
+Erster Eindruck ist positiv. Ein Blick zurück lohnt sich hier. Wichtig: vor dem nächsten Schritt nochmal prüfen.

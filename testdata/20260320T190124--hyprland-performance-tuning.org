@@ -1,0 +1,13 @@
+#+TITLE:      Hyprland Performance-Tuning
+#+DATE:       [2026-03-20 Fr 19:01]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260320T190124
+
+* Hyprland Performance-Tuning
+
+Siehe auch die letzte Notiz zu diesem Thema. Funktioniert soweit wie erwartet.
+
+- Mit zweitem Gerät getestet
+- Nächsten Termin vorgemerkt
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt

@@ -1,0 +1,32 @@
+[package]
+name = "nobo-app"
+version = "0.1.0"
+description = "What nobo's commands do, without a host: the bodies behind the Tauri command layer, callable from any front end."
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# The layer this crate exists to draw: `src/commands/*.rs` in the app used
+# to hold both the work and Tauri's way of asking for it (`State<'_, ...>`,
+# `AppHandle`, `#[tauri::command]`). A second host -- harbour-nobo, a
+# Qt/Silica app on Sailfish OS -- needs the first half and cannot compile
+# the second.
+#
+# So the bodies moved here unchanged, with the injected state as plain
+# borrows, and the Tauri commands became wrappers that unpack `State` and
+# call these. Nothing here knows what a front end is; the core it builds on
+# knows even less (see nobo-core).
+[dependencies]
+nobo-core = { path = "../nobo-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rusqlite = { workspace = true }
+chrono = { workspace = true }
+log = { workspace = true }
+specta = { workspace = true }
+specta-typescript = { workspace = true }
+image = { workspace = true }
+inventory = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+uuid = { workspace = true }

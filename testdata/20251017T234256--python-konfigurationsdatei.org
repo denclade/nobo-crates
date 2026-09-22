@@ -1,0 +1,8 @@
+#+TITLE:      Python Konfigurationsdatei
+#+DATE:       [2025-10-17 Fr 23:42]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20251017T234256
+
+* Python Konfigurationsdatei
+
+Todo: Screenshot ergänzen. Wichtig: vor dem nächsten Schritt nochmal prüfen.

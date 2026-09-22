@@ -1,0 +1,13 @@
+#+TITLE:      Home Assistant Update fehlgeschlagen
+#+DATE:       [2025-09-15 Mo 22:02]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :auto:
+#+IDENTIFIER: 20250915T220227
+
+* Home Assistant Update fehlgeschlagen
+
+Nächster Schritt: Ergebnis dokumentieren. Quelle: Gespräch von heute Vormittag.
+
+- Config-Datei gesichert
+- Logs geprüft
+- Nächsten Termin vorgemerkt

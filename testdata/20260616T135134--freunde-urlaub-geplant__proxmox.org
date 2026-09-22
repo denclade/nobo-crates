@@ -1,0 +1,14 @@
+#+TITLE:      Freunde Urlaub geplant
+#+DATE:       [2026-06-16 Di 13:51]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :proxmox:
+#+IDENTIFIER: 20260616T135134
+
+* Freunde Urlaub geplant
+
+Details stehen noch aus.
+
+- Dokumentation verlinkt
+- Mit zweitem Gerät getestet
+- Backup vorher gemacht
+- Nächsten Termin vorgemerkt

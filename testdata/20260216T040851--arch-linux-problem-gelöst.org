@@ -1,0 +1,15 @@
+#+TITLE:      Arch Linux Problem gelöst
+#+DATE:       [2026-02-16 Mo 04:08]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260216T040851
+
+* Arch Linux Problem gelöst
+
+Läuft seit dem Update stabil. Todo: Screenshot ergänzen. Hat länger gedauert als gedacht.
+
+- Dokumentation verlinkt
+- Mit zweitem Gerät getestet
+- Ergebnis mit Team geteilt
+
+** Weiteres Vorgehen
+Siehe auch die letzte Notiz zu diesem Thema.

@@ -1,0 +1,9 @@
+#+TITLE:      Tailscale Update fehlgeschlagen
+#+DATE:       [2024-12-12 Do 10:15]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :meeting:
+#+IDENTIFIER: 20241212T101558
+
+* Tailscale Update fehlgeschlagen
+
+Referenz für später aufgehoben. Läuft seit dem Update stabil. Klingt nach einer guten Idee für nächste Woche.

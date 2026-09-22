@@ -1,0 +1,9 @@
+#+TITLE:      Caddy Neuinstallation
+#+DATE:       [2025-08-18 Mo 17:02]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :docker:backup:nextcloud:
+#+IDENTIFIER: 20250818T170221
+
+* Caddy Neuinstallation
+
+Quelle: Gespräch von heute Vormittag. Todo: Screenshot ergänzen. Funktioniert soweit wie erwartet.

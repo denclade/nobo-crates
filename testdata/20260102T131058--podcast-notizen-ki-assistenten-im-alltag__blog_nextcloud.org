@@ -1,0 +1,13 @@
+#+TITLE:      Podcast Notizen: KI Assistenten im Alltag
+#+DATE:       [2026-01-02 Fr 13:10]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :blog:nextcloud:
+#+IDENTIFIER: 20260102T131058
+
+* Podcast Notizen: KI Assistenten im Alltag
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+- Screenshot gemacht
+- Logs geprüft
+- Dokumentation verlinkt

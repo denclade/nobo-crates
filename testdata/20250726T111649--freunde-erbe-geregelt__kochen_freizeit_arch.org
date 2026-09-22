@@ -1,0 +1,13 @@
+#+TITLE:      Freunde Erbe geregelt
+#+DATE:       [2025-07-26 Sa 11:16]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :kochen:freizeit:arch:
+#+IDENTIFIER: 20250726T111649
+
+* Freunde Erbe geregelt
+
+Siehe auch die letzte Notiz zu diesem Thema. Kurzes Fazit nach dem ersten Test.
+
+- Config-Datei gesichert
+- Screenshot gemacht
+- Dokumentation verlinkt

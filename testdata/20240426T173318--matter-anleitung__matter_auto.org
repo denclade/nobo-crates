@@ -1,0 +1,9 @@
+#+TITLE:      Matter Anleitung
+#+DATE:       [2024-04-26 Fr 17:33]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :matter:auto:
+#+IDENTIFIER: 20240426T173318
+
+* Matter Anleitung
+
+Funktioniert soweit wie erwartet. Klingt nach einer guten Idee für nächste Woche. War einfacher als erwartet.

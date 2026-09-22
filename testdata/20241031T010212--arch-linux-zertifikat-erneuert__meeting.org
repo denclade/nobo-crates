@@ -1,0 +1,9 @@
+#+TITLE:      Arch Linux Zertifikat erneuert
+#+DATE:       [2024-10-31 Do 01:02]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :meeting:
+#+IDENTIFIER: 20241031T010212
+
+* Arch Linux Zertifikat erneuert
+
+Läuft seit dem Update stabil. Kurzes Fazit nach dem ersten Test.

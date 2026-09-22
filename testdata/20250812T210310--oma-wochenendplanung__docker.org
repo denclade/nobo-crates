@@ -1,0 +1,9 @@
+#+TITLE:      Oma Wochenendplanung
+#+DATE:       [2025-08-12 Di 21:03]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :docker:
+#+IDENTIFIER: 20250812T210310
+
+* Oma Wochenendplanung
+
+Siehe auch die letzte Notiz zu diesem Thema.

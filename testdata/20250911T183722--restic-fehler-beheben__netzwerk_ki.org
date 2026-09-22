@@ -1,0 +1,9 @@
+#+TITLE:      Restic Fehler beheben
+#+DATE:       [2025-09-11 Do 18:37]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :netzwerk:ki:
+#+IDENTIFIER: 20250911T183722
+
+* Restic Fehler beheben
+
+Muss ich nochmal genauer testen. Details stehen noch aus.

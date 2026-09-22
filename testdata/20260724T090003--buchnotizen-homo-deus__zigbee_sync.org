@@ -1,0 +1,12 @@
+#+TITLE:      Buchnotizen: Homo Deus
+#+DATE:       [2026-07-24 Fr 09:00]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zigbee:sync:
+#+IDENTIFIER: 20260724T090003
+
+* Buchnotizen: Homo Deus
+
+Funktioniert soweit wie erwartet.
+
+** Weiteres Vorgehen
+Funktioniert soweit wie erwartet.

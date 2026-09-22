@@ -1,0 +1,12 @@
+#+TITLE:      React Notizen
+#+DATE:       [2024-06-13 Do 05:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :python:homeautomation:
+#+IDENTIFIER: 20240613T055651
+
+* React Notizen
+
+Noch offen: genaue Details klären. Läuft seit dem Update stabil. Hat länger gedauert als gedacht.
+
+- Nächsten Termin vorgemerkt
+- Backup vorher gemacht

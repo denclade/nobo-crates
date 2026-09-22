@@ -1,0 +1,9 @@
+#+TITLE:      Prometheus Fehler beheben
+#+DATE:       [2026-07-15 Mi 07:08]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :solidjs:ha:
+#+IDENTIFIER: 20260715T070840
+
+* Prometheus Fehler beheben
+
+Funktioniert soweit wie erwartet. Kurzes Fazit nach dem ersten Test. Nächster Schritt: Ergebnis dokumentieren.

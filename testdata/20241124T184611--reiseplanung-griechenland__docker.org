@@ -1,0 +1,9 @@
+#+TITLE:      Reiseplanung Griechenland
+#+DATE:       [2024-11-24 So 18:46]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :docker:
+#+IDENTIFIER: 20241124T184611
+
+* Reiseplanung Griechenland
+
+Kurzes Fazit nach dem ersten Test. Hat länger gedauert als gedacht.

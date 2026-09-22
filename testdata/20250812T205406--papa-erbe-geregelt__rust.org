@@ -1,0 +1,12 @@
+#+TITLE:      Papa Erbe geregelt
+#+DATE:       [2025-08-12 Di 20:54]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rust:
+#+IDENTIFIER: 20250812T205406
+
+* Papa Erbe geregelt
+
+Todo: Screenshot ergänzen. Nächster Schritt: Ergebnis dokumentieren. Ein Blick zurück lohnt sich hier.
+
+** Weiteres Vorgehen
+Todo: Screenshot ergänzen.

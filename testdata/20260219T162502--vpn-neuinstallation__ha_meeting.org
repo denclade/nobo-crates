@@ -1,0 +1,9 @@
+#+TITLE:      VPN Neuinstallation
+#+DATE:       [2026-02-19 Do 16:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ha:meeting:
+#+IDENTIFIER: 20260219T162502
+
+* VPN Neuinstallation
+
+Quelle: Gespräch von heute Vormittag. Noch offen: genaue Details klären. Klingt nach einer guten Idee für nächste Woche.

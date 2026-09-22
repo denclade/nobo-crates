@@ -1,0 +1,9 @@
+#+TITLE:      Bananenbrot backen
+#+DATE:       [2024-02-29 Do 20:48]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zfs:
+#+IDENTIFIER: 20240229T204808
+
+* Bananenbrot backen
+
+Nächster Schritt: Ergebnis dokumentieren.

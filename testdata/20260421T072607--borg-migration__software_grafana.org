@@ -1,0 +1,9 @@
+#+TITLE:      Borg Migration
+#+DATE:       [2026-04-21 Di 07:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :software:grafana:
+#+IDENTIFIER: 20260421T072607
+
+* Borg Migration
+
+Kurzes Fazit nach dem ersten Test. Noch offen: genaue Details klären.

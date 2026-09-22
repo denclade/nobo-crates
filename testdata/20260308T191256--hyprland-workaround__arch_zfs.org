@@ -1,0 +1,8 @@
+#+TITLE:      Hyprland Workaround
+#+DATE:       [2026-03-08 So 19:12]
+#+FILETAGS:   :arch:zfs:
+#+IDENTIFIER: 20260308T191256
+
+* Hyprland Workaround
+
+Todo: Screenshot ergänzen. Wichtig: vor dem nächsten Schritt nochmal prüfen.

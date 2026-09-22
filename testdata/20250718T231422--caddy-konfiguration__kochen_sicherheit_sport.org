@@ -1,0 +1,9 @@
+#+TITLE:      Caddy Konfiguration
+#+DATE:       [2025-07-18 Fr 23:14]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :kochen:sicherheit:sport:
+#+IDENTIFIER: 20250718T231422
+
+* Caddy Konfiguration
+
+Referenz für später aufgehoben. Läuft seit dem Update stabil.

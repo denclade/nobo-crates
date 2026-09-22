@@ -1,0 +1,17 @@
+#+TITLE:      Emacs Konfiguration
+#+DATE:       [2025-02-20 Do 11:31]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:
+#+IDENTIFIER: 20250220T113144
+
+* Emacs Konfiguration
+
+Muss ich nochmal genauer testen. Noch offen: genaue Details klären.
+
+- Ergebnis mit Team geteilt
+- Dokumentation verlinkt
+- Config-Datei gesichert
+- Nächsten Termin vorgemerkt
+
+** Weiteres Vorgehen
+Muss ich nochmal genauer testen.

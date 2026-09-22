@@ -1,0 +1,12 @@
+#+TITLE:      Restic Performance-Tuning
+#+DATE:       [2025-04-28 Mo 18:37]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :artikel:
+#+IDENTIFIER: 20250428T183723
+
+* Restic Performance-Tuning
+
+Todo: Screenshot ergänzen.
+
+** Weiteres Vorgehen
+Hat länger gedauert als gedacht.

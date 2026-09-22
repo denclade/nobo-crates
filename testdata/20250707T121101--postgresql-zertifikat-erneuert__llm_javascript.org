@@ -1,0 +1,12 @@
+#+TITLE:      PostgreSQL Zertifikat erneuert
+#+DATE:       [2025-07-07 Mo 12:11]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :llm:javascript:
+#+IDENTIFIER: 20250707T121101
+
+* PostgreSQL Zertifikat erneuert
+
+Todo: Screenshot ergänzen.
+
+- Config-Datei gesichert
+- Screenshot gemacht

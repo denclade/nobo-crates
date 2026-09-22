@@ -1,0 +1,14 @@
+#+TITLE:      Unterrichtsplanung Informatik
+#+DATE:       [2024-04-08 Mo 13:59]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :hardware:zigbee:
+#+IDENTIFIER: 20240408T135944
+
+* Unterrichtsplanung Informatik
+
+Todo: Screenshot ergänzen. Kurz notiert, bevor ich es vergesse. Auf Nachfrage nochmal nachhaken.
+
+- Logs geprüft
+- Backup vorher gemacht
+- Ergebnis mit Team geteilt
+- Nächsten Termin vorgemerkt

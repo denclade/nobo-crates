@@ -1,0 +1,9 @@
+#+TITLE:      Kubernetes Benchmark
+#+DATE:       [2026-04-27 Mo 19:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sport:ssh:
+#+IDENTIFIER: 20260427T190408
+
+* Kubernetes Benchmark
+
+Details stehen noch aus. Quelle: Gespräch von heute Vormittag.

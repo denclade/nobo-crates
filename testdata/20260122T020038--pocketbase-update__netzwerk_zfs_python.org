@@ -1,0 +1,12 @@
+#+TITLE:      PocketBase Update
+#+DATE:       [2026-01-22 Do 02:00]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :netzwerk:zfs:python:
+#+IDENTIFIER: 20260122T020038
+
+* PocketBase Update
+
+Funktioniert soweit wie erwartet.
+
+- Ergebnis mit Team geteilt
+- Config-Datei gesichert

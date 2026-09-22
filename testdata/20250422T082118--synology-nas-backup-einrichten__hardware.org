@@ -1,0 +1,14 @@
+#+TITLE:      Synology NAS Backup einrichten
+#+DATE:       [2025-04-22 Di 08:21]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :hardware:
+#+IDENTIFIER: 20250422T082118
+
+* Synology NAS Backup einrichten
+
+Quelle: Gespräch von heute Vormittag. Wichtig: vor dem nächsten Schritt nochmal prüfen. Siehe auch die letzte Notiz zu diesem Thema.
+
+- Backup vorher gemacht
+- Logs geprüft
+- Screenshot gemacht
+- Config-Datei gesichert

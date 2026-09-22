@@ -1,0 +1,9 @@
+#+TITLE:      Home Assistant Speicherplatz voll
+#+DATE:       [2026-02-09 Mo 02:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :vpn:
+#+IDENTIFIER: 20260209T022619
+
+* Home Assistant Speicherplatz voll
+
+Details stehen noch aus. Kurzes Fazit nach dem ersten Test.

@@ -1,0 +1,13 @@
+#+TITLE:      Team Geschenkidee
+#+DATE:       [2025-04-27 So 17:14]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:zfs:
+#+IDENTIFIER: 20250427T171408
+
+* Team Geschenkidee
+
+Klingt nach einer guten Idee für nächste Woche. Läuft seit dem Update stabil. Erster Eindruck ist positiv.
+
+- Mit zweitem Gerät getestet
+- Logs geprüft
+- Config-Datei gesichert

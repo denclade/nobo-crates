@@ -1,0 +1,12 @@
+#+TITLE:      Raspberry Pi Backup einrichten
+#+DATE:       [2025-07-22 Di 13:22]
+#+FILETAGS:   :idee:ki:docker:
+#+IDENTIFIER: 20250722T132201
+
+* Raspberry Pi Backup einrichten
+
+Todo: Screenshot ergänzen. Siehe auch die letzte Notiz zu diesem Thema.
+
+- Dokumentation verlinkt
+- Logs geprüft
+- Mit zweitem Gerät getestet

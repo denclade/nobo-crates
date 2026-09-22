@@ -1,0 +1,9 @@
+#+TITLE:      Prometheus Benchmark
+#+DATE:       [2026-06-12 Fr 03:23]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :home:blog:
+#+IDENTIFIER: 20260612T032317
+
+* Prometheus Benchmark
+
+Referenz für später aufgehoben. Muss ich nochmal genauer testen. Auf Nachfrage nochmal nachhaken.

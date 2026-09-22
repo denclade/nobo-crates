@@ -1,0 +1,9 @@
+#+TITLE:      Vim Update fehlgeschlagen
+#+DATE:       [2025-12-21 So 09:31]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :security:nextcloud:
+#+IDENTIFIER: 20251221T093101
+
+* Vim Update fehlgeschlagen
+
+Kurz notiert, bevor ich es vergesse. Referenz für später aufgehoben.

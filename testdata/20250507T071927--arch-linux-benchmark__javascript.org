@@ -1,0 +1,9 @@
+#+TITLE:      Arch Linux Benchmark
+#+DATE:       [2025-05-07 Mi 07:19]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :javascript:
+#+IDENTIFIER: 20250507T071927
+
+* Arch Linux Benchmark
+
+Noch offen: genaue Details klären. Ein Blick zurück lohnt sich hier. War einfacher als erwartet.

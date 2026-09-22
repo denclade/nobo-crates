@@ -1,0 +1,9 @@
+#+TITLE:      OPNsense Automatisierung
+#+DATE:       [2024-08-16 Fr 11:32]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:pbs:
+#+IDENTIFIER: 20240816T113236
+
+* OPNsense Automatisierung
+
+Funktioniert soweit wie erwartet.

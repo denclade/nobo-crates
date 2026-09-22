@@ -1,0 +1,9 @@
+#+TITLE:      SQLite Absturz analysiert
+#+DATE:       [2026-03-24 Di 04:40]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :meeting:debug:
+#+IDENTIFIER: 20260324T044043
+
+* SQLite Absturz analysiert
+
+Läuft seit dem Update stabil. Ergebnis war nicht ganz wie erhofft.

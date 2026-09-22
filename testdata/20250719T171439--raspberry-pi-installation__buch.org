@@ -1,0 +1,9 @@
+#+TITLE:      Raspberry Pi Installation
+#+DATE:       [2025-07-19 Sa 17:14]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :buch:
+#+IDENTIFIER: 20250719T171439
+
+* Raspberry Pi Installation
+
+Quelle: Gespräch von heute Vormittag. Siehe auch die letzte Notiz zu diesem Thema.

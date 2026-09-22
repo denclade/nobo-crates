@@ -1,0 +1,8 @@
+#+TITLE:      FreeBSD Update
+#+DATE:       [2024-12-08 So 18:45]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20241208T184546
+
+* FreeBSD Update
+
+War einfacher als erwartet. Kurz notiert, bevor ich es vergesse.

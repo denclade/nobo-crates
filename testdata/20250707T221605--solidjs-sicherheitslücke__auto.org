@@ -1,0 +1,9 @@
+#+TITLE:      SolidJS Sicherheitslücke
+#+DATE:       [2025-07-07 Mo 22:16]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :auto:
+#+IDENTIFIER: 20250707T221605
+
+* SolidJS Sicherheitslücke
+
+Todo: Screenshot ergänzen.

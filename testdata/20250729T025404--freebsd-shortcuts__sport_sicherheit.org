@@ -1,0 +1,9 @@
+#+TITLE:      FreeBSD Shortcuts
+#+DATE:       [2025-07-29 Di 02:54]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sport:sicherheit:
+#+IDENTIFIER: 20250729T025404
+
+* FreeBSD Shortcuts
+
+Quelle: Gespräch von heute Vormittag. Referenz für später aufgehoben. Nächster Schritt: Ergebnis dokumentieren.

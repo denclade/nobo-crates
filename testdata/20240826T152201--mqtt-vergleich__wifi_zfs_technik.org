@@ -1,0 +1,12 @@
+#+TITLE:      MQTT Vergleich
+#+DATE:       [2024-08-26 Mo 15:22]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :wifi:zfs:technik:
+#+IDENTIFIER: 20240826T152201
+
+* MQTT Vergleich
+
+Erster Eindruck ist positiv. Noch offen: genaue Details klären.
+
+** Weiteres Vorgehen
+Klingt nach einer guten Idee für nächste Woche.

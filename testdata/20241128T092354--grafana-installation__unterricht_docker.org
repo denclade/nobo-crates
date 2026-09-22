@@ -1,0 +1,9 @@
+#+TITLE:      Grafana Installation
+#+DATE:       [2024-11-28 Do 09:23]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :unterricht:docker:
+#+IDENTIFIER: 20241128T092354
+
+* Grafana Installation
+
+Funktioniert soweit wie erwartet. Läuft seit dem Update stabil. Siehe auch die letzte Notiz zu diesem Thema.

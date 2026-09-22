@@ -1,0 +1,8 @@
+#+TITLE:      Rust Update
+#+DATE:       [2024-03-21 Do 10:15]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240321T101508
+
+* Rust Update
+
+Funktioniert soweit wie erwartet.

@@ -1,0 +1,12 @@
+#+TITLE:      Prometheus Installation
+#+DATE:       [2024-03-28 Do 21:20]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :reise:sport:
+#+IDENTIFIER: 20240328T212035
+
+* Prometheus Installation
+
+Auf Nachfrage nochmal nachhaken.
+
+** Weiteres Vorgehen
+Details stehen noch aus.

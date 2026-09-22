@@ -1,0 +1,26 @@
+#+TITLE: Beispiel: Baumarkt (offline)
+#+NOBO_TYPE: caldav-list
+#+NOBO_CALDAV_URL: https://cloud.example.com/remote.php/dav/calendars/dennis/baumarkt/
+#+NOBO_CALDAV_USER: dennis
+#+COMMENT: Von nobo mit einer CalDAV-Liste synchronisiert. Bearbeiten ist erlaubt; Änderungen werden hochgeladen.
+
+* TODO Dübel 8mm
+:PROPERTIES:
+:CUSTOM_ID: h:9a34f3d4-ea57-54ee-b78d-fc66ff88e181
+:CALDAV_UID: sample-baumarkt-1
+:END:
+
+* TODO Holzlasur
+DEADLINE: <2026-09-05 Sat>
+:PROPERTIES:
+:CUSTOM_ID: h:de8d4c41-4531-5c0d-ab38-b23036701304
+:CALDAV_UID: sample-baumarkt-2
+:END:
+
+* TODO Ersatzschlauch für die Bewässerung
+:PROPERTIES:
+:CUSTOM_ID: h:fc392b06-3212-5044-924e-d98e5240dac7
+:CALDAV_UID: sample-baumarkt-3
+:END:
+Der alte ist am Anschluss porös.
+

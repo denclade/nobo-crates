@@ -1,0 +1,9 @@
+#+TITLE:      SSH Shortcuts
+#+DATE:       [2024-08-17 Sa 15:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :technik:
+#+IDENTIFIER: 20240817T152600
+
+* SSH Shortcuts
+
+Details stehen noch aus.

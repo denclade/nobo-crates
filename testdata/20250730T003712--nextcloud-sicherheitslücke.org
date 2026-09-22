@@ -1,0 +1,11 @@
+#+TITLE:      Nextcloud Sicherheitslücke
+#+DATE:       [2025-07-30 Mi 00:37]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250730T003712
+
+* Nextcloud Sicherheitslücke
+
+Erster Eindruck ist positiv.
+
+** Weiteres Vorgehen
+Siehe auch die letzte Notiz zu diesem Thema.

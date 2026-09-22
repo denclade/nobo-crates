@@ -1,0 +1,12 @@
+#+TITLE:      Nextcloud Konfiguration
+#+DATE:       [2025-01-27 Mo 18:42]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250127T184221
+
+* Nextcloud Konfiguration
+
+Erster Eindruck ist positiv. Noch offen: genaue Details klären.
+
+- Backup vorher gemacht
+- Config-Datei gesichert
+- Logs geprüft

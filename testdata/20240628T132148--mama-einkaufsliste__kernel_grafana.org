@@ -1,0 +1,9 @@
+#+TITLE:      Mama Einkaufsliste
+#+DATE:       [2024-06-28 Fr 13:21]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :kernel:grafana:
+#+IDENTIFIER: 20240628T132148
+
+* Mama Einkaufsliste
+
+Erster Eindruck ist positiv. Ergebnis war nicht ganz wie erhofft. Hat länger gedauert als gedacht.

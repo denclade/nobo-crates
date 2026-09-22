@@ -1,0 +1,9 @@
+#+TITLE:      SQLite Update
+#+DATE:       [2024-08-04 So 11:46]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :vpn:schule:
+#+IDENTIFIER: 20240804T114657
+
+* SQLite Update
+
+Kurzes Fazit nach dem ersten Test.

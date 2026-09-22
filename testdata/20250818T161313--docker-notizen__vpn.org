@@ -1,0 +1,12 @@
+#+TITLE:      Docker Notizen
+#+DATE:       [2025-08-18 Mo 16:13]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :vpn:
+#+IDENTIFIER: 20250818T161313
+
+* Docker Notizen
+
+Läuft seit dem Update stabil. Noch offen: genaue Details klären. Quelle: Gespräch von heute Vormittag.
+
+- Ergebnis mit Team geteilt
+- Logs geprüft

@@ -1,0 +1,14 @@
+#+TITLE:      Tailscale Absturz analysiert
+#+DATE:       [2024-06-08 Sa 03:51]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :pbs:ssh:
+#+IDENTIFIER: 20240608T035157
+
+* Tailscale Absturz analysiert
+
+Noch offen: genaue Details klären. Referenz für später aufgehoben. Auf Nachfrage nochmal nachhaken.
+
+- Config-Datei gesichert
+- Dokumentation verlinkt
+- Nächsten Termin vorgemerkt
+- Ergebnis mit Team geteilt

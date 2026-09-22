@@ -1,0 +1,9 @@
+#+TITLE:      GNOME Fehler beheben
+#+DATE:       [2024-04-05 Fr 04:53]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :home:
+#+IDENTIFIER: 20240405T045356
+
+* GNOME Fehler beheben
+
+Details stehen noch aus.

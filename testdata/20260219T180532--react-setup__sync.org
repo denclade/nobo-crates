@@ -1,0 +1,14 @@
+#+TITLE:      React Setup
+#+DATE:       [2026-02-19 Do 18:05]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sync:
+#+IDENTIFIER: 20260219T180532
+
+* React Setup
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Ergebnis war nicht ganz wie erhofft.
+
+- Dokumentation verlinkt
+- Backup vorher gemacht
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt

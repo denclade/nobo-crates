@@ -1,0 +1,12 @@
+#+TITLE:      Sway Update
+#+DATE:       [2026-06-10 Mi 04:22]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260610T042213
+
+* Sway Update
+
+Siehe auch die letzte Notiz zu diesem Thema. Auf Nachfrage nochmal nachhaken.
+
+- Config-Datei gesichert
+- Screenshot gemacht
+- Logs geprüft

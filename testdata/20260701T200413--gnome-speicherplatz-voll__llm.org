@@ -1,0 +1,9 @@
+#+TITLE:      GNOME Speicherplatz voll
+#+DATE:       [2026-07-01 Mi 20:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :llm:
+#+IDENTIFIER: 20260701T200413
+
+* GNOME Speicherplatz voll
+
+Kurzes Fazit nach dem ersten Test. War einfacher als erwartet.

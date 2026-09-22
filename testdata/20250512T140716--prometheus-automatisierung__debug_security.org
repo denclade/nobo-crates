@@ -1,0 +1,9 @@
+#+TITLE:      Prometheus Automatisierung
+#+DATE:       [2025-05-12 Mo 14:07]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :debug:security:
+#+IDENTIFIER: 20250512T140716
+
+* Prometheus Automatisierung
+
+Funktioniert soweit wie erwartet. Läuft seit dem Update stabil.

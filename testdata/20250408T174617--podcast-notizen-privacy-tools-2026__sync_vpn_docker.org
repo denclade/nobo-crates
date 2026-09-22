@@ -1,0 +1,9 @@
+#+TITLE:      Podcast Notizen: Privacy Tools 2026
+#+DATE:       [2025-04-08 Di 17:46]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sync:vpn:docker:
+#+IDENTIFIER: 20250408T174617
+
+* Podcast Notizen: Privacy Tools 2026
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen.

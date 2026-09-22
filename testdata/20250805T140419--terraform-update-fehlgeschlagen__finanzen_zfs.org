@@ -1,0 +1,9 @@
+#+TITLE:      Terraform Update fehlgeschlagen
+#+DATE:       [2025-08-05 Di 14:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :finanzen:zfs:
+#+IDENTIFIER: 20250805T140419
+
+* Terraform Update fehlgeschlagen
+
+Läuft seit dem Update stabil. Todo: Screenshot ergänzen.

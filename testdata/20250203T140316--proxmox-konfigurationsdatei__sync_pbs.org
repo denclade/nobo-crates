@@ -1,0 +1,9 @@
+#+TITLE:      Proxmox Konfigurationsdatei
+#+DATE:       [2025-02-03 Mo 14:03]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sync:pbs:
+#+IDENTIFIER: 20250203T140316
+
+* Proxmox Konfigurationsdatei
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Siehe auch die letzte Notiz zu diesem Thema.

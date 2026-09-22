@@ -1,0 +1,9 @@
+#+TITLE:      Git Update
+#+DATE:       [2025-11-09 So 06:08]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :homeautomation:sync:
+#+IDENTIFIER: 20251109T060806
+
+* Git Update
+
+Noch offen: genaue Details klären. Klingt nach einer guten Idee für nächste Woche. Todo: Screenshot ergänzen.

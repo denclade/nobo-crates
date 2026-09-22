@@ -1,0 +1,12 @@
+#+TITLE:      MQTT Notizen
+#+DATE:       [2025-04-05 Sa 16:31]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250405T163156
+
+* MQTT Notizen
+
+Auf Nachfrage nochmal nachhaken. Details stehen noch aus.
+
+- Backup vorher gemacht
+- Dokumentation verlinkt
+- Screenshot gemacht

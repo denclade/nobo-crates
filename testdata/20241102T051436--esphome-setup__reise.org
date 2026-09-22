@@ -1,0 +1,9 @@
+#+TITLE:      ESPHome Setup
+#+DATE:       [2024-11-02 Sa 05:14]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :reise:
+#+IDENTIFIER: 20241102T051436
+
+* ESPHome Setup
+
+Hat länger gedauert als gedacht. Muss ich nochmal genauer testen. Nächster Schritt: Ergebnis dokumentieren.

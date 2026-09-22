@@ -1,0 +1,9 @@
+#+TITLE:      WireGuard Troubleshooting
+#+DATE:       [2025-06-21 Sa 06:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :meeting:emacs:
+#+IDENTIFIER: 20250621T062542
+
+* WireGuard Troubleshooting
+
+Läuft seit dem Update stabil. Kurzes Fazit nach dem ersten Test.

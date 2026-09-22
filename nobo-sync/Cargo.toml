@@ -1,0 +1,64 @@
+[package]
+name = "nobo-sync"
+version = "0.1.0"
+description = "Syncing the whole vault to a server of the user's own, end-to-end encrypted."
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# The core and nothing else of nobo's, unless a line below says otherwise:
+# reaching into another feature is a compile error here, not a lint
+# failure.
+[dependencies]
+nobo-http = { path = "../nobo-http" }
+nobo-webdav = { path = "../nobo-webdav" }
+nobo-core = { path = "../nobo-core" }
+tauri = { workspace = true, optional = true }
+tauri-specta = { workspace = true, optional = true }
+specta = { workspace = true, optional = true }
+specta-typescript = { workspace = true, optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+log = { workspace = true }
+inventory = { workspace = true }
+# Not just for tests: the sync writes downloads to a temp file first.
+tempfile = { workspace = true }
+rusqlite = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+argon2 = { workspace = true }
+chacha20poly1305 = { workspace = true }
+rand = { workspace = true }
+zeroize = { workspace = true }
+blake3 = { workspace = true }
+hex = { workspace = true }
+base64ct = { workspace = true }
+futures-util = { workspace = true }
+uuid = { workspace = true }
+diffy = { workspace = true }
+flate2 = { workspace = true }
+
+# The providers are features of this crate now, not of the app: `sync`
+# knows WHAT to do, a provider knows where. A build picks at least one
+# (there is a compile_error! for none, see lib.rs).
+# Both by default so the crate stands on its own (`cargo check -p
+# nobo-sync`, and any --workspace pass). The app picks explicitly and
+# takes the dependency with `default-features = false`, so a build with
+# only one provider really has only one.
+# The Tauri half is optional on top of that (see nobo-review): `commands`
+# are plain functions, `tauri_commands` makes them Tauri commands and
+# carries the two events. Default-on, so the app's build is unchanged.
+#
+# Everything the Tauri half needs is in that list, and all of it comes
+# from crates.io: this crate carries its own index listener (see
+# `tauri_commands`) rather than borrowing one from the app's host crate,
+# so nothing here points at a path outside these crates.
+[features]
+default = ["pocketbase", "webdav", "tauri"]
+tauri = ["dep:tauri", "dep:tauri-specta", "dep:specta", "dep:specta-typescript"]
+pocketbase = []
+webdav = []
+
+[dev-dependencies]
+wiremock = { workspace = true }

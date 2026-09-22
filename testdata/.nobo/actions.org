@@ -1,0 +1,124 @@
+* NEXT Planung was genau gemacht werden soll klären                     :schule:
+SCHEDULED: <2026-08-12 Wed>
+
+* NEXT Konzept: Code beibringen (evtl. Dokumentation)                   :schule:
+SCHEDULED: <2026-08-15 Sat>
+:PROPERTIES:
+:Effort: 2:00
+:END:
+
+* NEXT Akku Recherche                                                 :hardware:
+SCHEDULED: <2026-08-13 Thu>
+:PROPERTIES:
+:Effort: 1:00
+:END:
+
+* NEXT history compare - zu änderung springen                         :software:
+
+* NEXT Erledigte Ausblenden Einstellung merken                        :software:
+
+* NEXT Konzept in TODOs packen                                          :schule:
+SCHEDULED: <2026-08-13 Thu>
+:PROPERTIES:
+:Effort: 1:00
+:END:
+
+* NEXT Weitere Artikelideen aufschreiben                                  :blog:
+SCHEDULED: <2026-08-14 Fri>
+
+* NEXT Beim CloudSync Login beim Start checken                   :software:sync:
+
+* TODO Passwort für Router notieren                                    :technik:
+SCHEDULED: <2026-08-18 Tue>
+
+* TODO Zahnarzttermin vereinbaren                                   :gesundheit:
+SCHEDULED: <2026-08-21 Fri>
+
+* TODO Bücher zurückbringen
+SCHEDULED: <2026-08-14 Fri>
+
+* TODO Autoreifen wechseln lassen                                         :auto:
+SCHEDULED: <2026-08-25 Tue>
+:PROPERTIES:
+:Effort: 1:00
+:END:
+
+* TODO Fotobuch vom Urlaub erstellen                                    :urlaub:
+SCHEDULED: <2026-10-10 Sat>
+
+* TODO Rasenmäher warten                                                :garten:
+SCHEDULED: <2026-09-01 Tue>
+
+* TODO WLAN Passwort ändern                                :netzwerk:sicherheit:
+SCHEDULED: <2026-08-16 Sun>
+
+* TODO Geschenk für Geburtstag besorgen                                :familie:
+SCHEDULED: <2026-08-19 Wed>
+
+* TODO Steuerunterlagen sortieren                                     :finanzen:
+SCHEDULED: <2026-09-10 Thu>
+:PROPERTIES:
+:Effort: 2:00
+:END:
+
+* TODO Fahrradlicht reparieren                                         :fahrrad:
+SCHEDULED: <2026-08-15 Sat>
+
+* TODO Newsletter abbestellen
+
+* TODO Versicherung vergleichen                                       :finanzen:
+SCHEDULED: <2026-09-20 Sun>
+:PROPERTIES:
+:Effort: 1:00
+:END:
+
+* TODO Keller aufräumen
+SCHEDULED: <2026-09-05 Sat>
+:PROPERTIES:
+:Effort: 3:00
+:END:
+
+* TODO Backup extern testen                                     :backup:proxmox:
+SCHEDULED: <2026-08-17 Mon>
+:PROPERTIES:
+:Effort: 1:00
+:END:
+
+* TODO SSH Keys rotieren                                          :security:ssh:
+SCHEDULED: <2026-08-23 Sun>
+:PROPERTIES:
+:Effort: 0:30
+:END:
+
+* TODO Grafana Dashboard aufräumen                                     :grafana:
+SCHEDULED: <2026-08-29 Sat>
+:PROPERTIES:
+:Effort: 1:00
+:END:
+
+* DONE Rechnung bezahlt                                               :finanzen:
+CLOSED: [2026-08-08 Sat 09:30]
+- State "DONE        " from "TODO        " [2026-08-08 Sat 09:30]
+
+* DONE Paket abgeholt
+CLOSED: [2026-08-10 Mon 09:30]
+- State "DONE        " from "TODO        " [2026-08-10 Mon 09:30]
+
+* DONE Termin beim Optiker wahrgenommen                             :gesundheit:
+CLOSED: [2026-08-05 Wed 09:30]
+- State "DONE        " from "TODO        " [2026-08-05 Wed 09:30]
+
+* DONE Zertifikat erneuert                                            :security:
+CLOSED: [2026-08-09 Sun 09:30]
+:PROPERTIES:
+:Effort: 0:30
+:END:
+- State "DONE        " from "TODO        " [2026-08-09 Sun 09:30]
+
+* OBE Alten Router verkaufen                                           :technik:
+CLOSED: [2026-08-01 Sat 09:30]
+- State "OBE         " from "TODO        " [2026-08-01 Sat 09:30]
+
+* WONT-DO Excel Makro debuggen                                        :software:
+CLOSED: [2026-07-27 Mon 09:30]
+- State "WONT-DO     " from "TODO        " [2026-07-27 Mon 09:30]

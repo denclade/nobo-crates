@@ -1,0 +1,9 @@
+#+TITLE:      Restic Sicherheitslücke
+#+DATE:       [2026-04-29 Mi 04:34]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :linux:security:javascript:
+#+IDENTIFIER: 20260429T043441
+
+* Restic Sicherheitslücke
+
+Hat länger gedauert als gedacht. War einfacher als erwartet. Referenz für später aufgehoben.

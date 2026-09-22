@@ -1,0 +1,14 @@
+#+TITLE:      Let's Encrypt Shortcuts
+#+DATE:       [2025-05-05 Mo 16:43]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :meeting:llm:wifi:
+#+IDENTIFIER: 20250505T164337
+
+* Let's Encrypt Shortcuts
+
+Details stehen noch aus. War einfacher als erwartet. Funktioniert soweit wie erwartet.
+
+- Config-Datei gesichert
+- Logs geprüft
+- Mit zweitem Gerät getestet
+- Screenshot gemacht

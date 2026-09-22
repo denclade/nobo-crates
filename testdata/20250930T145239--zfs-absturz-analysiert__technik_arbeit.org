@@ -1,0 +1,16 @@
+#+TITLE:      ZFS Absturz analysiert
+#+DATE:       [2025-09-30 Di 14:52]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :technik:arbeit:
+#+IDENTIFIER: 20250930T145239
+
+* ZFS Absturz analysiert
+
+Ergebnis war nicht ganz wie erhofft. Referenz für später aufgehoben.
+
+- Mit zweitem Gerät getestet
+- Screenshot gemacht
+- Ergebnis mit Team geteilt
+
+** Weiteres Vorgehen
+Wichtig: vor dem nächsten Schritt nochmal prüfen.

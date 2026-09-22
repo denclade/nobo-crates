@@ -1,0 +1,12 @@
+#+TITLE:      Let's Encrypt Sicherheitslücke
+#+DATE:       [2026-07-13 Mo 13:12]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :blog:
+#+IDENTIFIER: 20260713T131227
+
+* Let's Encrypt Sicherheitslücke
+
+Funktioniert soweit wie erwartet. Hat länger gedauert als gedacht. Noch offen: genaue Details klären.
+
+** Weiteres Vorgehen
+Klingt nach einer guten Idee für nächste Woche.

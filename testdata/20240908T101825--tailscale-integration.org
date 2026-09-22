@@ -1,0 +1,15 @@
+#+TITLE:      Tailscale Integration
+#+DATE:       [2024-09-08 So 10:18]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240908T101825
+
+* Tailscale Integration
+
+Auf Nachfrage nochmal nachhaken. Klingt nach einer guten Idee für nächste Woche.
+
+- Logs geprüft
+- Backup vorher gemacht
+- Dokumentation verlinkt
+
+** Weiteres Vorgehen
+Klingt nach einer guten Idee für nächste Woche.

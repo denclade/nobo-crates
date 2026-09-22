@@ -1,0 +1,12 @@
+#+TITLE:      Docker Performance-Tuning
+#+DATE:       [2025-04-28 Mo 20:37]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ki:backup:rust:
+#+IDENTIFIER: 20250428T203737
+
+* Docker Performance-Tuning
+
+Quelle: Gespräch von heute Vormittag. Ein Blick zurück lohnt sich hier. War einfacher als erwartet.
+
+** Weiteres Vorgehen
+Wichtig: vor dem nächsten Schritt nochmal prüfen.

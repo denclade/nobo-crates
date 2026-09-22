@@ -1,0 +1,14 @@
+#+TITLE:      WireGuard Migration
+#+DATE:       [2025-02-20 Do 11:05]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :grafana:artikel:
+#+IDENTIFIER: 20250220T110559
+
+* WireGuard Migration
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Kurzes Fazit nach dem ersten Test.
+
+- Ergebnis mit Team geteilt
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert
+- Dokumentation verlinkt

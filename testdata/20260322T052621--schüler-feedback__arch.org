@@ -1,0 +1,14 @@
+#+TITLE:      Schüler Feedback
+#+DATE:       [2026-03-22 So 05:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arch:
+#+IDENTIFIER: 20260322T052621
+
+* Schüler Feedback
+
+Nächster Schritt: Ergebnis dokumentieren.
+
+- Backup vorher gemacht
+- Ergebnis mit Team geteilt
+- Nächsten Termin vorgemerkt
+- Dokumentation verlinkt

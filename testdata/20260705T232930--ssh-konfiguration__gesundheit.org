@@ -1,0 +1,9 @@
+#+TITLE:      SSH Konfiguration
+#+DATE:       [2026-07-05 So 23:29]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gesundheit:
+#+IDENTIFIER: 20260705T232930
+
+* SSH Konfiguration
+
+Muss ich nochmal genauer testen. Quelle: Gespräch von heute Vormittag. Hat länger gedauert als gedacht.

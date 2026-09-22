@@ -1,0 +1,11 @@
+#+TITLE:      Nextcloud Anleitung
+#+DATE:       [2024-03-27 Mi 04:36]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240327T043626
+
+* Nextcloud Anleitung
+
+Referenz für später aufgehoben. Details stehen noch aus.
+
+- Screenshot gemacht
+- Mit zweitem Gerät getestet

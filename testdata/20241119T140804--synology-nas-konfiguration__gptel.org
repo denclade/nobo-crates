@@ -1,0 +1,9 @@
+#+TITLE:      Synology NAS Konfiguration
+#+DATE:       [2024-11-19 Di 14:08]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:
+#+IDENTIFIER: 20241119T140804
+
+* Synology NAS Konfiguration
+
+Ergebnis war nicht ganz wie erhofft. Details stehen noch aus. Erster Eindruck ist positiv.

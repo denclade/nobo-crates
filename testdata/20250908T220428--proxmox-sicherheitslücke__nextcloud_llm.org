@@ -1,0 +1,9 @@
+#+TITLE:      Proxmox Sicherheitslücke
+#+DATE:       [2025-09-08 Mo 22:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :nextcloud:llm:
+#+IDENTIFIER: 20250908T220428
+
+* Proxmox Sicherheitslücke
+
+Details stehen noch aus. Klingt nach einer guten Idee für nächste Woche. Todo: Screenshot ergänzen.

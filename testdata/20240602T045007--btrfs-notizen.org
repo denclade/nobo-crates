@@ -1,0 +1,11 @@
+#+TITLE:      BTRFS Notizen
+#+DATE:       [2024-06-02 So 04:50]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240602T045007
+
+* BTRFS Notizen
+
+Funktioniert soweit wie erwartet.
+
+- Config-Datei gesichert
+- Nächsten Termin vorgemerkt

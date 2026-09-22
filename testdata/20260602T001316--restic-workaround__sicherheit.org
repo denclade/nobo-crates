@@ -1,0 +1,9 @@
+#+TITLE:      Restic Workaround
+#+DATE:       [2026-06-02 Di 00:13]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:
+#+IDENTIFIER: 20260602T001316
+
+* Restic Workaround
+
+Quelle: Gespräch von heute Vormittag. Kurz notiert, bevor ich es vergesse. Nächster Schritt: Ergebnis dokumentieren.

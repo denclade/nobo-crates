@@ -1,0 +1,12 @@
+#+TITLE:      Home Assistant Konfiguration
+#+DATE:       [2024-06-05 Mi 18:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :familie:
+#+IDENTIFIER: 20240605T185645
+
+* Home Assistant Konfiguration
+
+Muss ich nochmal genauer testen.
+
+- Dokumentation verlinkt
+- Screenshot gemacht

@@ -1,0 +1,9 @@
+#+TITLE:      Tauri Update fehlgeschlagen
+#+DATE:       [2026-01-10 Sa 07:23]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :hardware:reise:
+#+IDENTIFIER: 20260110T072335
+
+* Tauri Update fehlgeschlagen
+
+Hat länger gedauert als gedacht.

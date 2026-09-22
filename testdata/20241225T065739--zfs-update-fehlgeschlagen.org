@@ -1,0 +1,13 @@
+#+TITLE:      ZFS Update fehlgeschlagen
+#+DATE:       [2024-12-25 Mi 06:57]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20241225T065739
+
+* ZFS Update fehlgeschlagen
+
+Klingt nach einer guten Idee für nächste Woche. Kurz notiert, bevor ich es vergesse.
+
+- Logs geprüft
+- Dokumentation verlinkt
+- Backup vorher gemacht
+- Config-Datei gesichert

@@ -1,0 +1,9 @@
+#+TITLE:      Ansible Benchmark
+#+DATE:       [2025-09-29 Mo 12:33]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :config:
+#+IDENTIFIER: 20250929T123310
+
+* Ansible Benchmark
+
+Nächster Schritt: Ergebnis dokumentieren. Muss ich nochmal genauer testen. Details stehen noch aus.

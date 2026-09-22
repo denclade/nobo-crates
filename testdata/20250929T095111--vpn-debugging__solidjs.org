@@ -1,0 +1,13 @@
+#+TITLE:      VPN Debugging
+#+DATE:       [2025-09-29 Mo 09:51]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :solidjs:
+#+IDENTIFIER: 20250929T095111
+
+* VPN Debugging
+
+Nächster Schritt: Ergebnis dokumentieren. Muss ich nochmal genauer testen.
+
+- Backup vorher gemacht
+- Mit zweitem Gerät getestet
+- Logs geprüft

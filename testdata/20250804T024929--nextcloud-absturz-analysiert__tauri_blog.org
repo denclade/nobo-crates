@@ -1,0 +1,13 @@
+#+TITLE:      Nextcloud Absturz analysiert
+#+DATE:       [2025-08-04 Mo 02:49]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :tauri:blog:
+#+IDENTIFIER: 20250804T024929
+
+* Nextcloud Absturz analysiert
+
+Siehe auch die letzte Notiz zu diesem Thema. Kurzes Fazit nach dem ersten Test. Muss ich nochmal genauer testen.
+
+- Dokumentation verlinkt
+- Backup vorher gemacht
+- Mit zweitem Gerät getestet

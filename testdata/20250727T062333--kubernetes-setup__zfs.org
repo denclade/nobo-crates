@@ -1,0 +1,9 @@
+#+TITLE:      Kubernetes Setup
+#+DATE:       [2025-07-27 So 06:23]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zfs:
+#+IDENTIFIER: 20250727T062333
+
+* Kubernetes Setup
+
+Muss ich nochmal genauer testen.

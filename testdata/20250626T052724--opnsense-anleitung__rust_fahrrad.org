@@ -1,0 +1,12 @@
+#+TITLE:      OPNsense Anleitung
+#+DATE:       [2025-06-26 Do 05:27]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rust:fahrrad:
+#+IDENTIFIER: 20250626T052724
+
+* OPNsense Anleitung
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+** Weiteres Vorgehen
+Details stehen noch aus.

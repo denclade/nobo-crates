@@ -1,0 +1,12 @@
+#+TITLE:      Tailscale Troubleshooting
+#+DATE:       [2025-02-06 Do 11:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :javascript:
+#+IDENTIFIER: 20250206T115625
+
+* Tailscale Troubleshooting
+
+Referenz für später aufgehoben. Noch offen: genaue Details klären. Muss ich nochmal genauer testen.
+
+- Mit zweitem Gerät getestet
+- Dokumentation verlinkt

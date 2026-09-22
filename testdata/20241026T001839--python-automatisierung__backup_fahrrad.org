@@ -1,0 +1,12 @@
+#+TITLE:      Python Automatisierung
+#+DATE:       [2024-10-26 Sa 00:18]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :backup:fahrrad:
+#+IDENTIFIER: 20241026T001839
+
+* Python Automatisierung
+
+Muss ich nochmal genauer testen. Nächster Schritt: Ergebnis dokumentieren. Ein Blick zurück lohnt sich hier.
+
+- Config-Datei gesichert
+- Nächsten Termin vorgemerkt

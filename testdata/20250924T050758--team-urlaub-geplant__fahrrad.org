@@ -1,0 +1,12 @@
+#+TITLE:      Team Urlaub geplant
+#+DATE:       [2025-09-24 Mi 05:07]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :fahrrad:
+#+IDENTIFIER: 20250924T050758
+
+* Team Urlaub geplant
+
+Ein Blick zurück lohnt sich hier. Kurzes Fazit nach dem ersten Test. Todo: Screenshot ergänzen.
+
+- Config-Datei gesichert
+- Nächsten Termin vorgemerkt

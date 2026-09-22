@@ -1,0 +1,12 @@
+#+TITLE:      SSH Anleitung
+#+DATE:       [2024-03-01 Fr 15:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ssh:sync:
+#+IDENTIFIER: 20240301T152505
+
+* SSH Anleitung
+
+Muss ich nochmal genauer testen. Auf Nachfrage nochmal nachhaken. Kurz notiert, bevor ich es vergesse.
+
+- Dokumentation verlinkt
+- Nächsten Termin vorgemerkt

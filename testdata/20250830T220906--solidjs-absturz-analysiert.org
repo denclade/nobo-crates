@@ -1,0 +1,13 @@
+#+TITLE:      SolidJS Absturz analysiert
+#+DATE:       [2025-08-30 Sa 22:09]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250830T220906
+
+* SolidJS Absturz analysiert
+
+Ergebnis war nicht ganz wie erhofft. Funktioniert soweit wie erwartet.
+
+- Dokumentation verlinkt
+- Nächsten Termin vorgemerkt
+- Logs geprüft
+- Backup vorher gemacht

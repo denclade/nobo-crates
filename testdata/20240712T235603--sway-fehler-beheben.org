@@ -1,0 +1,10 @@
+#+TITLE:      Sway Fehler beheben
+#+DATE:       [2024-07-12 Fr 23:56]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240712T235603
+
+* Sway Fehler beheben
+
+Nächster Schritt: Ergebnis dokumentieren. Erster Eindruck ist positiv. Läuft seit dem Update stabil.
+
+[[file:.attachments/20250516T063000--urlaubsfoto-strand.png]]

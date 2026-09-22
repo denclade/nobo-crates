@@ -1,0 +1,9 @@
+#+TITLE:      Restic Vergleich
+#+DATE:       [2025-09-13 Sa 14:02]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zigbee:arbeit:
+#+IDENTIFIER: 20250913T140209
+
+* Restic Vergleich
+
+Quelle: Gespräch von heute Vormittag. Details stehen noch aus. Kurzes Fazit nach dem ersten Test.

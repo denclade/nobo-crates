@@ -1,0 +1,9 @@
+#+TITLE:      Tailscale Update
+#+DATE:       [2026-05-19 Di 12:52]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :vpn:backup:
+#+IDENTIFIER: 20260519T125237
+
+* Tailscale Update
+
+Kurzes Fazit nach dem ersten Test. Referenz für später aufgehoben.

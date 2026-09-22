@@ -1,0 +1,11 @@
+#+TITLE:      Raspberry Pi Performance-Tuning
+#+DATE:       [2026-07-29 Mi 12:32]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arbeit:ha:
+#+IDENTIFIER: 20260729T123234
+
+* Raspberry Pi Performance-Tuning
+
+Klingt nach einer guten Idee für nächste Woche. Kurz notiert, bevor ich es vergesse.
+
+[[file:.attachments/20240921T113000--whiteboard-foto-meeting.png]]

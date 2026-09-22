@@ -1,0 +1,12 @@
+#+TITLE:      SSH Update
+#+DATE:       [2025-05-05 Mo 12:14]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zfs:unterricht:
+#+IDENTIFIER: 20250505T121458
+
+* SSH Update
+
+Kurzes Fazit nach dem ersten Test. Noch offen: genaue Details klären.
+
+** Weiteres Vorgehen
+Ein Blick zurück lohnt sich hier.

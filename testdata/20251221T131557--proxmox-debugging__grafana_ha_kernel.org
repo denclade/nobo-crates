@@ -1,0 +1,17 @@
+#+TITLE:      Proxmox Debugging
+#+DATE:       [2025-12-21 So 13:15]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :grafana:ha:kernel:
+#+IDENTIFIER: 20251221T131557
+
+* Proxmox Debugging
+
+Hat länger gedauert als gedacht. Todo: Screenshot ergänzen.
+
+- Dokumentation verlinkt
+- Logs geprüft
+- Ergebnis mit Team geteilt
+- Config-Datei gesichert
+
+** Weiteres Vorgehen
+Klingt nach einer guten Idee für nächste Woche.

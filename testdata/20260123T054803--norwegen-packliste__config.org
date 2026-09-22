@@ -1,0 +1,12 @@
+#+TITLE:      Norwegen Packliste
+#+DATE:       [2026-01-23 Fr 05:48]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :config:
+#+IDENTIFIER: 20260123T054803
+
+* Norwegen Packliste
+
+Ein Blick zurück lohnt sich hier. Läuft seit dem Update stabil.
+
+- Dokumentation verlinkt
+- Screenshot gemacht

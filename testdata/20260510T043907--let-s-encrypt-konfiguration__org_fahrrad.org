@@ -1,0 +1,14 @@
+#+TITLE:      Let's Encrypt Konfiguration
+#+DATE:       [2026-05-10 So 04:39]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :org:fahrrad:
+#+IDENTIFIER: 20260510T043907
+
+* Let's Encrypt Konfiguration
+
+Referenz für später aufgehoben. Wichtig: vor dem nächsten Schritt nochmal prüfen. Nächster Schritt: Ergebnis dokumentieren.
+
+- Logs geprüft
+- Ergebnis mit Team geteilt
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert

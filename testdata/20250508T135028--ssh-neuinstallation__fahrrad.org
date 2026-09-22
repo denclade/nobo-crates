@@ -1,0 +1,12 @@
+#+TITLE:      SSH Neuinstallation
+#+DATE:       [2025-05-08 Do 13:50]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :fahrrad:
+#+IDENTIFIER: 20250508T135028
+
+* SSH Neuinstallation
+
+Ein Blick zurück lohnt sich hier. Siehe auch die letzte Notiz zu diesem Thema.
+
+** Weiteres Vorgehen
+Noch offen: genaue Details klären.

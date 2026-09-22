@@ -1,0 +1,8 @@
+#+TITLE:      MQTT Zertifikat erneuert
+#+DATE:       [2025-05-06 Di 21:58]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250506T215812
+
+* MQTT Zertifikat erneuert
+
+War einfacher als erwartet.

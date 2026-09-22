@@ -1,0 +1,12 @@
+#+TITLE:      ZFS Speicherplatz voll
+#+DATE:       [2024-05-27 Mo 22:32]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :artikel:
+#+IDENTIFIER: 20240527T223243
+
+* ZFS Speicherplatz voll
+
+War einfacher als erwartet.
+
+** Weiteres Vorgehen
+Wichtig: vor dem nächsten Schritt nochmal prüfen.

@@ -1,0 +1,12 @@
+#+TITLE:      Nextcloud Update fehlgeschlagen
+#+DATE:       [2026-02-08 So 15:27]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sport:technik:
+#+IDENTIFIER: 20260208T152743
+
+* Nextcloud Update fehlgeschlagen
+
+War einfacher als erwartet. Details stehen noch aus.
+
+** Weiteres Vorgehen
+Details stehen noch aus.

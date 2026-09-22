@@ -1,0 +1,14 @@
+#+TITLE:      VPN Update fehlgeschlagen
+#+DATE:       [2026-04-17 Fr 22:44]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :nginx:
+#+IDENTIFIER: 20260417T224425
+
+* VPN Update fehlgeschlagen
+
+Quelle: Gespräch von heute Vormittag. Kurzes Fazit nach dem ersten Test.
+
+- Dokumentation verlinkt
+- Screenshot gemacht
+- Mit zweitem Gerät getestet
+- Nächsten Termin vorgemerkt

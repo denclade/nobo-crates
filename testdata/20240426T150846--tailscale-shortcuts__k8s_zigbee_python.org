@@ -1,0 +1,9 @@
+#+TITLE:      Tailscale Shortcuts
+#+DATE:       [2024-04-26 Fr 15:08]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:zigbee:python:
+#+IDENTIFIER: 20240426T150846
+
+* Tailscale Shortcuts
+
+Ergebnis war nicht ganz wie erhofft. Noch offen: genaue Details klären. Hat länger gedauert als gedacht.

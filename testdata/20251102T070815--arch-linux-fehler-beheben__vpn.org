@@ -1,0 +1,9 @@
+#+TITLE:      Arch Linux Fehler beheben
+#+DATE:       [2025-11-02 So 07:08]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :vpn:
+#+IDENTIFIER: 20251102T070815
+
+* Arch Linux Fehler beheben
+
+Auf Nachfrage nochmal nachhaken.

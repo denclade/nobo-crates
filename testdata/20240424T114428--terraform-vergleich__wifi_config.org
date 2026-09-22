@@ -1,0 +1,9 @@
+#+TITLE:      Terraform Vergleich
+#+DATE:       [2024-04-24 Mi 11:44]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :wifi:config:
+#+IDENTIFIER: 20240424T114428
+
+* Terraform Vergleich
+
+Kurzes Fazit nach dem ersten Test. War einfacher als erwartet. Hat länger gedauert als gedacht.

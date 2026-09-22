@@ -1,0 +1,12 @@
+#+TITLE:      Nginx Troubleshooting
+#+DATE:       [2025-07-17 Do 08:07]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :meeting:buch:nextcloud:
+#+IDENTIFIER: 20250717T080726
+
+* Nginx Troubleshooting
+
+Todo: Screenshot ergänzen.
+
+- Nächsten Termin vorgemerkt
+- Ergebnis mit Team geteilt

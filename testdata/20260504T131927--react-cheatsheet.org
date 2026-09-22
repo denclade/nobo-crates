@@ -1,0 +1,12 @@
+#+TITLE:      React Cheatsheet
+#+DATE:       [2026-05-04 Mo 13:19]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260504T131927
+
+* React Cheatsheet
+
+Details stehen noch aus. Hat länger gedauert als gedacht. Nächster Schritt: Ergebnis dokumentieren.
+
+- Dokumentation verlinkt
+- Mit zweitem Gerät getestet
+- Nächsten Termin vorgemerkt

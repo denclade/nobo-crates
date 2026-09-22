@@ -1,0 +1,12 @@
+#+TITLE:      WireGuard Best Practices
+#+DATE:       [2025-11-29 Sa 05:28]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20251129T052851
+
+* WireGuard Best Practices
+
+Nächster Schritt: Ergebnis dokumentieren. Ein Blick zurück lohnt sich hier. Kurzes Fazit nach dem ersten Test.
+
+- Ergebnis mit Team geteilt
+- Dokumentation verlinkt
+- Config-Datei gesichert

@@ -1,0 +1,9 @@
+#+TITLE:      Familie Arzttermin notiert
+#+DATE:       [2024-04-21 So 05:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :pbs:python:
+#+IDENTIFIER: 20240421T052534
+
+* Familie Arzttermin notiert
+
+Siehe auch die letzte Notiz zu diesem Thema.

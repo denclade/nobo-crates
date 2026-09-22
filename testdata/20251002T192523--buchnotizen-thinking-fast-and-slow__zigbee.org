@@ -1,0 +1,9 @@
+#+TITLE:      Buchnotizen: Thinking Fast and Slow
+#+DATE:       [2025-10-02 Do 19:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zigbee:
+#+IDENTIFIER: 20251002T192523
+
+* Buchnotizen: Thinking Fast and Slow
+
+Siehe auch die letzte Notiz zu diesem Thema.

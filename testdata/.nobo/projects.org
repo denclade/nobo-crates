@@ -1,0 +1,246 @@
+* TODO nobo V2 - Offline First Architektur [45%]                       :dev:project:
+:PROPERTIES:
+:CATEGORY: dencla
+:CREATED: [2026-06-15 Mon 09:00]
+:LAST_ACTIVITY: 2026-08-21 Fri 11:30
+:ORDERED: t
+:TRIGGER: next-sibling todo!(NEXT)
+:UPDATED: 2026-08-21 Fri 11:30
+:END:
+** DONE Evaluierung lokaler Datenbanken (SQLite vs. IndexedDB)
+CLOSED: [2026-07-02 Thu 16:45] SCHEDULED: <2026-07-01 Wed>
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-07-02 Thu 16:45
+:UPDATED: 2026-07-02 Thu 16:45
+:CUSTOM_ID: h:f8e9102c-4b3a-4912-9c1a-8f1234567890
+:END:
+:LOGBOOK:
+CLOCK: [2026-07-02 Thu 14:00]--[2026-07-02 Thu 16:30] =>  2:30
+CLOCK: [2026-07-01 Wed 09:00]--[2026-07-01 Wed 11:15] =>  2:15
+- State "DONE        " from "IN-PROGRESS " [2026-07-02 Thu 16:45]
+- State "IN-PROGRESS " from "NEXT        " [2026-07-01 Wed 09:00]
+- State "NEXT        " from "TODO        " [2026-06-20 Sat 10:12]
+:END:
+Fazit der Evaluierung:
+Wir gehen mit SQLite via WASM (op-sqlite oder wa-sqlite), da IndexedDB bei tiefen Org-Bäumen und Volltextsuche extrem in die Knie geht. SQLite erlaubt uns echtes ACID und saubere JOINs für die Tag-Suche.
+** DONE CRDTs für konfliktfreien Sync einbauen
+CLOSED: [2026-08-10 Mon 18:22]
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-10 Mon 18:22
+:UPDATED: 2026-08-10 Mon 18:22
+:END:
+:LOGBOOK:
+- State "DONE        " from "IN-PROGRESS " [2026-08-10 Mon 18:22]
+- State "IN-PROGRESS " from "TODO        " [2026-08-05 Wed 09:10]
+:END:
+** IN-PROGRESS UI State Management Refactoring
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-21 Fri 10:15
+:UPDATED: 2026-08-21 Fri 10:15
+:END:
+:LOGBOOK:
+CLOCK: [2026-08-21 Fri 08:30]--[2026-08-21 Fri 10:15] =>  1:45
+- State "IN-PROGRESS " from "NEXT        " [2026-08-21 Fri 08:30]
+- State "NEXT        " from "TODO        " [2026-08-19 Wed 14:20]
+:END:
+Aktuell haben wir zu viele Re-Renders in der Sidebar, wenn sich nur tief drinnen im Projektbaum ein Status ändert.
+Lösungsidee: SolidJS Stores feingranularer aufsplitten. Nicht den ganzen AST in einen Store werfen!
+*** DONE Store Architektur skizzieren
+CLOSED: [2026-08-20 Thu 17:00]
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-20 Thu 17:00
+:UPDATED: 2026-08-20 Thu 17:00
+:END:
+:LOGBOOK:
+- State "DONE        " from "IN-PROGRESS " [2026-08-20 Thu 17:00]
+:END:
+*** NEXT Tree-Rendering virtualisieren (tanstack-virtual)
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-21 Fri 08:35
+:UPDATED: 2026-08-21 Fri 08:35
+:END:
+:LOGBOOK:
+- State "NEXT        " from "TODO        " [2026-08-21 Fri 08:35]
+:END:
+** WONT-DO Electron Support hinzufügen
+CLOSED: [2026-08-15 Sat 11:11]
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-15 Sat 11:11
+:UPDATED: 2026-08-15 Sat 11:11
+:END:
+:LOGBOOK:
+- State "WONT-DO     " from "TODO        " [2026-08-15 Sat 11:11]
+:END:
+Entscheidung: Tauri v2 ist performant genug und das Binary ist winzig. Electron frisst zu viel RAM und verkompliziert den Build-Prozess unnötig. Wir bleiben exklusiv bei Tauri für den Desktop.
+** TODO Conflict Resolution UI entwerfen
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-12 Wed 08:00
+:UPDATED: 2026-08-12 Wed 08:00
+:END:
+Wenn der automatische 3-Way-Merge fehlschlägt (z.B. gleicher Paragraph komplett unterschiedlich editiert), brauchen wir ein sauberes Fallback-UI auf Mobile.
+1. Diff View (Left/Right)
+2. Swipe to keep Left or Right
+3. Manual Edit Button
+
+* NEXT Schuljahr 26/27 Vorbereitung [20%]                               :Schule:project:
+:PROPERTIES:
+:CATEGORY: Schule
+:CREATED: [2026-08-01 Sat 12:00]
+:LAST_ACTIVITY: 2026-08-21 Fri 09:00
+:UPDATED: 2026-08-21 Fri 09:00
+:END:
+** DONE Stoffverteilungspläne Klasse 9 & 10 aktualisieren
+CLOSED: [2026-08-18 Tue 14:30]
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-18 Tue 14:30
+:UPDATED: 2026-08-18 Tue 14:30
+:END:
+:LOGBOOK:
+CLOCK: [2026-08-18 Tue 12:00]--[2026-08-18 Tue 14:30] =>  2:30
+- State "DONE        " from "IN-PROGRESS " [2026-08-18 Tue 14:30]
+:END:
+** NEXT Neues Modul: "KI im Alltag" für Klasse 10 ausarbeiten
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-21 Fri 09:00
+:UPDATED: 2026-08-21 Fri 09:00
+:END:
+:LOGBOOK:
+- State "NEXT        " from "TODO        " [2026-08-21 Fri 09:00]
+:END:
+Fokus nicht nur auf "Wie benutze ich ChatGPT", sondern:
+- Halluzinationen und Faktenprüfung (RAG vereinfacht erklären)
+- Datenschutz: Was passiert mit meinen Prompts?
+- Bias in Trainingsdaten (Beispiel Bewerbungs-KI)
+*** TODO Arbeitsblatt Bias erstellen
+*** TODO Praktische Übung Prompting entwerfen
+** TODO Elternbrief Vorlagen updaten (Neues Schulgesetz)
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-05 Wed 10:00
+:UPDATED: 2026-08-05 Wed 10:00
+:END:
+** TODO Fachschaftssitzung Informatik vorbereiten
+SCHEDULED: <2026-09-10 Thu 14:00>
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-20 Thu 11:20
+:UPDATED: 2026-08-20 Thu 11:20
+:END:
+Agenda:
+- Budgetplanung Hardware (Raspberry Pi 5?)
+- Einheitliche IDE für Python (Thonny vs. VS Code)
+
+* IN-PROGRESS Umbau Büro / Arbeitszimmer [75%]                          :private:project:
+:PROPERTIES:
+:CATEGORY: Privat
+:CREATED: [2026-07-20 Mon 18:30]
+:LAST_ACTIVITY: 2026-08-20 Thu 20:00
+:UPDATED: 2026-08-20 Thu 20:00
+:END:
+** DONE Alten Schreibtisch abbauen und verkaufen
+CLOSED: [2026-08-02 Sun 14:00]
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-02 Sun 14:00
+:UPDATED: 2026-08-02 Sun 14:00
+:END:
+:LOGBOOK:
+- State "DONE        " from "TODO        " [2026-08-02 Sun 14:00]
+:END:
+Hat über Kleinanzeigen gut geklappt.
+** DONE Wände neu streichen (Weiß & Akzentwand Blau)
+CLOSED: [2026-08-10 Mon 19:00]
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-10 Mon 19:00
+:UPDATED: 2026-08-10 Mon 19:00
+:CUSTOM_ID: h:a1b2c3d4-e5f6-7890-abcd-ef1234567890
+:END:
+:LOGBOOK:
+CLOCK: [2026-08-09 Sun 09:00]--[2026-08-09 Sun 15:30] =>  6:30
+CLOCK: [2026-08-08 Sat 10:00]--[2026-08-08 Sat 18:00] =>  8:00
+- State "DONE        " from "IN-PROGRESS " [2026-08-10 Mon 19:00]
+- State "IN-PROGRESS " from "NEXT        " [2026-08-08 Sat 09:30]
+:END:
+** DONE Neuen Höhenverstellbaren Schreibtisch aufbauen
+CLOSED: [2026-08-15 Sat 13:45]
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-15 Sat 13:45
+:UPDATED: 2026-08-15 Sat 13:45
+:END:
+:LOGBOOK:
+- State "DONE        " from "IN-PROGRESS " [2026-08-15 Sat 13:45]
+- State "IN-PROGRESS " from "TODO        " [2026-08-15 Sat 10:00]
+:END:
+** IN-PROGRESS Kabelmanagement unter dem Tisch
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-20 Thu 20:00
+:UPDATED: 2026-08-20 Thu 20:00
+:END:
+:LOGBOOK:
+- State "IN-PROGRESS " from "NEXT        " [2026-08-20 Thu 19:00]
+- State "NEXT        " from "TODO        " [2026-08-18 Tue 21:00]
+:END:
+Brauche noch mehr Klettverschlüsse. Netzteil-Halterung von Ikea hält erstaunlich gut, aber die USB-C Hub Kabel sind zu kurz.
+** TODO Monitorarm montieren und justieren
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-07-20 Mon 18:30
+:UPDATED: 2026-07-20 Mon 18:30
+:END:
+
+* TODO Routinen & Wartung [0%]                                          :routine:
+:PROPERTIES:
+:CATEGORY: Orga
+:CREATED: [2026-01-01 Thu 12:00]
+:LAST_ACTIVITY: 2026-08-15 Sat 10:00
+:UPDATED: 2026-08-15 Sat 10:00
+:END:
+** TODO Server Backups prüfen (NAS)
+SCHEDULED: <2026-08-28 Fri +1m>
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-15 Sat 10:00
+:UPDATED: 2026-08-15 Sat 10:00
+:END:
+:LOGBOOK:
+- State "DONE        " from "TODO        " [2026-07-28 Tue 09:00]
+- State "DONE        " from "TODO        " [2026-06-28 Sun 11:30]
+:END:
+Das ist ein Beispiel für den strikten Org-Mode Repeater (+1m). Er wandert jeden Monat weiter, ohne den Ast komplett neu zu generieren.
+
+* NEXT UX Pattern Library aufbauen [20%]                                :dev:design:
+:PROPERTIES:
+:CATEGORY: dencla
+:LAST_ACTIVITY: 2026-08-21 Fri 11:45
+:UPDATED: 2026-08-21 Fri 11:45
+:END:
+Diese Notiz dient als Sammelbecken für UI/UX Entscheidungen, die in nobo V2 getroffen wurden, damit das Verhalten im gesamten System konsistent bleibt.
+
+** DONE Pattern: Formulare auf Mobile Devices
+CLOSED: [2026-08-20 Thu 09:22]
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-20 Thu 09:22
+:UPDATED: 2026-08-20 Thu 09:22
+:END:
+:LOGBOOK:
+- State "DONE        " from "IN-PROGRESS " [2026-08-20 Thu 09:22]
+:END:
+Wenn ein Formular (z.B. Projekt-Details bearbeiten) länger als der Viewport ist:
+- Niemals den "Speichern" Button ganz ans Ende der Seite scrollen lassen.
+- Besser: Floating Action Button (FAB) oder Header-Action-Bar verwenden.
+- Autosave implementieren, wo es keine destruktiven Nebeneffekte hat.
+** NEXT Pattern: Focus-Mode Editor
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-21 Fri 11:45
+:UPDATED: 2026-08-21 Fri 11:45
+:END:
+:LOGBOOK:
+- State "NEXT        " from "TODO        " [2026-08-21 Fri 11:45]
+:END:
+Sobald ein Textfeld angetippt wird (insbesondere Description von Tasks), sollte die UI in einen Focus-Mode schalten.
+- Header wird minimal (nur "Zurück" / "Fertig").
+- Keine anderen ablenkenden Buttons.
+- Tastatur darf keine Speichern-Buttons verdecken.
+** TODO Pattern: Gestensteuerung (Swipe Actions)
+:PROPERTIES:
+:LAST_ACTIVITY: 2026-08-19 Wed 10:00
+:UPDATED: 2026-08-19 Wed 10:00
+:END:
+- Swipe Right: Complete (Status -> DONE)
+- Swipe Left: Menu / Delete (Öffnet Kontext-Aktionen)
+- Langes Drücken: Multi-Select Mode aktivieren (Haptisches Feedback wichtig!)

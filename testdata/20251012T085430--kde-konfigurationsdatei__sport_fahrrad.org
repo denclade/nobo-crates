@@ -1,0 +1,9 @@
+#+TITLE:      KDE Konfigurationsdatei
+#+DATE:       [2025-10-12 So 08:54]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sport:fahrrad:
+#+IDENTIFIER: 20251012T085430
+
+* KDE Konfigurationsdatei
+
+Noch offen: genaue Details klären. Referenz für später aufgehoben.

@@ -1,0 +1,8 @@
+#+TITLE:      Sway Best Practices
+#+DATE:       [2024-11-08 Fr 19:59]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20241108T195914
+
+* Sway Best Practices
+
+Klingt nach einer guten Idee für nächste Woche. Siehe auch die letzte Notiz zu diesem Thema.

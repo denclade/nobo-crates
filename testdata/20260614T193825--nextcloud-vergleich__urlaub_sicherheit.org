@@ -1,0 +1,13 @@
+#+TITLE:      Nextcloud Vergleich
+#+DATE:       [2026-06-14 So 19:38]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :urlaub:sicherheit:
+#+IDENTIFIER: 20260614T193825
+
+* Nextcloud Vergleich
+
+Noch offen: genaue Details klären. Todo: Screenshot ergänzen. Klingt nach einer guten Idee für nächste Woche.
+
+- Dokumentation verlinkt
+- Nächsten Termin vorgemerkt
+- Logs geprüft

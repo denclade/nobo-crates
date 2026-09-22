@@ -1,0 +1,9 @@
+#+TITLE:      React Migration
+#+DATE:       [2025-11-24 Mo 05:44]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:python:
+#+IDENTIFIER: 20251124T054455
+
+* React Migration
+
+Referenz für später aufgehoben. Muss ich nochmal genauer testen. Siehe auch die letzte Notiz zu diesem Thema.

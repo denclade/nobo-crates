@@ -1,0 +1,13 @@
+#+TITLE:      WireGuard Absturz analysiert
+#+DATE:       [2024-09-12 Do 15:34]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :auto:
+#+IDENTIFIER: 20240912T153426
+
+* WireGuard Absturz analysiert
+
+Hat länger gedauert als gedacht. Quelle: Gespräch von heute Vormittag. Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+- Config-Datei gesichert
+- Dokumentation verlinkt
+- Nächsten Termin vorgemerkt

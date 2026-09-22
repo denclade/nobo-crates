@@ -1,0 +1,12 @@
+#+TITLE:      KDE Neuinstallation
+#+DATE:       [2024-04-08 Mo 15:33]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arbeit:urlaub:
+#+IDENTIFIER: 20240408T153352
+
+* KDE Neuinstallation
+
+Funktioniert soweit wie erwartet. Noch offen: genaue Details klären. Ergebnis war nicht ganz wie erhofft.
+
+** Weiteres Vorgehen
+Kurz notiert, bevor ich es vergesse.

@@ -1,0 +1,12 @@
+#+TITLE:      Bash Setup
+#+DATE:       [2024-04-28 So 19:11]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240428T191143
+
+* Bash Setup
+
+Siehe auch die letzte Notiz zu diesem Thema. Ergebnis war nicht ganz wie erhofft.
+
+- Screenshot gemacht
+- Nächsten Termin vorgemerkt
+- Ergebnis mit Team geteilt

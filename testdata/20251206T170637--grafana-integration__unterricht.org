@@ -1,0 +1,9 @@
+#+TITLE:      Grafana Integration
+#+DATE:       [2025-12-06 Sa 17:06]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :unterricht:
+#+IDENTIFIER: 20251206T170637
+
+* Grafana Integration
+
+Quelle: Gespräch von heute Vormittag. Klingt nach einer guten Idee für nächste Woche. Muss ich nochmal genauer testen.

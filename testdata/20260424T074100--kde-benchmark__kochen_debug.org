@@ -1,0 +1,12 @@
+#+TITLE:      KDE Benchmark
+#+DATE:       [2026-04-24 Fr 07:41]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :kochen:debug:
+#+IDENTIFIER: 20260424T074100
+
+* KDE Benchmark
+
+Kurzes Fazit nach dem ersten Test.
+
+** Weiteres Vorgehen
+Klingt nach einer guten Idee für nächste Woche.

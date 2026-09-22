@@ -1,0 +1,8 @@
+#+TITLE:      FreeBSD Automatisierung
+#+DATE:       [2025-09-24 Mi 04:34]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250924T043408
+
+* FreeBSD Automatisierung
+
+Auf Nachfrage nochmal nachhaken.

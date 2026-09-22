@@ -1,0 +1,9 @@
+#+TITLE:      Synology NAS Best Practices
+#+DATE:       [2025-02-05 Mi 21:58]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :familie:backup:
+#+IDENTIFIER: 20250205T215815
+
+* Synology NAS Best Practices
+
+Hat länger gedauert als gedacht. Kurz notiert, bevor ich es vergesse. Muss ich nochmal genauer testen.

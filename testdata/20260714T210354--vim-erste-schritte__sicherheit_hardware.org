@@ -1,0 +1,9 @@
+#+TITLE:      Vim erste Schritte
+#+DATE:       [2026-07-14 Di 21:03]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:hardware:
+#+IDENTIFIER: 20260714T210354
+
+* Vim erste Schritte
+
+Siehe auch die letzte Notiz zu diesem Thema.

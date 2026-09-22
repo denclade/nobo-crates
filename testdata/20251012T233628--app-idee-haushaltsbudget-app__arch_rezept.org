@@ -1,0 +1,12 @@
+#+TITLE:      App Idee: Haushaltsbudget App
+#+DATE:       [2025-10-12 So 23:36]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arch:rezept:
+#+IDENTIFIER: 20251012T233628
+
+* App Idee: Haushaltsbudget App
+
+Erster Eindruck ist positiv.
+
+** Weiteres Vorgehen
+Kurz notiert, bevor ich es vergesse.

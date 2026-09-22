@@ -1,0 +1,12 @@
+#+TITLE:      WireGuard Update
+#+DATE:       [2024-03-29 Fr 08:57]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:zigbee:freizeit:
+#+IDENTIFIER: 20240329T085729
+
+* WireGuard Update
+
+Quelle: Gespräch von heute Vormittag. Ein Blick zurück lohnt sich hier.
+
+** Weiteres Vorgehen
+Kurzes Fazit nach dem ersten Test.

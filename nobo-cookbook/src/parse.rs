@@ -1,0 +1,246 @@
+//! Reading recipes out of an org file.
+//!
+//! Only compiled with the `cookbook` feature: without it the app still
+//! knows what a cookbook file IS (see the module next door, which keeps
+//! the file kind registered so a shared vault stays safe), it just does
+//! not read recipes out of one.
+
+use nobo_core::core::models::property_value;
+
+use super::model::{IngredientGroup, Recipe, Sections, StepGroup};
+use super::outline::{self, Node};
+
+/// Section headings that introduce the ingredient list, lowercased. A
+/// trailing colon is tolerated (`** Zutaten:`).
+const INGREDIENT_HEADINGS: &[&str] = &["zutaten", "ingredients"];
+
+/// Section headings that introduce the steps, lowercased.
+const DIRECTION_HEADINGS: &[&str] = &[
+    "zubereitung", "schritte", "anleitung",
+    "directions", "preparation", "instructions", "steps", "method",
+];
+
+use super::ingredients;
+
+/// Property names per field, in the order they are tried. The first is the
+/// one org-chef writes; the rest are what a German user would type.
+/// Matching is case-insensitive (see models::property_value), so
+/// `:servings:` and `:SERVINGS:` are the same key.
+const SERVINGS_KEYS: &[&str] = &["SERVINGS", "PORTIONEN"];
+const PREP_TIME_KEYS: &[&str] = &["PREP-TIME", "VORBEREITUNGSZEIT", "ZUBEREITUNGSZEIT"];
+const COOK_TIME_KEYS: &[&str] = &["COOK-TIME", "KOCHZEIT", "BACKZEIT"];
+const SOURCE_KEYS: &[&str] = &["SOURCE-URL", "QUELLE", "SOURCE"];
+
+/// Every recipe in one cookbook file, in file order.
+pub fn recipes_of(file_path: &str, text: &str) -> Vec<Recipe> {
+    let nodes = outline::read(text);
+    // Once, not once per heading: recipe_level walks the whole outline and
+    // asks children_of about every node, so computing it inside the filter
+    // made a long cookbook quadratically slower for an answer that is the
+    // same every time.
+    let level = recipe_level(&nodes);
+    nodes
+        .iter()
+        .enumerate()
+        .filter(|(index, node)| is_recipe(&nodes, *index, node, level))
+        .map(|(index, node)| build(file_path, &nodes, index, node))
+        .collect()
+}
+
+/// A heading is a recipe when it owns an ingredients or directions
+/// section -- that is the unambiguous case and needs no guessing.
+///
+/// The awkward one is a heading with nothing under it, because an
+/// unstructured recipe (`* Omas Kartoffelsalat`, just prose) and a stray
+/// note in the same file have exactly the same shape. Nothing in the text
+/// tells them apart, so the file's own layout decides: a childless
+/// heading counts as a recipe when it sits at the level the file's real
+/// recipes sit at. In a flat collection that is level 1, so the loose
+/// entry is a recipe; in one grouped by course the recipes are level 2, so
+/// `* Notizen zur Vorratshaltung` next to `* Desserts` is not.
+///
+/// Section headings themselves are never recipes, and neither are the
+/// sub-headings inside them (`*** Für den Teig`) -- those are deeper than
+/// the recipe level.
+fn is_recipe(flat: &[Node], index: usize, heading: &Node, recipe_level: usize) -> bool {
+    if section_of(heading).is_some() {
+        return false;
+    }
+    // One pass over the children, answering both questions it is asked:
+    // does it own a section (then it is a recipe), and does it have any
+    // children at all (a childless one is judged by its level instead).
+    let mut childless = true;
+    for (_, child) in children_of(flat, index, heading.level) {
+        childless = false;
+        if section_of(child).is_some() {
+            return true;
+        }
+    }
+    childless && heading.level == recipe_level
+}
+
+/// The level this file keeps its recipes at: the shallowest heading that
+/// owns a section. A file with no structured recipe at all has none to go
+/// by, and falls back to its shallowest heading.
+fn recipe_level(flat: &[Node]) -> usize {
+    flat.iter()
+        .enumerate()
+        .filter(|(index, node)| children_of(flat, *index, node.level).any(|(_, child)| section_of(child).is_some()))
+        .map(|(_, node)| node.level)
+        .min()
+        .or_else(|| flat.iter().map(|node| node.level).min())
+        .unwrap_or(1)
+}
+
+fn build(file_path: &str, flat: &[Node], index: usize, heading: &Node) -> Recipe {
+    let mut ingredients = Vec::new();
+    let mut steps = Vec::new();
+    let mut structured = false;
+
+    for (child_index, child) in children_of(flat, index, heading.level) {
+        match section_of(child) {
+            Some(Section::Ingredients) => {
+                structured = true;
+                ingredients = groups_of(flat, child_index, child, |lines| {
+                    lines.iter().map(|line| ingredients::parse(line)).collect()
+                })
+                .into_iter()
+                .map(|(title, items)| IngredientGroup { title, items })
+                .collect();
+            }
+            Some(Section::Directions) => {
+                structured = true;
+                steps = groups_of(flat, child_index, child, |lines| lines.to_vec())
+                    .into_iter()
+                    .map(|(title, steps)| StepGroup { title, steps })
+                    .collect();
+            }
+            None => {}
+        }
+    }
+
+    Recipe {
+        file_path: file_path.to_string(),
+        line_no: heading.line_no,
+        custom_id: property_value(&heading.properties, "CUSTOM_ID").map(str::to_string),
+        title: heading.title.clone(),
+        tags: heading.tags.clone(),
+        categories: ancestor_titles(flat, index, heading.level),
+        servings: first_property(heading, SERVINGS_KEYS),
+        prep_time: first_property(heading, PREP_TIME_KEYS),
+        cook_time: first_property(heading, COOK_TIME_KEYS),
+        source_url: first_property(heading, SOURCE_KEYS),
+        intro: heading.content.trim().to_string(),
+        sections: structured.then_some(Sections { ingredients, steps }),
+    }
+}
+
+enum Section {
+    Ingredients,
+    Directions,
+}
+
+fn section_of(heading: &Node) -> Option<Section> {
+    let title = heading.title.trim().trim_end_matches(':').to_lowercase();
+    if INGREDIENT_HEADINGS.contains(&title.as_str()) {
+        Some(Section::Ingredients)
+    } else if DIRECTION_HEADINGS.contains(&title.as_str()) {
+        Some(Section::Directions)
+    } else {
+        None
+    }
+}
+
+/// A section's content, split into the ungrouped part and one group per
+/// sub-heading (`*** Für den Teig`).
+fn groups_of<T>(
+    flat: &[Node],
+    index: usize,
+    section: &Node,
+    convert: impl Fn(&[String]) -> Vec<T>,
+) -> Vec<(Option<String>, Vec<T>)> {
+    let mut groups = Vec::new();
+    let direct = list_lines(&section.content);
+    if !direct.is_empty() {
+        groups.push((None, convert(&direct)));
+    }
+    for (_, child) in children_of(flat, index, section.level) {
+        let lines = list_lines(&child.content);
+        if !lines.is_empty() {
+            groups.push((Some(child.title.clone()), convert(&lines)));
+        }
+    }
+    groups
+}
+
+/// The list items in a section body, with their markers removed. Anything
+/// that is not a list item (a stray sentence between the steps) is kept as
+/// its own line -- dropping content is worse than showing an unnumbered
+/// line.
+fn list_lines(content: &str) -> Vec<String> {
+    content
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(|line| strip_marker(line).to_string())
+        .collect()
+}
+
+fn strip_marker(line: &str) -> &str {
+    if let Some(rest) = line.strip_prefix("- ").or_else(|| line.strip_prefix("+ ")) {
+        return rest.trim_start();
+    }
+    // "1." / "1)" -- an ordered list, which is what steps normally are.
+    let digits: String = line.chars().take_while(char::is_ascii_digit).collect();
+    if !digits.is_empty() {
+        let rest = &line[digits.len()..];
+        if let Some(rest) = rest.strip_prefix('.').or_else(|| rest.strip_prefix(')')) {
+            return rest.trim_start();
+        }
+    }
+    line
+}
+
+/// The headings directly below INDEX, i.e. its own children -- not its
+/// grandchildren, and stopping where the subtree ends.
+fn children_of(
+    flat: &[Node],
+    index: usize,
+    level: usize,
+) -> impl Iterator<Item = (usize, &Node)> {
+    flat.iter()
+        .enumerate()
+        .skip(index + 1)
+        .take_while(move |(_, heading)| heading.level > level)
+        .filter(move |(_, heading)| heading.level == level + 1)
+}
+
+/// The titles of the headings this one sits under, outermost first.
+fn ancestor_titles(flat: &[Node], index: usize, level: usize) -> Vec<String> {
+    let mut wanted = level;
+    let mut titles: Vec<String> = flat[..index]
+        .iter()
+        .rev()
+        .filter(|heading| {
+            let is_ancestor = heading.level < wanted;
+            if is_ancestor {
+                wanted = heading.level;
+            }
+            is_ancestor
+        })
+        .map(|heading| heading.title.clone())
+        .collect();
+    titles.reverse();
+    titles
+}
+
+fn first_property(heading: &Node, keys: &[&str]) -> Option<String> {
+    keys.iter()
+        .find_map(|key| property_value(&heading.properties, key))
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+}
+
+#[cfg(test)]
+#[path = "tests.rs"]
+mod tests;

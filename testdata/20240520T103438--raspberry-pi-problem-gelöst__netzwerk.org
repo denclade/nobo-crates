@@ -1,0 +1,12 @@
+#+TITLE:      Raspberry Pi Problem gelöst
+#+DATE:       [2024-05-20 Mo 10:34]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :netzwerk:
+#+IDENTIFIER: 20240520T103438
+
+* Raspberry Pi Problem gelöst
+
+Klingt nach einer guten Idee für nächste Woche. Erster Eindruck ist positiv. War einfacher als erwartet.
+
+- Mit zweitem Gerät getestet
+- Dokumentation verlinkt

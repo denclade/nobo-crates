@@ -1,0 +1,12 @@
+#+TITLE:      VPN Update
+#+DATE:       [2025-03-14 Fr 11:28]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :homeautomation:
+#+IDENTIFIER: 20250314T112808
+
+* VPN Update
+
+Ergebnis war nicht ganz wie erhofft. War einfacher als erwartet. Kurz notiert, bevor ich es vergesse.
+
+** Weiteres Vorgehen
+Funktioniert soweit wie erwartet.

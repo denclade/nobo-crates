@@ -1,0 +1,512 @@
+//! The one place a heading is written.
+//!
+//! Every heading-mutating command used to spell the same sequence out for
+//! itself: parse the file from disk, resolve the target by identity,
+//! clone the heading, capture its ancestors, build a block, splice it in
+//! at `line_no - 1 .. last_line`, touch the ancestors, refresh the index.
+//! A dozen call sites, a dozen copies, and the parts that were already
+//! centralised were only centralised where somebody remembered to call
+//! them -- `replace_heading_block` exists precisely to own that
+//! `line_no - 1`, and the app's own main edit path did the arithmetic
+//! itself anyway.
+//!
+//! This makes the sequence the thing you call:
+//!
+//! ```ignore
+//! let mut edit = heading_utils::open_edit(&path, &target, &crate::core::errors::subject::heading())?;
+//! let block = heading_utils::build_org_heading_block(edit.heading(), &payload);
+//! edit.replace(block)?;
+//! edit.touch_ancestors()?;
+//! edit.commit()?;
+//! ```
+//!
+//! Three properties fall out of that shape rather than out of discipline:
+//!
+//! - **One read.** The lines a block is spliced INTO are the same lines
+//!   the heading's position was parsed FROM. Previously `parse_from_disk`
+//!   read the file and `splice_lines` read it again, and in between a
+//!   sync pull, a CalDAV pull or another editor could insert lines above
+//!   the heading -- the range still fit, so nothing complained, and the
+//!   block landed that many lines too high. `read_and_parse` was written
+//!   to close exactly this window and only the batch paths ever used it.
+//!
+//! - **One write.** Everything happens in memory and lands in a single
+//!   `write_lines`. `touch_ancestors` used to write the whole file once
+//!   per ancestor; a subtask three levels deep meant four full rewrites,
+//!   each one an atomic write with its own fsync.
+//!
+//! - **One conversion.** `block_range` is the only code that turns a
+//!   1-based `line_no`/`last_line` into a 0-based half-open range, and it
+//!   refuses a range that no longer fits instead of trimming it to size.
+//!
+//! What this deliberately does NOT do is decide policy. It has no opinion
+//! on history snapshots, triggers, repeat handling or the index -- those
+//! differ per command and stay at the call site. It owns finding the
+//! region and writing it, nothing else.
+
+use super::batch::block_range;
+use super::serialize::{build_org_heading_block, read_and_parse, touch_last_activity};
+use super::tree::{ancestors_of, find_subtree_end_line, subtree_line_range};
+use crate::core::heading_identity;
+use crate::core::models::{Heading, HeadingTarget, HeadingUpdatePayload};
+use crate::core::org_parser;
+use crate::utils::fs_utils;
+use std::path::{Path, PathBuf};
+
+/// One file, read once: its lines, the headings parsed from exactly those
+/// lines, and the index of the one this edit is aimed at.
+///
+/// Mutations are applied to `lines` and nothing reaches disk until
+/// `commit`. `flat` keeps describing the file as it was READ -- which is
+/// what the ancestor touches want, since every ancestor's own block sits
+/// strictly above the edited heading and so keeps its position no matter
+/// how the edit below it changes the line count.
+pub struct HeadingEdit {
+    path: PathBuf,
+    lines: Vec<String>,
+    flat: Vec<Heading>,
+    idx: usize,
+    /// What the file looked like when it was read, so `commit` can tell
+    /// whether anything landed in it since -- see `commit`.
+    read_as: Fingerprint,
+    /// Set by the first structural mutation. A second one would be
+    /// computing its range from `flat`, which the first has just made
+    /// stale -- see `refuse_second_mutation`.
+    mutated: bool,
+}
+
+/// Line count plus a hash of the lines. Enough to catch another writer,
+/// and far cheaper than keeping a second copy of the file around for the
+/// length of an edit.
+type Fingerprint = (usize, u64);
+
+fn fingerprint(lines: &[String]) -> Fingerprint {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    lines.hash(&mut hasher);
+    (lines.len(), hasher.finish())
+}
+
+/// Reads PATH, finds the heading TARGET names, and hands back an edit
+/// positioned on it.
+///
+/// The target is resolved by identity, never by line number alone (see
+/// `heading_identity::resolve_target`): a CUSTOM_ID first, a unique title
+/// where there is no id, and the caller's line number only once the
+/// heading actually sitting there proves to be the one meant.
+///
+/// The file's declared kind is checked here rather than at `commit`, so a
+/// generated mirror is refused before the caller does any work -- and on
+/// the lines just read, which are the file as it IS. Checking the lines
+/// about to be WRITTEN would let a write that removes the `#+NOBO_TYPE:`
+/// declaration through, which is the exact write this refuses.
+///
+/// SUBJECT names the thing in the error the user reads ("Überschrift",
+/// "Übergeordnete Überschrift", "Quell-Überschrift", &crate::core::errors::subject::target_heading()).
+pub fn open_edit(path: &Path, target: &HeadingTarget, subject: &str) -> Result<HeadingEdit, String> {
+    let (lines, flat) = read_and_parse(path)?;
+    fs_utils::refuse_unwritable_kind_of(&lines).map_err(|e| e.to_string())?;
+    let idx = heading_identity::resolve_target(&flat, target, subject)?;
+    let read_as = fingerprint(&lines);
+    Ok(HeadingEdit { path: path.to_path_buf(), lines, flat, idx, read_as, mutated: false })
+}
+
+impl HeadingEdit {
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    /// The heading being edited, as it is on disk right now.
+    pub fn heading(&self) -> &Heading {
+        &self.flat[self.idx]
+    }
+
+    /// Every heading in the file, from the same read -- for the callers
+    /// that need context around the target (a level to derive, a subtree
+    /// end to find).
+    pub fn flat(&self) -> &[Heading] {
+        &self.flat
+    }
+
+    pub fn idx(&self) -> usize {
+        self.idx
+    }
+
+    /// The enclosing headings, nearest first.
+    pub fn ancestors(&self) -> Vec<Heading> {
+        ancestors_of(&self.flat, self.idx)
+    }
+
+    /// Replaces the heading's own block -- its heading line, drawers and
+    /// body, but not its children.
+    pub fn replace(&mut self, block: Vec<String>) -> Result<(), String> {
+        self.refuse_second_mutation()?;
+        let heading = self.flat[self.idx].clone();
+        self.splice(heading.line_no, heading.last_line, block, &heading.title)
+    }
+
+    /// The same, with the block built from PAYLOAD -- the ordinary edit.
+    pub fn write(&mut self, payload: &HeadingUpdatePayload) -> Result<(), String> {
+        let block = build_org_heading_block(self.heading(), payload);
+        self.replace(block)
+    }
+
+    /// Removes the heading and everything under it.
+    pub fn delete_subtree(&mut self) -> Result<(), String> {
+        self.refuse_second_mutation()?;
+        let title = self.flat[self.idx].title.clone();
+        let (start_line, end_line) = subtree_line_range(&self.flat, self.idx);
+        self.splice(start_line, end_line, Vec::new(), &title)
+    }
+
+    /// Puts NEW_LINES directly above the heading -- where a restored
+    /// sibling goes back.
+    pub fn insert_before(&mut self, new_lines: Vec<String>) -> Result<(), String> {
+        self.refuse_second_mutation()?;
+        let heading = &self.flat[self.idx];
+        if heading.line_no == 0 || heading.line_no > self.lines.len() + 1 {
+            return Err(crate::t!(
+                "\"{}\" liegt nicht mehr auf Zeile {} (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.", "\"{}\" is no longer at line {} (the file has {}) -- it has changed since, please reload.",
+                heading.title,
+                heading.line_no,
+                self.lines.len()
+            ));
+        }
+        let at = heading.line_no - 1;
+        self.lines.splice(at..at, new_lines);
+        self.mutated = true;
+        Ok(())
+    }
+
+    /// Puts NEW_LINES directly after the heading's whole subtree -- where
+    /// a new child belongs.
+    pub fn insert_after_subtree(&mut self, new_lines: Vec<String>) -> Result<(), String> {
+        self.refuse_second_mutation()?;
+        let after = find_subtree_end_line(&self.flat, self.idx);
+        if after > self.lines.len() {
+            return Err(crate::t!(
+                "\"{}\" endet nicht mehr auf Zeile {after} (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.", "\"{}\" no longer ends at line {after} (the file has {}) -- it has changed since, please reload.",
+                self.flat[self.idx].title,
+                self.lines.len()
+            ));
+        }
+        self.lines.splice(after..after, new_lines);
+        self.mutated = true;
+        Ok(())
+    }
+
+    /// Bumps LAST_ACTIVITY on every enclosing heading, so finishing a
+    /// subtask surfaces its project under "sort by last activity".
+    ///
+    /// Call after the primary mutation: the progress cookies are re-read
+    /// from the lines as they then are, which is the change being reacted
+    /// to.
+    pub fn touch_ancestors(&mut self) -> Result<(), String> {
+        let chain = self.ancestors();
+        self.touch(chain)
+    }
+
+    /// The same, including the heading itself -- for a new child, where
+    /// the heading in hand is the parent rather than the thing edited.
+    pub fn touch_self_and_ancestors(&mut self) -> Result<(), String> {
+        let mut chain = vec![self.flat[self.idx].clone()];
+        chain.extend(self.ancestors());
+        self.touch(chain)
+    }
+
+    /// Writes the file, once -- unless somebody else got there first.
+    ///
+    /// Splicing in memory and writing the whole file back is what buys the
+    /// single read; it also means the write carries every line, including
+    /// the ones nobody edited. So a sync pull, a CalDAV pull or another
+    /// editor landing between `open_edit` and here would be overwritten
+    /// wholesale rather than merged. Re-reading and comparing turns that
+    /// into a refusal the user can act on ("bitte neu laden") instead of a
+    /// silent loss.
+    ///
+    /// Not a lock: another writer could still land between this read and
+    /// the rename below. It closes the window that lasts as long as the
+    /// caller's own work -- building a block, stamping an id, walking an
+    /// ancestor chain -- and leaves only the one inside a single function,
+    /// which is the same one every other write in the app has. Same shape
+    /// as sync's own `local_matches_diff_snapshot`.
+    ///
+    /// The re-read doubles as the write guard's look at the file, so this
+    /// opens it once, not twice (see `fs_utils::write_checked`).
+    pub fn commit(self) -> Result<(), String> {
+        let current = fs_utils::read_lines(&self.path).map_err(|e| e.to_string())?;
+        if fingerprint(&current) != self.read_as {
+            return Err(crate::t!(
+                "\"{}\" wurde während der Bearbeitung von außen geändert -- die Änderung wurde nicht gespeichert, bitte neu laden.", "\"{}\" was changed from outside while it was being edited -- the change was not saved, please reload.",
+                self.path.display()
+            ));
+        }
+        fs_utils::refuse_unwritable_kind_of(&current).map_err(|e| e.to_string())?;
+        fs_utils::write_checked(&self.path, &self.lines).map_err(|e| e.to_string())
+    }
+
+    /// Applied nearest first: touching a shallower ancestor can change its
+    /// line count, and the rest of the chain sits strictly above that
+    /// point, so their captured positions survive.
+    fn touch(&mut self, chain: Vec<Heading>) -> Result<(), String> {
+        if chain.is_empty() {
+            return Ok(());
+        }
+
+        // `chain` was captured before the primary mutation, so its
+        // progress stats are stale by exactly what this is reacting to.
+        // Re-parsing the lines in hand gives each `[N%]` a current value
+        // without touching the disk. Line numbers are unchanged between
+        // the two parses for everything above the edit, so matching by
+        // line_no is safe.
+        let fresh = org_parser::parse_headings_from_lines(&self.path, &self.lines);
+
+        for mut ancestor in chain {
+            ancestor.progress_stats =
+                fresh.iter().find(|h| h.line_no == ancestor.line_no).and_then(|h| h.progress_stats);
+            let block = touch_last_activity(&ancestor);
+            self.splice(ancestor.line_no, ancestor.last_line, block, &ancestor.title)?;
+        }
+        Ok(())
+    }
+
+    /// The one conversion from a heading's 1-based, inclusive line range
+    /// to the 0-based, half-open one a splice wants -- and the one place
+    /// that range is checked against the lines actually in hand.
+    fn splice(&mut self, line_no: usize, last_line: usize, block: Vec<String>, title: &str) -> Result<(), String> {
+        let (start, end) = block_range(&self.lines, line_no, last_line, title)?;
+        self.lines.splice(start..end, block);
+        self.mutated = true;
+        Ok(())
+    }
+
+    /// A second structural mutation would take its range from `flat`,
+    /// which the first one has just invalidated -- and splicing a stale
+    /// range writes over whatever moved into it. A caller that needs two
+    /// edits in one file wants `apply_bulk_update`, which resolves them
+    /// all against one parse and applies them in a safe order.
+    fn refuse_second_mutation(&self) -> Result<(), String> {
+        if self.mutated {
+            return Err(crate::t!(
+                "{}: zweite Änderung an derselben Datei in einem Vorgang -- die Zeilennummern der ersten sind dadurch überholt.", "{}: a second change to the same file in one operation -- the first has made its line numbers stale.",
+                self.path.display()
+            ));
+        }
+        Ok(())
+    }
+}
+
+/// A target that names nothing but a line -- for the callers that restore
+/// a recorded position rather than follow a heading's identity (see
+/// `history::restore`). `resolve_target` gives this the plain
+/// line-number behaviour, and refuses when no heading sits there.
+pub fn target_at_line(line_no: usize) -> HeadingTarget {
+    HeadingTarget { line_no, custom_id: None, title: None }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::file_kind::{FileKind, FileKindSpec, StateSupport};
+    use tempfile::TempDir;
+
+    const TWO_HEADINGS: &str = concat!(
+        "* TODO Erste\n",
+        ":PROPERTIES:\n",
+        ":CUSTOM_ID: h:eins\n",
+        ":END:\n",
+        "* TODO Zweite\n",
+        ":PROPERTIES:\n",
+        ":CUSTOM_ID: h:zwei\n",
+        ":END:\n",
+    );
+
+    const PROJECT: &str = concat!(
+        "* Projekt                                                          :project:\n",
+        "** Gruppe\n",
+        ":PROPERTIES:\n",
+        ":CUSTOM_ID: h:gruppe\n",
+        ":END:\n",
+        "*** TODO Aufgabe A\n",
+        "*** TODO Aufgabe B\n",
+    );
+
+    fn write(dir: &TempDir, name: &str, content: &str) -> PathBuf {
+        let path = dir.path().join(name);
+        std::fs::write(&path, content).unwrap();
+        path
+    }
+
+    fn renamed(title: &str) -> HeadingUpdatePayload {
+        HeadingUpdatePayload { title: Some(title.to_string()), ..Default::default() }
+    }
+
+    /// The identity gate, seen from the outside: the caller's line number
+    /// is stale (it points at the FIRST heading), and the write still
+    /// lands on the one its CUSTOM_ID names.
+    #[test]
+    fn an_edit_follows_the_heading_rather_than_the_line_it_was_last_seen_on() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "notizen.org", TWO_HEADINGS);
+        let stale = HeadingTarget { line_no: 1, custom_id: Some("h:zwei".into()), title: Some("Zweite".into()) };
+
+        let mut edit = open_edit(&path, &stale, &crate::core::errors::subject::heading()).unwrap();
+        edit.write(&renamed("Zweite umbenannt")).unwrap();
+        edit.commit().unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(text.contains("* TODO Zweite umbenannt"), "{text}");
+        assert!(text.contains("* TODO Erste"), "the heading on the stale line was not touched:\n{text}");
+    }
+
+    /// The price of splicing in memory and writing the whole file: a
+    /// change that landed in between would be overwritten wholesale. It is
+    /// refused instead.
+    #[test]
+    fn commit_refuses_a_file_that_changed_while_the_edit_was_open() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "notizen.org", TWO_HEADINGS);
+        let target = HeadingTarget { line_no: 1, custom_id: Some("h:eins".into()), title: None };
+
+        let mut edit = open_edit(&path, &target, &crate::core::errors::subject::heading()).unwrap();
+        edit.write(&renamed("Erste umbenannt")).unwrap();
+
+        // Whatever else writes into this vault -- a sync pull, a CalDAV
+        // pull, the user's own editor.
+        let from_elsewhere = format!("{TWO_HEADINGS}* TODO Vom anderen Gerät\n");
+        std::fs::write(&path, &from_elsewhere).unwrap();
+
+        let err = edit.commit().unwrap_err();
+
+        assert!(err.contains("neu laden"), "{err}");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), from_elsewhere, "the other write survives untouched");
+    }
+
+    /// Nothing reaches disk before `commit`, so a caller that gives up
+    /// halfway leaves the file exactly as it found it.
+    #[test]
+    fn an_uncommitted_edit_leaves_the_file_alone() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "notizen.org", TWO_HEADINGS);
+        let target = HeadingTarget { line_no: 1, custom_id: Some("h:eins".into()), title: None };
+
+        let mut edit = open_edit(&path, &target, &crate::core::errors::subject::heading()).unwrap();
+        edit.write(&renamed("Nie gespeichert")).unwrap();
+        edit.touch_ancestors().unwrap();
+        drop(edit);
+
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), TWO_HEADINGS);
+    }
+
+    /// The whole ancestor chain and the edit itself land in one write --
+    /// and the cookie the project carries reflects the edit, not the parse
+    /// it was captured from.
+    #[test]
+    fn the_edit_and_every_ancestor_touch_land_together() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "projekte.org", PROJECT);
+        let target = HeadingTarget { line_no: 7, custom_id: None, title: Some("Aufgabe B".into()) };
+
+        let mut edit = open_edit(&path, &target, &crate::core::errors::subject::heading()).unwrap();
+        assert_eq!(
+            edit.ancestors().iter().map(|h| h.title.as_str()).collect::<Vec<_>>(),
+            vec!["Gruppe", "Projekt"],
+            "nearest ancestor first"
+        );
+        edit.write(&HeadingUpdatePayload { state: Some("DONE".into()), ..Default::default() }).unwrap();
+        edit.touch_ancestors().unwrap();
+        edit.commit().unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(text.contains("*** DONE Aufgabe B"), "{text}");
+        assert_eq!(
+            text.matches("LAST_ACTIVITY").count(),
+            3,
+            "the edited heading plus both ancestors, all in the same write:\n{text}"
+        );
+        // The cookies come from a re-parse of the mutated lines, so they
+        // describe the file after this edit rather than the parse the
+        // ancestors were captured from.
+        assert_eq!(text.matches("[50%]").count(), 2, "both ancestors show one of two done:\n{text}");
+        assert!(text.contains("*** TODO Aufgabe A"), "the sibling is untouched:\n{text}");
+    }
+
+    #[test]
+    fn deleting_a_heading_takes_its_children_with_it_and_leaves_the_rest() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "projekte.org", PROJECT);
+        let target = HeadingTarget { line_no: 2, custom_id: None, title: Some("Gruppe".into()) };
+
+        let mut edit = open_edit(&path, &target, &crate::core::errors::subject::heading()).unwrap();
+        edit.delete_subtree().unwrap();
+        edit.commit().unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(!text.contains("Aufgabe A") && !text.contains("Aufgabe B"), "{text}");
+        assert!(text.contains("* Projekt"), "{text}");
+    }
+
+    #[test]
+    fn insert_before_puts_the_lines_directly_above_the_heading() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "notizen.org", TWO_HEADINGS);
+        let target = HeadingTarget { line_no: 5, custom_id: Some("h:zwei".into()), title: None };
+
+        let mut edit = open_edit(&path, &target, &crate::core::errors::subject::heading()).unwrap();
+        edit.insert_before(vec!["* TODO Dazwischen".to_string()]).unwrap();
+        edit.commit().unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        let at = lines.iter().position(|l| *l == "* TODO Dazwischen").unwrap();
+        assert_eq!(lines[at + 1], "* TODO Zweite", "{text}");
+    }
+
+    /// A second structural mutation would take its range from a parse the
+    /// first one just invalidated.
+    #[test]
+    fn a_second_mutation_in_the_same_edit_is_refused() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "notizen.org", TWO_HEADINGS);
+        let target = HeadingTarget { line_no: 1, custom_id: Some("h:eins".into()), title: None };
+
+        let mut edit = open_edit(&path, &target, &crate::core::errors::subject::heading()).unwrap();
+        edit.write(&renamed("Einmal")).unwrap();
+
+        assert!(edit.write(&renamed("Zweimal")).is_err());
+        assert!(edit.delete_subtree().is_err());
+    }
+
+    /* --- the write guard, asked before the caller does any work --- */
+
+    const EDIT_GENERATED: FileKind = FileKind::new("test-edit-generated");
+
+    inventory::submit! {
+        FileKindSpec {
+            kind: EDIT_GENERATED,
+            served_by: None,
+            editable: false,
+            states: StateSupport::None,
+            reorderable: false,
+            can_add_headings: false,
+        }
+    }
+
+    /// Refused at `open_edit` rather than at `commit`: the caller would
+    /// otherwise build a block, resolve an ancestor chain and stamp an id
+    /// before finding out the file was never writable.
+    #[test]
+    fn opening_an_edit_on_a_generated_file_is_refused_up_front() {
+        let dir = TempDir::new().unwrap();
+        let path = write(
+            &dir,
+            "spiegel.org",
+            &format!("#+TITLE: X\n{}\n\n* TODO Termin\n", EDIT_GENERATED.declaration()),
+        );
+        let target = HeadingTarget { line_no: 4, custom_id: None, title: Some("Termin".into()) };
+
+        let err = open_edit(&path, &target, &crate::core::errors::subject::heading()).err().unwrap();
+
+        assert!(err.contains("von nobo erzeugt"), "{err}");
+    }
+}

@@ -1,0 +1,9 @@
+#+TITLE:      SQLite Setup
+#+DATE:       [2024-07-04 Do 05:24]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :config:matter:garten:
+#+IDENTIFIER: 20240704T052438
+
+* SQLite Setup
+
+Auf Nachfrage nochmal nachhaken. Erster Eindruck ist positiv. Noch offen: genaue Details klären.

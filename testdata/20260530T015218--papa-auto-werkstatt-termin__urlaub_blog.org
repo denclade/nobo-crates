@@ -1,0 +1,14 @@
+#+TITLE:      Papa Auto Werkstatt Termin
+#+DATE:       [2026-05-30 Sa 01:52]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :urlaub:blog:
+#+IDENTIFIER: 20260530T015218
+
+* Papa Auto Werkstatt Termin
+
+Nächster Schritt: Ergebnis dokumentieren.
+
+- Ergebnis mit Team geteilt
+- Config-Datei gesichert
+- Nächsten Termin vorgemerkt
+- Backup vorher gemacht

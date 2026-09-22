@@ -1,0 +1,12 @@
+#+TITLE:      Caddy Debugging
+#+DATE:       [2024-05-19 So 14:30]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :llm:
+#+IDENTIFIER: 20240519T143025
+
+* Caddy Debugging
+
+Referenz für später aufgehoben. Wichtig: vor dem nächsten Schritt nochmal prüfen. Funktioniert soweit wie erwartet.
+
+- Logs geprüft
+- Config-Datei gesichert

@@ -1,0 +1,13 @@
+#+TITLE:      Reiseplanung Italien
+#+DATE:       [2024-07-03 Mi 12:01]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:
+#+IDENTIFIER: 20240703T120140
+
+* Reiseplanung Italien
+
+Erster Eindruck ist positiv. Kurz notiert, bevor ich es vergesse. Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+- Config-Datei gesichert
+- Backup vorher gemacht
+- Nächsten Termin vorgemerkt

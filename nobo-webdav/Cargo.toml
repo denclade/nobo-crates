@@ -1,0 +1,14 @@
+[package]
+name = "nobo-webdav"
+version = "0.1.0"
+description = "WebDAV plumbing: the methods HTTP does not define, and the 207 Multi-Status body."
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# Shared by the vault sync and the CalDAV task sync, which speak the same
+# protocol at this level. Its own crate rather than the core's, because a
+# build with neither of them has no use for an XML parser.
+[dependencies]
+reqwest = { workspace = true }
+quick-xml = { workspace = true }
+base64ct = { workspace = true }

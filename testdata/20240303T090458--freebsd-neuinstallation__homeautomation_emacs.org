@@ -1,0 +1,9 @@
+#+TITLE:      FreeBSD Neuinstallation
+#+DATE:       [2024-03-03 So 09:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :homeautomation:emacs:
+#+IDENTIFIER: 20240303T090458
+
+* FreeBSD Neuinstallation
+
+Ergebnis war nicht ganz wie erhofft. Auf Nachfrage nochmal nachhaken.

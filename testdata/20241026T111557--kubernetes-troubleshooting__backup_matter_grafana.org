@@ -1,0 +1,9 @@
+#+TITLE:      Kubernetes Troubleshooting
+#+DATE:       [2024-10-26 Sa 11:15]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :backup:matter:grafana:
+#+IDENTIFIER: 20241026T111557
+
+* Kubernetes Troubleshooting
+
+Läuft seit dem Update stabil.

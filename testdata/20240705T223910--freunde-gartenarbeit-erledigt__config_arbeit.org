@@ -1,0 +1,17 @@
+#+TITLE:      Freunde Gartenarbeit erledigt
+#+DATE:       [2024-07-05 Fr 22:39]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :config:arbeit:
+#+IDENTIFIER: 20240705T223910
+
+* Freunde Gartenarbeit erledigt
+
+Muss ich nochmal genauer testen.
+
+- Dokumentation verlinkt
+- Config-Datei gesichert
+- Screenshot gemacht
+- Backup vorher gemacht
+
+** Weiteres Vorgehen
+Siehe auch die letzte Notiz zu diesem Thema.

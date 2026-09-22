@@ -1,0 +1,9 @@
+#+TITLE:      Python Installation
+#+DATE:       [2024-06-05 Mi 06:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :security:netzwerk:buch:
+#+IDENTIFIER: 20240605T062618
+
+* Python Installation
+
+Details stehen noch aus.

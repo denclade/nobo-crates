@@ -1,0 +1,9 @@
+#+TITLE:      BTRFS Zertifikat erneuert
+#+DATE:       [2024-07-23 Di 06:45]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :grafana:blog:
+#+IDENTIFIER: 20240723T064547
+
+* BTRFS Zertifikat erneuert
+
+Siehe auch die letzte Notiz zu diesem Thema. Noch offen: genaue Details klären.

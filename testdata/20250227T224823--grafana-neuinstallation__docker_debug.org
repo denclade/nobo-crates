@@ -1,0 +1,14 @@
+#+TITLE:      Grafana Neuinstallation
+#+DATE:       [2025-02-27 Do 22:48]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :docker:debug:
+#+IDENTIFIER: 20250227T224823
+
+* Grafana Neuinstallation
+
+Referenz für später aufgehoben.
+
+- Mit zweitem Gerät getestet
+- Ergebnis mit Team geteilt
+- Backup vorher gemacht
+- Nächsten Termin vorgemerkt

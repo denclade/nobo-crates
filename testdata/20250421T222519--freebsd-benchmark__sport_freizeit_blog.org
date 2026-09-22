@@ -1,0 +1,9 @@
+#+TITLE:      FreeBSD Benchmark
+#+DATE:       [2025-04-21 Mo 22:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sport:freizeit:blog:
+#+IDENTIFIER: 20250421T222519
+
+* FreeBSD Benchmark
+
+Referenz für später aufgehoben. Kurzes Fazit nach dem ersten Test.

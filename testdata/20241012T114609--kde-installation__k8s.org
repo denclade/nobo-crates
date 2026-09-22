@@ -1,0 +1,9 @@
+#+TITLE:      KDE Installation
+#+DATE:       [2024-10-12 Sa 11:46]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:
+#+IDENTIFIER: 20241012T114609
+
+* KDE Installation
+
+Klingt nach einer guten Idee für nächste Woche. Hat länger gedauert als gedacht.

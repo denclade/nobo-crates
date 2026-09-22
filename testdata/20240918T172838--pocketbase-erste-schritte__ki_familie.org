@@ -1,0 +1,9 @@
+#+TITLE:      PocketBase erste Schritte
+#+DATE:       [2024-09-18 Mi 17:28]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ki:familie:
+#+IDENTIFIER: 20240918T172838
+
+* PocketBase erste Schritte
+
+Noch offen: genaue Details klären.

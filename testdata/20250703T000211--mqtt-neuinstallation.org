@@ -1,0 +1,8 @@
+#+TITLE:      MQTT Neuinstallation
+#+DATE:       [2025-07-03 Do 00:02]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250703T000211
+
+* MQTT Neuinstallation
+
+Hat länger gedauert als gedacht. Wichtig: vor dem nächsten Schritt nochmal prüfen. Läuft seit dem Update stabil.

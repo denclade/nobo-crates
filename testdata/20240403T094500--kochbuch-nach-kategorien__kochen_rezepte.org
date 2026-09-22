@@ -1,0 +1,82 @@
+#+TITLE: Kochbuch nach Kategorien
+#+NOBO_TYPE: cookbook
+
+Rezepte in Kategorien gruppiert -- die Rezepte liegen hier auf Ebene 2,
+ihre Abschnitte auf Ebene 3. Genau deshalb darf "Rezept" nicht als
+"Überschrift der ersten Ebene" definiert sein.
+
+* Desserts
+
+** Tiramisu                                                        :dessert:italien:
+:PROPERTIES:
+:CUSTOM_ID: h:rec-tiramisu
+:SERVINGS: 6
+:PREP-TIME: 30
+:END:
+
+*** Zutaten
+- 500 g Mascarpone
+- 4 Eier
+- 100 g Zucker
+- 200 ml starker Espresso
+- 1 Packung Löffelbiskuits
+- 2 EL Kakaopulver
+
+*** Zubereitung
+1. Eier trennen, Eigelb mit Zucker schaumig rühren.
+2. Mascarpone unterrühren, Eiweiß steif schlagen und unterheben.
+3. Löffelbiskuits kurz in Espresso tauchen, Schichten aufbauen.
+4. Mindestens vier Stunden kalt stellen, vor dem Servieren Kakao darüber sieben.
+
+** Apfelkuchen                                                            :dessert:
+:PROPERTIES:
+:CUSTOM_ID: h:rec-apfelkuchen
+:SERVINGS: 12
+:PREP-TIME: 25
+:COOK-TIME: 55
+:END:
+
+*** Zutaten
+- 250 g Mehl
+- 150 g Butter
+- 100 g Zucker
+- 1 Ei
+- 1 kg Äpfel
+- Etwas Zimt
+
+*** Zubereitung
+1. Aus Mehl, Butter, Zucker und Ei einen Mürbeteig kneten, kalt stellen.
+2. Äpfel schälen und in Spalten schneiden.
+3. Teig ausrollen, Äpfel darauf verteilen, mit Zimt bestreuen.
+4. Bei 180 °C etwa 55 Minuten backen.
+
+* Hauptgerichte
+
+** Linsencurry                                                        :vegan:linsen:
+:PROPERTIES:
+:CUSTOM_ID: h:rec-linsencurry
+:SERVINGS: 4
+:PREP-TIME: 10
+:COOK-TIME: 30
+:END:
+
+*** Zutaten
+- 250 g rote Linsen
+- 400 ml Kokosmilch
+- 1 Dose stückige Tomaten
+- 2 TL Currypulver
+- 1 Stück Ingwer
+
+*** Zubereitung
+1. Ingwer fein hacken, mit dem Currypulver kurz anrösten.
+2. Linsen, Tomaten und Kokosmilch dazugeben.
+3. 25 Minuten köcheln lassen, gelegentlich umrühren.
+
+* Notizen zur Vorratshaltung
+
+Keine Rezeptüberschrift, nur ein Abschnitt mit Text -- darf in der
+Rezeptliste nicht auftauchen, aber die Datei auch nicht durcheinander
+bringen.
+
+Linsen halten trocken gelagert praktisch ewig; Kokosmilch nach dem Öffnen
+in ein Schraubglas umfüllen.

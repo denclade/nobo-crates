@@ -1,0 +1,12 @@
+#+TITLE:      Emacs Vergleich
+#+DATE:       [2024-06-04 Di 10:12]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :tauri:
+#+IDENTIFIER: 20240604T101219
+
+* Emacs Vergleich
+
+Details stehen noch aus. Klingt nach einer guten Idee für nächste Woche. Auf Nachfrage nochmal nachhaken.
+
+** Weiteres Vorgehen
+Quelle: Gespräch von heute Vormittag.

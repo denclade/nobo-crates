@@ -1,0 +1,13 @@
+#+TITLE:      Borg Troubleshooting
+#+DATE:       [2024-12-22 So 01:22]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ssh:emacs:
+#+IDENTIFIER: 20241222T012226
+
+* Borg Troubleshooting
+
+Auf Nachfrage nochmal nachhaken. Kurzes Fazit nach dem ersten Test. Läuft seit dem Update stabil.
+
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt
+- Screenshot gemacht

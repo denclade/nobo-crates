@@ -1,0 +1,99 @@
+* Idee: Browser Extension für Notizen
+:PROPERTIES:
+:CUSTOM_ID: h:35a173a5-8666-4c7e-841e-ed4e524f4835
+:END:
+
+* Buch Empfehlung von Kollegen notieren
+:PROPERTIES:
+:CUSTOM_ID: h:b2cacf27-7b5d-41a8-afc3-f39704cc6542
+:END:
+
+* Podcast Folge über Local First Software gehört
+:PROPERTIES:
+:CUSTOM_ID: h:1abe1015-23bf-46c5-9d0c-9cdb06cc44ab
+:END:
+
+* Restaurant Tipp von Berenice
+:PROPERTIES:
+:CUSTOM_ID: h:6510c07d-f310-4c5c-93ae-bd8fcbd37ef1
+:END:
+
+* Nachbarn wegen Gartenzaun ansprechen
+:PROPERTIES:
+:CUSTOM_ID: h:f18163c7-2485-4d4f-93d9-047ed0976496
+:END:
+
+* Mail von der Versicherung beantworten
+:PROPERTIES:
+:CUSTOM_ID: h:5a18416a-4e58-4731-8474-4a245e927c94
+:END:
+
+* Interessanter Artikel über E2EE gefunden
+:PROPERTIES:
+:CUSTOM_ID: h:58b8aa33-95d5-490e-9bc9-764cd3c92d20
+:END:
+
+* Frage an den Vermieter stellen
+:PROPERTIES:
+:CUSTOM_ID: h:0a8b85fe-9ce9-4ded-9742-7edc2474a008
+:END:
+
+* Neues Rezept ausprobieren: Ramen
+:PROPERTIES:
+:CUSTOM_ID: h:29e886f1-c47c-4f78-9711-6eb6ac358c80
+:END:
+
+* Reifendruck prüfen
+:PROPERTIES:
+:CUSTOM_ID: h:2f64442c-2731-4e25-ad59-6e36fad84a8a
+:END:
+
+* Kalenderwoche mit Team abstimmen
+:PROPERTIES:
+:CUSTOM_ID: h:fcd237e3-8e40-4e17-918c-5846b07f5383
+:END:
+
+* Link zu Homelab Forum gespeichert
+:PROPERTIES:
+:CUSTOM_ID: h:8f47d4d5-4b1f-43e3-8f71-633e40d4c422
+:END:
+
+* Frage zu Steuererklärung klären
+:PROPERTIES:
+:CUSTOM_ID: h:f0149ded-3439-4c67-bbef-4ee224425ef0
+:END:
+
+* Idee für nächstes Schulprojekt
+:PROPERTIES:
+:CUSTOM_ID: h:306196e1-e9d5-41cc-b2e6-4ce253815dce
+:END:
+
+* Whiteboard Foto vom Meeting sichern
+:PROPERTIES:
+:CUSTOM_ID: h:6e2ca8cb-1f2c-48ca-8e94-ec09740b9b7d
+:END:
+
+* Kontakt für Handwerker notiert
+:PROPERTIES:
+:CUSTOM_ID: h:f6d4829f-29b1-46f4-addd-b266dfafd5eb
+:END:
+
+* Gedanke zu Zettelkasten Struktur
+:PROPERTIES:
+:CUSTOM_ID: h:20f6eaab-1a6f-4a81-879d-d0efb3127d5a
+:END:
+
+* Ticket für Konzert kaufen
+:PROPERTIES:
+:CUSTOM_ID: h:f998590f-0adc-46df-9c90-b3879ac3df59
+:END:
+
+* Software Lizenz läuft bald ab
+:PROPERTIES:
+:CUSTOM_ID: h:783866a6-4c19-48ee-967c-5f2f6537775a
+:END:
+
+* Interessante Konferenz gefunden
+:PROPERTIES:
+:CUSTOM_ID: h:d84cbbc3-71ae-4f81-a931-8765baadbe54
+:END:

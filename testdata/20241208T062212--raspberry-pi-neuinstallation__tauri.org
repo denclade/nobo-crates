@@ -1,0 +1,12 @@
+#+TITLE:      Raspberry Pi Neuinstallation
+#+DATE:       [2024-12-08 So 06:22]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :tauri:
+#+IDENTIFIER: 20241208T062212
+
+* Raspberry Pi Neuinstallation
+
+Hat länger gedauert als gedacht. Siehe auch die letzte Notiz zu diesem Thema.
+
+- Backup vorher gemacht
+- Ergebnis mit Team geteilt

@@ -1,0 +1,14 @@
+#+TITLE:      MQTT Migration
+#+DATE:       [2026-08-11 Di 00:01]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:k8s:
+#+IDENTIFIER: 20260811T000126
+
+* MQTT Migration
+
+Ein Blick zurück lohnt sich hier. Noch offen: genaue Details klären.
+
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt
+- Backup vorher gemacht
+- Nächsten Termin vorgemerkt

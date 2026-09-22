@@ -1,0 +1,8 @@
+#+TITLE:      SQLite Migration
+#+DATE:       [2024-06-05 Mi 06:50]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240605T065010
+
+* SQLite Migration
+
+Noch offen: genaue Details klären. Wichtig: vor dem nächsten Schritt nochmal prüfen.

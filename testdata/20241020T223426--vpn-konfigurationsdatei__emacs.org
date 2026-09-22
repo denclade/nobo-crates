@@ -1,0 +1,12 @@
+#+TITLE:      VPN Konfigurationsdatei
+#+DATE:       [2024-10-20 So 22:34]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :emacs:
+#+IDENTIFIER: 20241020T223426
+
+* VPN Konfigurationsdatei
+
+Siehe auch die letzte Notiz zu diesem Thema.
+
+** Weiteres Vorgehen
+Quelle: Gespräch von heute Vormittag.

@@ -1,0 +1,25 @@
+#+TITLE: Beispiel: Projekte (offline)
+#+NOBO_TYPE: caldav-list
+#+NOBO_CALDAV_URL: https://dav.work.example/dav/calendars/d.burgermeister/projekte/
+#+NOBO_CALDAV_USER: d.burgermeister
+#+COMMENT: Von nobo mit einer CalDAV-Liste synchronisiert. Bearbeiten ist erlaubt; Änderungen werden hochgeladen.
+
+* TODO Angebot Kunde X prüfen    :Arbeit:
+SCHEDULED: <2026-09-01 Tue>
+:PROPERTIES:
+:CUSTOM_ID: h:25dd651a-480d-58e5-bd39-97c57a21293e
+:CALDAV_UID: sample-arbeit-1
+:END:
+
+* TODO Rückmeldung Team einholen    :Arbeit:
+:PROPERTIES:
+:CUSTOM_ID: h:e69c53ee-5416-572e-abb8-ba80e4694484
+:CALDAV_UID: sample-arbeit-2
+:END:
+
+* DONE Protokoll verschicken    :Arbeit:
+:PROPERTIES:
+:CUSTOM_ID: h:e18bed90-ab5a-57b0-ba1c-c130bb45fd84
+:CALDAV_UID: sample-arbeit-3
+:END:
+

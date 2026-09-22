@@ -1,0 +1,9 @@
+#+TITLE:      Proxmox Integration
+#+DATE:       [2026-01-05 Mo 05:35]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :home:kernel:sicherheit:
+#+IDENTIFIER: 20260105T053519
+
+* Proxmox Integration
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Referenz für später aufgehoben. Details stehen noch aus.

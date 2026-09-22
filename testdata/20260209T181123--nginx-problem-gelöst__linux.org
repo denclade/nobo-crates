@@ -1,0 +1,14 @@
+#+TITLE:      Nginx Problem gelöst
+#+DATE:       [2026-02-09 Mo 18:11]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :linux:
+#+IDENTIFIER: 20260209T181123
+
+* Nginx Problem gelöst
+
+Quelle: Gespräch von heute Vormittag. Funktioniert soweit wie erwartet. Ein Blick zurück lohnt sich hier.
+
+- Logs geprüft
+- Nächsten Termin vorgemerkt
+- Mit zweitem Gerät getestet
+- Backup vorher gemacht

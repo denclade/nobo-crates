@@ -1,0 +1,9 @@
+#+TITLE:      BTRFS Migration
+#+DATE:       [2026-06-22 Mo 06:06]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :technik:
+#+IDENTIFIER: 20260622T060604
+
+* BTRFS Migration
+
+Referenz für später aufgehoben. Kurz notiert, bevor ich es vergesse. Wichtig: vor dem nächsten Schritt nochmal prüfen.

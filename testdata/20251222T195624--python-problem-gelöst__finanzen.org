@@ -1,0 +1,9 @@
+#+TITLE:      Python Problem gelöst
+#+DATE:       [2025-12-22 Mo 19:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :finanzen:
+#+IDENTIFIER: 20251222T195624
+
+* Python Problem gelöst
+
+Funktioniert soweit wie erwartet.

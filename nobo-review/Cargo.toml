@@ -1,0 +1,35 @@
+[package]
+name = "nobo-review"
+version = "0.1.0"
+description = "The GTD weekly review: its checklist state in the vault, and how often it is due."
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# The Tauri half is optional, the same way nobo-core's is: `commands` are
+# plain functions and `tauri_commands` is the thin layer that makes them
+# Tauri commands, so a host that is not a Tauri app (harbour-nobo on
+# Sailfish OS links this crate into a Qt UI) gets the feature without a
+# webview in its dependency graph. Default-on, so the app's build is the
+# build it always was.
+[features]
+default = ["tauri"]
+tauri = ["dep:tauri", "dep:tauri-specta", "dep:specta", "dep:specta-typescript"]
+
+# The core and nothing else of nobo's: reaching into another feature is a
+# compile error here, not a lint failure.
+[dependencies]
+# Plain, with nothing to switch off: the core carries no Tauri any more
+# (see crates/nobo-tauri), so depending on it cannot drag Tauri into a
+# build whatever this crate asks for.
+nobo-core = { path = "../nobo-core" }
+tauri = { workspace = true, optional = true }
+tauri-specta = { workspace = true, optional = true }
+specta = { workspace = true, optional = true }
+specta-typescript = { workspace = true, optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+inventory = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -1,0 +1,9 @@
+#+TITLE:      Kubernetes Performance-Tuning
+#+DATE:       [2024-04-26 Fr 04:13]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :solidjs:
+#+IDENTIFIER: 20240426T041333
+
+* Kubernetes Performance-Tuning
+
+Ergebnis war nicht ganz wie erhofft. Nächster Schritt: Ergebnis dokumentieren. Hat länger gedauert als gedacht.

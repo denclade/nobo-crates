@@ -1,0 +1,14 @@
+#+TITLE:      SolidJS Best Practices
+#+DATE:       [2025-11-22 Sa 10:09]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:urlaub:
+#+IDENTIFIER: 20251122T100932
+
+* SolidJS Best Practices
+
+Nächster Schritt: Ergebnis dokumentieren.
+
+- Mit zweitem Gerät getestet
+- Dokumentation verlinkt
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt

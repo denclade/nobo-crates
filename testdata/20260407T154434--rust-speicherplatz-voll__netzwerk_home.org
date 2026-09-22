@@ -1,0 +1,16 @@
+#+TITLE:      Rust Speicherplatz voll
+#+DATE:       [2026-04-07 Di 15:44]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :netzwerk:home:
+#+IDENTIFIER: 20260407T154434
+
+* Rust Speicherplatz voll
+
+Kurzes Fazit nach dem ersten Test. War einfacher als erwartet.
+
+- Backup vorher gemacht
+- Ergebnis mit Team geteilt
+- Logs geprüft
+
+** Weiteres Vorgehen
+Quelle: Gespräch von heute Vormittag.

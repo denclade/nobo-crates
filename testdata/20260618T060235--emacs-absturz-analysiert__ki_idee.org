@@ -1,0 +1,9 @@
+#+TITLE:      Emacs Absturz analysiert
+#+DATE:       [2026-06-18 Do 06:02]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ki:idee:
+#+IDENTIFIER: 20260618T060235
+
+* Emacs Absturz analysiert
+
+Details stehen noch aus. Kurzes Fazit nach dem ersten Test. War einfacher als erwartet.

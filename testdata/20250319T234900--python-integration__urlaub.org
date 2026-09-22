@@ -1,0 +1,9 @@
+#+TITLE:      Python Integration
+#+DATE:       [2025-03-19 Mi 23:49]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :urlaub:
+#+IDENTIFIER: 20250319T234900
+
+* Python Integration
+
+Quelle: Gespräch von heute Vormittag.

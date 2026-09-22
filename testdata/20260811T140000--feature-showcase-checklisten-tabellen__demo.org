@@ -1,0 +1,41 @@
+#+TITLE:      Feature Showcase: Checklisten & Tabellen
+#+DATE:       [2026-08-11 Di 14:00]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :demo:
+#+IDENTIFIER: 20260811T140000
+
+* Feature Showcase: Checklisten & Tabellen
+
+Diese Notiz zeigt, was der Editor aktuell kann -- *fett*, /kursiv/, +durchgestrichen+ und ~inline code~ funktionieren mitten im Text.
+
+** Checklisten
+
+- [ ] Offene Aufgabe
+- [X] Erledigte Aufgabe
+- [-] Teilweise erledigt
+  - [X] Unteraufgabe 1 fertig
+  - [ ] Unteraufgabe 2 offen
+
+** Tabelle
+
+| Feature    | Status | Notiz                      |
+|------------+--------+-----------------------------|
+| Checkboxen | fertig | inkl. verschachtelt        |
+| Tabellen   | fertig | keine Formeln               |
+| Bilder     | fertig | nur reine [[file:...]] Links |
+| Links      | fertig | id:-Links zwischen Notizen  |
+
+** Bild
+
+#+CAPTION: Diagramm aus dem Netzwerk-Setup
+[[file:.attachments/20250820T133000--diagramm-netzwerk__rust_idee.png]]
+
+---
+
+** Code
+
+#+begin_src python
+print("hallo von nobo")
+#+end_src
+
+Mehr Details dazu in der [[id:20260811T140100][Projekt Kickoff Notizen]].

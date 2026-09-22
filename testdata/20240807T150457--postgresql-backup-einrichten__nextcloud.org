@@ -1,0 +1,12 @@
+#+TITLE:      PostgreSQL Backup einrichten
+#+DATE:       [2024-08-07 Mi 15:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :nextcloud:
+#+IDENTIFIER: 20240807T150457
+
+* PostgreSQL Backup einrichten
+
+Läuft seit dem Update stabil. Referenz für später aufgehoben.
+
+- Nächsten Termin vorgemerkt
+- Logs geprüft

@@ -1,0 +1,9 @@
+#+TITLE:      ESPHome Konfiguration
+#+DATE:       [2024-11-09 Sa 15:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :config:matter:wifi:
+#+IDENTIFIER: 20241109T155650
+
+* ESPHome Konfiguration
+
+Hat länger gedauert als gedacht.

@@ -1,0 +1,9 @@
+#+TITLE:      ZFS Automatisierung
+#+DATE:       [2025-01-21 Di 05:03]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :unterricht:sicherheit:
+#+IDENTIFIER: 20250121T050359
+
+* ZFS Automatisierung
+
+Auf Nachfrage nochmal nachhaken. Hat länger gedauert als gedacht. Kurz notiert, bevor ich es vergesse.

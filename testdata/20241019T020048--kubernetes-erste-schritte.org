@@ -1,0 +1,13 @@
+#+TITLE:      Kubernetes erste Schritte
+#+DATE:       [2024-10-19 Sa 02:00]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20241019T020048
+
+* Kubernetes erste Schritte
+
+Muss ich nochmal genauer testen.
+
+- Config-Datei gesichert
+- Backup vorher gemacht
+- Screenshot gemacht
+- Dokumentation verlinkt

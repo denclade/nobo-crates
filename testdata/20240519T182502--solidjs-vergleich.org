@@ -1,0 +1,13 @@
+#+TITLE:      SolidJS Vergleich
+#+DATE:       [2024-05-19 So 18:25]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240519T182502
+
+* SolidJS Vergleich
+
+Nächster Schritt: Ergebnis dokumentieren. Auf Nachfrage nochmal nachhaken. War einfacher als erwartet.
+
+- Ergebnis mit Team geteilt
+- Config-Datei gesichert
+- Mit zweitem Gerät getestet
+- Screenshot gemacht

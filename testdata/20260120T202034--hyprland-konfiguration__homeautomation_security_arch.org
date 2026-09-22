@@ -1,0 +1,9 @@
+#+TITLE:      Hyprland Konfiguration
+#+DATE:       [2026-01-20 Di 20:20]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :homeautomation:security:arch:
+#+IDENTIFIER: 20260120T202034
+
+* Hyprland Konfiguration
+
+Kurz notiert, bevor ich es vergesse.

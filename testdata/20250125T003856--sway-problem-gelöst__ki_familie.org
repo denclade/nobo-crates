@@ -1,0 +1,16 @@
+#+TITLE:      Sway Problem gelöst
+#+DATE:       [2025-01-25 Sa 00:38]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ki:familie:
+#+IDENTIFIER: 20250125T003856
+
+* Sway Problem gelöst
+
+Referenz für später aufgehoben. Auf Nachfrage nochmal nachhaken.
+
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert
+- Backup vorher gemacht
+
+** Weiteres Vorgehen
+Ein Blick zurück lohnt sich hier.

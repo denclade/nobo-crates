@@ -1,0 +1,14 @@
+#+TITLE:      Kubernetes Konfiguration
+#+DATE:       [2025-04-19 Sa 20:36]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :org:rust:
+#+IDENTIFIER: 20250419T203643
+
+* Kubernetes Konfiguration
+
+Muss ich nochmal genauer testen.
+
+- Backup vorher gemacht
+- Config-Datei gesichert
+- Dokumentation verlinkt
+- Mit zweitem Gerät getestet

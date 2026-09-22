@@ -1,0 +1,13 @@
+#+TITLE:      Tailscale Fehler beheben
+#+DATE:       [2024-12-23 Mo 20:17]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:blog:sicherheit:
+#+IDENTIFIER: 20241223T201718
+
+* Tailscale Fehler beheben
+
+Nächster Schritt: Ergebnis dokumentieren. Auf Nachfrage nochmal nachhaken. Muss ich nochmal genauer testen.
+
+- Logs geprüft
+- Config-Datei gesichert
+- Dokumentation verlinkt

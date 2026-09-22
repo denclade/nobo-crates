@@ -1,0 +1,12 @@
+#+TITLE:      Island Sehenswürdigkeiten
+#+DATE:       [2024-03-25 Mo 12:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:
+#+IDENTIFIER: 20240325T122627
+
+* Island Sehenswürdigkeiten
+
+Referenz für später aufgehoben. Noch offen: genaue Details klären. Läuft seit dem Update stabil.
+
+- Dokumentation verlinkt
+- Mit zweitem Gerät getestet

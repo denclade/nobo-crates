@@ -1,0 +1,13 @@
+#+TITLE:      Caddy Notizen
+#+DATE:       [2026-07-24 Fr 01:10]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zigbee:
+#+IDENTIFIER: 20260724T011028
+
+* Caddy Notizen
+
+Ein Blick zurück lohnt sich hier. Läuft seit dem Update stabil.
+
+- Dokumentation verlinkt
+- Ergebnis mit Team geteilt
+- Screenshot gemacht

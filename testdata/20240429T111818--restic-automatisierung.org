@@ -1,0 +1,11 @@
+#+TITLE:      Restic Automatisierung
+#+DATE:       [2024-04-29 Mo 11:18]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240429T111818
+
+* Restic Automatisierung
+
+Referenz für später aufgehoben. Siehe auch die letzte Notiz zu diesem Thema.
+
+** Weiteres Vorgehen
+Hat länger gedauert als gedacht.

@@ -1,0 +1,9 @@
+#+TITLE:      Bash Troubleshooting
+#+DATE:       [2026-06-26 Fr 04:47]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gesundheit:technik:ssh:
+#+IDENTIFIER: 20260626T044708
+
+* Bash Troubleshooting
+
+War einfacher als erwartet.

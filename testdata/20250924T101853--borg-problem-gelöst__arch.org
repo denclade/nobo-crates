@@ -1,0 +1,9 @@
+#+TITLE:      Borg Problem gelöst
+#+DATE:       [2025-09-24 Mi 10:18]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arch:
+#+IDENTIFIER: 20250924T101853
+
+* Borg Problem gelöst
+
+Todo: Screenshot ergänzen.

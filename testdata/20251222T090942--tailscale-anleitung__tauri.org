@@ -1,0 +1,12 @@
+#+TITLE:      Tailscale Anleitung
+#+DATE:       [2025-12-22 Mo 09:09]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :tauri:
+#+IDENTIFIER: 20251222T090942
+
+* Tailscale Anleitung
+
+Details stehen noch aus.
+
+** Weiteres Vorgehen
+Kurzes Fazit nach dem ersten Test.

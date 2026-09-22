@@ -1,0 +1,14 @@
+#+TITLE:      ESPHome erste Schritte
+#+DATE:       [2025-10-11 Sa 20:37]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :config:finanzen:
+#+IDENTIFIER: 20251011T203734
+
+* ESPHome erste Schritte
+
+Läuft seit dem Update stabil. Todo: Screenshot ergänzen. Auf Nachfrage nochmal nachhaken.
+
+- Mit zweitem Gerät getestet
+- Backup vorher gemacht
+- Logs geprüft
+- Config-Datei gesichert

@@ -1,0 +1,9 @@
+#+TITLE:      PostgreSQL Notizen
+#+DATE:       [2024-09-27 Fr 22:40]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :tauri:
+#+IDENTIFIER: 20240927T224035
+
+* PostgreSQL Notizen
+
+Todo: Screenshot ergänzen.

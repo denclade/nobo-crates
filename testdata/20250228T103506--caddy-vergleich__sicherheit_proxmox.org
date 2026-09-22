@@ -1,0 +1,12 @@
+#+TITLE:      Caddy Vergleich
+#+DATE:       [2025-02-28 Fr 10:35]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:proxmox:
+#+IDENTIFIER: 20250228T103506
+
+* Caddy Vergleich
+
+Ergebnis war nicht ganz wie erhofft.
+
+- Config-Datei gesichert
+- Screenshot gemacht

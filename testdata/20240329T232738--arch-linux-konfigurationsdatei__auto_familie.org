@@ -1,0 +1,9 @@
+#+TITLE:      Arch Linux Konfigurationsdatei
+#+DATE:       [2024-03-29 Fr 23:27]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :auto:familie:
+#+IDENTIFIER: 20240329T232738
+
+* Arch Linux Konfigurationsdatei
+
+Muss ich nochmal genauer testen. Todo: Screenshot ergänzen.

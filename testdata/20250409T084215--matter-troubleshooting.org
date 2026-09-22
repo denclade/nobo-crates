@@ -1,0 +1,14 @@
+#+TITLE:      Matter Troubleshooting
+#+DATE:       [2025-04-09 Mi 08:42]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250409T084215
+
+* Matter Troubleshooting
+
+Erster Eindruck ist positiv. Siehe auch die letzte Notiz zu diesem Thema.
+
+- Config-Datei gesichert
+- Logs geprüft
+- Dokumentation verlinkt
+
+[[file:.attachments/20260724T093000--foto-werkstatt-rechnung.png]]

@@ -1,0 +1,9 @@
+#+TITLE:      systemd Vergleich
+#+DATE:       [2024-10-19 Sa 23:19]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :hardware:idee:
+#+IDENTIFIER: 20241019T231943
+
+* systemd Vergleich
+
+Quelle: Gespräch von heute Vormittag.

@@ -1,0 +1,9 @@
+#+TITLE:      Zigbee Konfigurationsdatei
+#+DATE:       [2025-04-07 Mo 20:27]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :python:tauri:
+#+IDENTIFIER: 20250407T202751
+
+* Zigbee Konfigurationsdatei
+
+Siehe auch die letzte Notiz zu diesem Thema. Kurz notiert, bevor ich es vergesse. Noch offen: genaue Details klären.

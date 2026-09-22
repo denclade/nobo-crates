@@ -1,0 +1,9 @@
+#+TITLE:      Ansible Update fehlgeschlagen
+#+DATE:       [2025-08-06 Mi 02:14]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :technik:rust:
+#+IDENTIFIER: 20250806T021412
+
+* Ansible Update fehlgeschlagen
+
+Ergebnis war nicht ganz wie erhofft. Wichtig: vor dem nächsten Schritt nochmal prüfen. Todo: Screenshot ergänzen.

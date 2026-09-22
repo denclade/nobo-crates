@@ -1,0 +1,11 @@
+#+TITLE:      Git Update fehlgeschlagen
+#+DATE:       [2026-01-03 Sa 05:40]
+#+FILETAGS:   :ha:netzwerk:garten:
+#+IDENTIFIER: 20260103T054038
+
+* Git Update fehlgeschlagen
+
+Siehe auch die letzte Notiz zu diesem Thema. Hat länger gedauert als gedacht.
+
+** Weiteres Vorgehen
+Funktioniert soweit wie erwartet.

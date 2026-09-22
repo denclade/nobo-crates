@@ -1,0 +1,12 @@
+#+TITLE:      Matter Backup einrichten
+#+DATE:       [2026-01-05 Mo 22:43]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sport:home:
+#+IDENTIFIER: 20260105T224317
+
+* Matter Backup einrichten
+
+Erster Eindruck ist positiv. Muss ich nochmal genauer testen.
+
+** Weiteres Vorgehen
+Auf Nachfrage nochmal nachhaken.

@@ -1,0 +1,11 @@
+#+TITLE:      OPNsense Vergleich
+#+DATE:       [2024-06-07 Fr 18:01]
+#+FILETAGS:   :debug:k8s:solidjs:
+#+IDENTIFIER: 20240607T180123
+
+* OPNsense Vergleich
+
+War einfacher als erwartet.
+
+- Config-Datei gesichert
+- Backup vorher gemacht

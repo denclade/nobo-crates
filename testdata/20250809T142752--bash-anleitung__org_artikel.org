@@ -1,0 +1,13 @@
+#+TITLE:      Bash Anleitung
+#+DATE:       [2025-08-09 Sa 14:27]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :org:artikel:
+#+IDENTIFIER: 20250809T142752
+
+* Bash Anleitung
+
+Kurzes Fazit nach dem ersten Test. Erster Eindruck ist positiv. Noch offen: genaue Details klären.
+
+- Ergebnis mit Team geteilt
+- Logs geprüft
+- Nächsten Termin vorgemerkt

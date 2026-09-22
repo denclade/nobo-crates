@@ -1,0 +1,8 @@
+#+TITLE:      App Idee: 3D Drucker Projekt
+#+DATE:       [2026-05-15 Fr 16:57]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260515T165745
+
+* App Idee: 3D Drucker Projekt
+
+Kurzes Fazit nach dem ersten Test. Hat länger gedauert als gedacht. Erster Eindruck ist positiv.

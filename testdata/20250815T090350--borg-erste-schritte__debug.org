@@ -1,0 +1,12 @@
+#+TITLE:      Borg erste Schritte
+#+DATE:       [2025-08-15 Fr 09:03]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :debug:
+#+IDENTIFIER: 20250815T090350
+
+* Borg erste Schritte
+
+War einfacher als erwartet. Läuft seit dem Update stabil.
+
+- Nächsten Termin vorgemerkt
+- Dokumentation verlinkt

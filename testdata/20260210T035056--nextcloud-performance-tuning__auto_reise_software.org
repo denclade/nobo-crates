@@ -1,0 +1,12 @@
+#+TITLE:      Nextcloud Performance-Tuning
+#+DATE:       [2026-02-10 Di 03:50]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :auto:reise:software:
+#+IDENTIFIER: 20260210T035056
+
+* Nextcloud Performance-Tuning
+
+Quelle: Gespräch von heute Vormittag.
+
+** Weiteres Vorgehen
+Hat länger gedauert als gedacht.

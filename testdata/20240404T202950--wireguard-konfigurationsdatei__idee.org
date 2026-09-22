@@ -1,0 +1,9 @@
+#+TITLE:      WireGuard Konfigurationsdatei
+#+DATE:       [2024-04-04 Do 20:29]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :idee:
+#+IDENTIFIER: 20240404T202950
+
+* WireGuard Konfigurationsdatei
+
+Noch offen: genaue Details klären. Kurz notiert, bevor ich es vergesse.

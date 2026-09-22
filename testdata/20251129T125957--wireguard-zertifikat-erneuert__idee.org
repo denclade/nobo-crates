@@ -1,0 +1,12 @@
+#+TITLE:      WireGuard Zertifikat erneuert
+#+DATE:       [2025-11-29 Sa 12:59]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :idee:
+#+IDENTIFIER: 20251129T125957
+
+* WireGuard Zertifikat erneuert
+
+Todo: Screenshot ergänzen.
+
+- Backup vorher gemacht
+- Mit zweitem Gerät getestet

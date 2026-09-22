@@ -1,0 +1,9 @@
+#+TITLE:      Rust Shortcuts
+#+DATE:       [2026-06-06 Sa 18:49]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arbeit:hardware:ssh:
+#+IDENTIFIER: 20260606T184911
+
+* Rust Shortcuts
+
+Muss ich nochmal genauer testen. Läuft seit dem Update stabil. War einfacher als erwartet.

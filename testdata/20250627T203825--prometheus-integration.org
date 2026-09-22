@@ -1,0 +1,8 @@
+#+TITLE:      Prometheus Integration
+#+DATE:       [2025-06-27 Fr 20:38]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250627T203825
+
+* Prometheus Integration
+
+Siehe auch die letzte Notiz zu diesem Thema. Nächster Schritt: Ergebnis dokumentieren. Ein Blick zurück lohnt sich hier.

@@ -1,0 +1,12 @@
+#+TITLE:      Chef Versicherung geprüft
+#+DATE:       [2024-07-27 Sa 18:20]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:
+#+IDENTIFIER: 20240727T182046
+
+* Chef Versicherung geprüft
+
+Hat länger gedauert als gedacht. Kurz notiert, bevor ich es vergesse. Klingt nach einer guten Idee für nächste Woche.
+
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt

@@ -1,0 +1,15 @@
+#+TITLE:      Projektwoche Ideen
+#+DATE:       [2024-04-05 Fr 09:10]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240405T091047
+
+* Projektwoche Ideen
+
+Funktioniert soweit wie erwartet. Klingt nach einer guten Idee für nächste Woche. Erster Eindruck ist positiv.
+
+- Nächsten Termin vorgemerkt
+- Dokumentation verlinkt
+- Mit zweitem Gerät getestet
+
+** Weiteres Vorgehen
+Siehe auch die letzte Notiz zu diesem Thema.

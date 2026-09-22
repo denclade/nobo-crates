@@ -1,0 +1,13 @@
+#+TITLE:      Nginx Best Practices
+#+DATE:       [2025-03-10 Mo 20:11]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :projekt:
+#+IDENTIFIER: 20250310T201135
+
+* Nginx Best Practices
+
+Funktioniert soweit wie erwartet. Referenz für später aufgehoben.
+
+- Screenshot gemacht
+- Dokumentation verlinkt
+- Logs geprüft

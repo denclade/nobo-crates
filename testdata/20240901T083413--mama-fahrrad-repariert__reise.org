@@ -1,0 +1,12 @@
+#+TITLE:      Mama Fahrrad repariert
+#+DATE:       [2024-09-01 So 08:34]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :reise:
+#+IDENTIFIER: 20240901T083413
+
+* Mama Fahrrad repariert
+
+Kurz notiert, bevor ich es vergesse.
+
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert

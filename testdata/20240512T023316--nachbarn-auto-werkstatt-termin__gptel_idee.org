@@ -1,0 +1,12 @@
+#+TITLE:      Nachbarn Auto Werkstatt Termin
+#+DATE:       [2024-05-12 So 02:33]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:idee:
+#+IDENTIFIER: 20240512T023316
+
+* Nachbarn Auto Werkstatt Termin
+
+Auf Nachfrage nochmal nachhaken.
+
+** Weiteres Vorgehen
+Muss ich nochmal genauer testen.

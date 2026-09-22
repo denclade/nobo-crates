@@ -1,0 +1,13 @@
+#+TITLE:      Opa Steuererklärung
+#+DATE:       [2025-07-16 Mi 20:21]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :javascript:auto:ssh:
+#+IDENTIFIER: 20250716T202154
+
+* Opa Steuererklärung
+
+Kurz notiert, bevor ich es vergesse.
+
+- Screenshot gemacht
+- Dokumentation verlinkt
+- Ergebnis mit Team geteilt

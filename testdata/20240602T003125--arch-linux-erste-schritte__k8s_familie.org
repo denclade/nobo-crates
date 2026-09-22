@@ -1,0 +1,13 @@
+#+TITLE:      Arch Linux erste Schritte
+#+DATE:       [2024-06-02 So 00:31]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:familie:
+#+IDENTIFIER: 20240602T003125
+
+* Arch Linux erste Schritte
+
+Nächster Schritt: Ergebnis dokumentieren. Funktioniert soweit wie erwartet.
+
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert
+- Logs geprüft

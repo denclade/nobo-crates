@@ -1,0 +1,9 @@
+#+TITLE:      Vim Vergleich
+#+DATE:       [2025-08-16 Sa 15:10]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :freizeit:python:
+#+IDENTIFIER: 20250816T151043
+
+* Vim Vergleich
+
+Muss ich nochmal genauer testen. Kurzes Fazit nach dem ersten Test. Quelle: Gespräch von heute Vormittag.

@@ -1,0 +1,9 @@
+#+TITLE:      Nginx Speicherplatz voll
+#+DATE:       [2026-02-20 Fr 01:33]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arch:sync:
+#+IDENTIFIER: 20260220T013330
+
+* Nginx Speicherplatz voll
+
+Referenz für später aufgehoben. Details stehen noch aus. Hat länger gedauert als gedacht.

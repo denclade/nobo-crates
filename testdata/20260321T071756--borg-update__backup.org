@@ -1,0 +1,12 @@
+#+TITLE:      Borg Update
+#+DATE:       [2026-03-21 Sa 07:17]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :backup:
+#+IDENTIFIER: 20260321T071756
+
+* Borg Update
+
+Funktioniert soweit wie erwartet. Erster Eindruck ist positiv.
+
+** Weiteres Vorgehen
+Hat länger gedauert als gedacht.

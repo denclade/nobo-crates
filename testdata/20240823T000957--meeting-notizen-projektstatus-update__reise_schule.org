@@ -1,0 +1,12 @@
+#+TITLE:      Meeting Notizen: Projektstatus Update
+#+DATE:       [2024-08-23 Fr 00:09]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :reise:schule:
+#+IDENTIFIER: 20240823T000957
+
+* Meeting Notizen: Projektstatus Update
+
+Ergebnis war nicht ganz wie erhofft. Hat länger gedauert als gedacht. Noch offen: genaue Details klären.
+
+- Screenshot gemacht
+- Backup vorher gemacht

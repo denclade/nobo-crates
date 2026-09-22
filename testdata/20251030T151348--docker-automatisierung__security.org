@@ -1,0 +1,9 @@
+#+TITLE:      Docker Automatisierung
+#+DATE:       [2025-10-30 Do 15:13]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :security:
+#+IDENTIFIER: 20251030T151348
+
+* Docker Automatisierung
+
+Quelle: Gespräch von heute Vormittag.

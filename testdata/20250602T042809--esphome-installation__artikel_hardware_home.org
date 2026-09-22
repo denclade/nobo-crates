@@ -1,0 +1,9 @@
+#+TITLE:      ESPHome Installation
+#+DATE:       [2025-06-02 Mo 04:28]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :artikel:hardware:home:
+#+IDENTIFIER: 20250602T042809
+
+* ESPHome Installation
+
+Kurzes Fazit nach dem ersten Test. Funktioniert soweit wie erwartet. Quelle: Gespräch von heute Vormittag.

@@ -1,0 +1,11 @@
+#+TITLE:      Berenice Auto Werkstatt Termin
+#+DATE:       [2024-11-18 Mo 00:14]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :security:
+#+IDENTIFIER: 20241118T001442
+
+* Berenice Auto Werkstatt Termin
+
+Todo: Screenshot ergänzen. Noch offen: genaue Details klären. Hat länger gedauert als gedacht.
+
+[[file:.attachments/20260509T153000--skizze-gartenplan.png]]

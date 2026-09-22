@@ -1,0 +1,9 @@
+#+TITLE:      Hyprland erste Schritte
+#+DATE:       [2026-05-07 Do 23:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :unterricht:k8s:security:
+#+IDENTIFIER: 20260507T235605
+
+* Hyprland erste Schritte
+
+Muss ich nochmal genauer testen. Siehe auch die letzte Notiz zu diesem Thema. Ergebnis war nicht ganz wie erhofft.

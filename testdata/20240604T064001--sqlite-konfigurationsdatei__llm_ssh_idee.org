@@ -1,0 +1,9 @@
+#+TITLE:      SQLite Konfigurationsdatei
+#+DATE:       [2024-06-04 Di 06:40]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :llm:ssh:idee:
+#+IDENTIFIER: 20240604T064001
+
+* SQLite Konfigurationsdatei
+
+Quelle: Gespräch von heute Vormittag.

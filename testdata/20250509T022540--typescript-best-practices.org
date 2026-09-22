@@ -1,0 +1,8 @@
+#+TITLE:      TypeScript Best Practices
+#+DATE:       [2025-05-09 Fr 02:25]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250509T022540
+
+* TypeScript Best Practices
+
+Referenz für später aufgehoben. Ergebnis war nicht ganz wie erhofft. Auf Nachfrage nochmal nachhaken.

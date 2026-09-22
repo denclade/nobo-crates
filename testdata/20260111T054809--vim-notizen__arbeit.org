@@ -1,0 +1,12 @@
+#+TITLE:      Vim Notizen
+#+DATE:       [2026-01-11 So 05:48]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arbeit:
+#+IDENTIFIER: 20260111T054809
+
+* Vim Notizen
+
+Klingt nach einer guten Idee für nächste Woche. Todo: Screenshot ergänzen. Funktioniert soweit wie erwartet.
+
+** Weiteres Vorgehen
+Siehe auch die letzte Notiz zu diesem Thema.

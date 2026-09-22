@@ -1,0 +1,9 @@
+#+TITLE:      VPN Fehler beheben
+#+DATE:       [2024-06-10 Mo 14:42]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :auto:
+#+IDENTIFIER: 20240610T144210
+
+* VPN Fehler beheben
+
+Kurzes Fazit nach dem ersten Test. Quelle: Gespräch von heute Vormittag. Läuft seit dem Update stabil.

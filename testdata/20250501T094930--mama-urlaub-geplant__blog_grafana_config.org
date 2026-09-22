@@ -1,0 +1,12 @@
+#+TITLE:      Mama Urlaub geplant
+#+DATE:       [2025-05-01 Do 09:49]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :blog:grafana:config:
+#+IDENTIFIER: 20250501T094930
+
+* Mama Urlaub geplant
+
+Muss ich nochmal genauer testen. Kurz notiert, bevor ich es vergesse. Nächster Schritt: Ergebnis dokumentieren.
+
+** Weiteres Vorgehen
+Kurz notiert, bevor ich es vergesse.

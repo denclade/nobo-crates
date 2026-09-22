@@ -1,0 +1,9 @@
+#+TITLE:      SSH Fehler beheben
+#+DATE:       [2024-07-21 So 06:53]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rust:hardware:arbeit:
+#+IDENTIFIER: 20240721T065341
+
+* SSH Fehler beheben
+
+Klingt nach einer guten Idee für nächste Woche. Details stehen noch aus. Siehe auch die letzte Notiz zu diesem Thema.

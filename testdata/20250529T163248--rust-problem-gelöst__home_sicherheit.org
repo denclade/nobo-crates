@@ -1,0 +1,14 @@
+#+TITLE:      Rust Problem gelöst
+#+DATE:       [2025-05-29 Do 16:32]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :home:sicherheit:
+#+IDENTIFIER: 20250529T163248
+
+* Rust Problem gelöst
+
+Quelle: Gespräch von heute Vormittag. Ergebnis war nicht ganz wie erhofft. War einfacher als erwartet.
+
+- Backup vorher gemacht
+- Nächsten Termin vorgemerkt
+- Logs geprüft
+- Ergebnis mit Team geteilt

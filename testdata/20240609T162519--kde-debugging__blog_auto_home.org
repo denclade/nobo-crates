@@ -1,0 +1,9 @@
+#+TITLE:      KDE Debugging
+#+DATE:       [2024-06-09 So 16:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :blog:auto:home:
+#+IDENTIFIER: 20240609T162519
+
+* KDE Debugging
+
+Funktioniert soweit wie erwartet. Noch offen: genaue Details klären.

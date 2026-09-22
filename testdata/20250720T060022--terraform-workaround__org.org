@@ -1,0 +1,12 @@
+#+TITLE:      Terraform Workaround
+#+DATE:       [2025-07-20 So 06:00]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :org:
+#+IDENTIFIER: 20250720T060022
+
+* Terraform Workaround
+
+Muss ich nochmal genauer testen.
+
+** Weiteres Vorgehen
+Nächster Schritt: Ergebnis dokumentieren.

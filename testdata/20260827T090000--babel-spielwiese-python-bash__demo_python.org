@@ -1,0 +1,139 @@
+#+TITLE:      Babel-Spielwiese: Python & Bash
+#+DATE:       [2026-08-27 Do 09:00]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :demo:python:
+#+IDENTIFIER: 20260827T090000
+
+* Babel-Spielwiese: Python & Bash
+
+Zum Ausprobieren der Codeausführung im Devcontainer. Jeder Block hat oben
+rechts einen /Ausführen/-Knopf; das Ergebnis landet als =#+RESULTS:= direkt
+darunter.
+
+Beim allerersten Ausführen fragt nobo einmal nach, ob dieser Datei vertraut
+wird -- das ist Absicht, siehe den letzten Abschnitt. Die Antwort gilt für
+genau diesen Dateiinhalt: nach einer Änderung wird erneut gefragt.
+
+Voraussetzungen im Container: =python3= (3.13) und =bash= liegen im PATH,
+mehr braucht es nicht. Ein eigener Interpreter lässt sich unter
+Einstellungen → Code hinterlegen.
+
+** Der einfachste Fall
+
+Ein Block ohne alles. Läuft in einem eigenen Prozess, der danach wieder weg
+ist.
+
+#+BEGIN_SRC python
+print("Hallo aus nobo")
+#+END_SRC
+
+Bash geht genauso:
+
+#+BEGIN_SRC bash
+echo "Vault: $(pwd)"
+python3 --version
+#+END_SRC
+
+** :var -- Werte von außen hineinreichen
+
+=:var= belegt Namen vor, bevor der Code läuft. Mehrere Paare durch
+Leerzeichen getrennt, Zeichenketten in Anführungszeichen.
+
+#+BEGIN_SRC python :var name="Ada" year=1815
+print(f"{name} wurde {year} geboren")
+#+END_SRC
+
+** :session -- Zustand über mehrere Blöcke
+
+Blöcke mit demselben Sessionnamen teilen sich einen laufenden Interpreter.
+Erst den hier ausführen:
+
+#+BEGIN_SRC python :session spielwiese
+zahlen = [n * n for n in range(1, 11)]
+print(f"{len(zahlen)} Quadratzahlen vorbereitet")
+#+END_SRC
+
+...dann den hier -- =zahlen= ist noch da:
+
+#+BEGIN_SRC python :session spielwiese
+print(sum(zahlen))
+#+END_SRC
+
+Die Session lebt, bis sie beendet wird (Einstellungen → Code) oder die App
+neu startet. Der Sessionschlüssel enthält den Dateipfad: derselbe Name in
+einer anderen Notiz ist eine andere Session.
+
+** :results -- wohin das Ergebnis geht
+
+=replace= (Vorgabe) ersetzt das vorhandene Ergebnis, =append= hängt an,
+=silent= schreibt gar nichts in die Datei.
+
+#+BEGIN_SRC bash :results replace
+date +"%H:%M:%S"
+#+END_SRC
+
+#+BEGIN_SRC python :results silent
+print("dieser Text taucht nicht in der Datei auf")
+#+END_SRC
+
+** :cache -- teures nicht zweimal rechnen
+
+Mit =:cache yes= wird das Ergebnis behalten, solange sich der Code nicht
+ändert. Zweimal ausführen: beim zweiten Mal kommt es sofort und die Zahl
+bleibt gleich.
+
+#+BEGIN_SRC python :cache yes
+import random, time
+time.sleep(1)
+print(f"teuer gerechnet: {random.randint(1000, 9999)}")
+#+END_SRC
+
+** :tangle -- Code als Datei herausschreiben
+
+Blöcke mit =:tangle= bekommen zusätzlich einen /Tangle/-Knopf. Ziel ist ein
+Pfad relativ zu dieser Notiz; =yes= nimmt den Dateinamen der Notiz mit
+passender Endung.
+
+#+BEGIN_SRC python :tangle spielwiese.py
+def gruss(name: str) -> str:
+    return f"Hallo, {name}!"
+
+
+if __name__ == "__main__":
+    print(gruss("Welt"))
+#+END_SRC
+
+Danach liegt =spielwiese.py= neben dieser Notiz im Vault und lässt sich von
+dort ausführen:
+
+#+BEGIN_SRC bash
+python3 spielwiese.py 2>/dev/null || echo "erst tangeln"
+#+END_SRC
+
+** Fehler sehen auch wie Fehler aus
+
+Absichtlich kaputt -- der Knopf färbt sich rot, stderr steht im Ergebnis.
+
+#+BEGIN_SRC python
+raise ValueError("so sieht ein Fehler aus")
+#+END_SRC
+
+** Was nicht läuft
+
+Sprachen ohne Ausführungsunterstützung bekommen keinen Knopf, bleiben aber
+normal hervorgehoben -- ein Block muss nicht ausführbar sein, um in einer
+Notiz zu stehen.
+
+#+BEGIN_SRC json
+{"nur": "Anschauungsmaterial"}
+#+END_SRC
+
+Auf Mobilgeräten fehlen die Knöpfe komplett: dort darf nichts Prozesse
+starten, und in einem Build ohne Babel ist die Ausführung gar nicht erst
+einkompiliert.
+
+** Vertrauen
+
+Der Vertrauensdialog kommt einmal pro Dateiinhalt. Die Antwort steht in
+=trusted_files.json= im Konfigurationsverzeichnis; zum erneuten Testen die
+Datei löschen oder oben einen Buchstaben ändern.

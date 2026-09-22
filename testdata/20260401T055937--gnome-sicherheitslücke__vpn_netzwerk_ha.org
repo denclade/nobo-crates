@@ -1,0 +1,13 @@
+#+TITLE:      GNOME Sicherheitslücke
+#+DATE:       [2026-04-01 Mi 05:59]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :vpn:netzwerk:ha:
+#+IDENTIFIER: 20260401T055937
+
+* GNOME Sicherheitslücke
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+- Screenshot gemacht
+- Ergebnis mit Team geteilt
+- Mit zweitem Gerät getestet

@@ -1,0 +1,12 @@
+#+TITLE:      Ansible Speicherplatz voll
+#+DATE:       [2024-07-31 Mi 04:05]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240731T040555
+
+* Ansible Speicherplatz voll
+
+War einfacher als erwartet. Ein Blick zurück lohnt sich hier. Erster Eindruck ist positiv.
+
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt
+- Backup vorher gemacht

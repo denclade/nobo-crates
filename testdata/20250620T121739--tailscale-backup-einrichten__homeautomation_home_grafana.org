@@ -1,0 +1,9 @@
+#+TITLE:      Tailscale Backup einrichten
+#+DATE:       [2025-06-20 Fr 12:17]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :homeautomation:home:grafana:
+#+IDENTIFIER: 20250620T121739
+
+* Tailscale Backup einrichten
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Funktioniert soweit wie erwartet. Details stehen noch aus.

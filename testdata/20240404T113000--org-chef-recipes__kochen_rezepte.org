@@ -1,0 +1,43 @@
+#+TITLE: Recipes (org-chef)
+#+NOBO_TYPE: cookbook
+
+Written the way org-chef itself generates recipes: English section
+headings, English properties. Has to render exactly like the German files.
+
+* Pancakes                                                          :breakfast:quick:
+:PROPERTIES:
+:CUSTOM_ID: h:rec-pancakes
+:source-url: https://example.com/pancakes
+:servings: 4
+:prep-time: 5
+:cook-time: 15
+:END:
+
+** Ingredients
+- 2 cups flour
+- 2 tbsp sugar
+- 1/2 tsp salt
+- 2 eggs
+- 1 3/4 cups milk
+
+** Directions
+1. Whisk the dry ingredients together.
+2. Beat in the eggs and milk until just combined -- lumps are fine.
+3. Cook on a lightly buttered griddle until bubbles form, then flip.
+
+* Guacamole                                                              :snack:vegan:
+:PROPERTIES:
+:CUSTOM_ID: h:rec-guacamole
+:SERVINGS: 2
+:END:
+
+** Ingredients
+- 2 ripe avocados
+- 1/2 red onion
+- 1 lime
+- A pinch of salt
+
+** Preparation
+1. Mash the avocados coarsely.
+2. Dice the onion finely and fold it in.
+3. Season with lime juice and salt.

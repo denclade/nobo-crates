@@ -1,0 +1,9 @@
+#+TITLE:      PostgreSQL Automatisierung
+#+DATE:       [2026-05-19 Di 02:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :unterricht:tauri:
+#+IDENTIFIER: 20260519T025648
+
+* PostgreSQL Automatisierung
+
+Auf Nachfrage nochmal nachhaken. Ergebnis war nicht ganz wie erhofft.

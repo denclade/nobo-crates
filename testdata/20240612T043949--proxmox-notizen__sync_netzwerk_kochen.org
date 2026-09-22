@@ -1,0 +1,14 @@
+#+TITLE:      Proxmox Notizen
+#+DATE:       [2024-06-12 Mi 04:39]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sync:netzwerk:kochen:
+#+IDENTIFIER: 20240612T043949
+
+* Proxmox Notizen
+
+Läuft seit dem Update stabil. Quelle: Gespräch von heute Vormittag.
+
+- Logs geprüft
+- Ergebnis mit Team geteilt
+- Backup vorher gemacht
+- Dokumentation verlinkt

@@ -1,0 +1,9 @@
+#+TITLE:      Papa Einkaufsliste
+#+DATE:       [2024-04-29 Mo 19:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:rust:
+#+IDENTIFIER: 20240429T195629
+
+* Papa Einkaufsliste
+
+Todo: Screenshot ergänzen. Auf Nachfrage nochmal nachhaken. Siehe auch die letzte Notiz zu diesem Thema.

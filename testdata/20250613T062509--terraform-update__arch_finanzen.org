@@ -1,0 +1,9 @@
+#+TITLE:      Terraform Update
+#+DATE:       [2025-06-13 Fr 06:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arch:finanzen:
+#+IDENTIFIER: 20250613T062509
+
+* Terraform Update
+
+Noch offen: genaue Details klären. Funktioniert soweit wie erwartet. Details stehen noch aus.

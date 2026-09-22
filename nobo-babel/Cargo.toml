@@ -1,0 +1,39 @@
+[package]
+name = "nobo-babel"
+version = "0.1.0"
+description = "Running org-babel SRC blocks in nobo notes, as a Tauri plugin."
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# It depends on the core and on nothing else of nobo's. That is the point
+# of it being a crate: reaching into another feature is not a lint
+# failure here, it is a compile error.
+#
+# The Tauri half is optional, the same way every other feature crate's is
+# (see nobo-review): `commands` are plain functions, `tauri_commands`
+# makes them Tauri commands and puts `spawn_blocking` back around the
+# three that start a process. Default-on, so the app's build is
+# unchanged; everything in that list comes from crates.io, so nothing
+# here points at a path outside these crates.
+[features]
+default = ["tauri"]
+tauri = ["dep:tauri", "dep:tauri-specta", "dep:specta", "dep:specta-typescript"]
+
+[dependencies]
+# For the trust digest -- see src/trust.rs on why it is not a
+# `DefaultHasher`.
+blake3 = { workspace = true }
+nobo-core = { path = "../nobo-core" }
+tauri = { workspace = true, optional = true }
+tauri-specta = { workspace = true, optional = true }
+specta = { workspace = true, optional = true }
+specta-typescript = { workspace = true, optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+log = { workspace = true }
+rusqlite = { workspace = true }
+inventory = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

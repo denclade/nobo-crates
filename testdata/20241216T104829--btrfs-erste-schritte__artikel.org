@@ -1,0 +1,9 @@
+#+TITLE:      BTRFS erste Schritte
+#+DATE:       [2024-12-16 Mo 10:48]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :artikel:
+#+IDENTIFIER: 20241216T104829
+
+* BTRFS erste Schritte
+
+Referenz für später aufgehoben. Auf Nachfrage nochmal nachhaken. Erster Eindruck ist positiv.

@@ -1,0 +1,9 @@
+#+TITLE:      React Konfiguration
+#+DATE:       [2026-03-22 So 16:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :unterricht:projekt:buch:
+#+IDENTIFIER: 20260322T165635
+
+* React Konfiguration
+
+Ergebnis war nicht ganz wie erhofft.

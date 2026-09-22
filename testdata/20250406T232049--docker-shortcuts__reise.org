@@ -1,0 +1,9 @@
+#+TITLE:      Docker Shortcuts
+#+DATE:       [2025-04-06 So 23:20]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :reise:
+#+IDENTIFIER: 20250406T232049
+
+* Docker Shortcuts
+
+Funktioniert soweit wie erwartet. Auf Nachfrage nochmal nachhaken.

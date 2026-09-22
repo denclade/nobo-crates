@@ -1,0 +1,9 @@
+#+TITLE:      Terraform Migration
+#+DATE:       [2025-05-30 Fr 08:38]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :urlaub:sync:
+#+IDENTIFIER: 20250530T083802
+
+* Terraform Migration
+
+Kurzes Fazit nach dem ersten Test. Details stehen noch aus. Siehe auch die letzte Notiz zu diesem Thema.

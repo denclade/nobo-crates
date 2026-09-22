@@ -1,0 +1,9 @@
+#+TITLE:      VPN Sicherheitslücke
+#+DATE:       [2025-01-31 Fr 11:02]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :auto:javascript:
+#+IDENTIFIER: 20250131T110256
+
+* VPN Sicherheitslücke
+
+Auf Nachfrage nochmal nachhaken. Ein Blick zurück lohnt sich hier. Referenz für später aufgehoben.

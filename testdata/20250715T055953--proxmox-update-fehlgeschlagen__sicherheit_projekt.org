@@ -1,0 +1,9 @@
+#+TITLE:      Proxmox Update fehlgeschlagen
+#+DATE:       [2025-07-15 Di 05:59]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:projekt:
+#+IDENTIFIER: 20250715T055953
+
+* Proxmox Update fehlgeschlagen
+
+Ein Blick zurück lohnt sich hier. Details stehen noch aus.

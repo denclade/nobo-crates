@@ -1,0 +1,9 @@
+#+TITLE:      Familie Wochenendplanung
+#+DATE:       [2024-09-22 So 23:02]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :homeautomation:python:blog:
+#+IDENTIFIER: 20240922T230230
+
+* Familie Wochenendplanung
+
+Erster Eindruck ist positiv. Ein Blick zurück lohnt sich hier.

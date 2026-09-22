@@ -1,0 +1,9 @@
+#+TITLE:      KDE Sicherheitslücke
+#+DATE:       [2024-03-31 So 11:37]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :meeting:
+#+IDENTIFIER: 20240331T113730
+
+* KDE Sicherheitslücke
+
+Details stehen noch aus. Auf Nachfrage nochmal nachhaken.

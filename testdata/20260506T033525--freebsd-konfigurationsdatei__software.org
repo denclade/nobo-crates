@@ -1,0 +1,9 @@
+#+TITLE:      FreeBSD Konfigurationsdatei
+#+DATE:       [2026-05-06 Mi 03:35]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :software:
+#+IDENTIFIER: 20260506T033525
+
+* FreeBSD Konfigurationsdatei
+
+Auf Nachfrage nochmal nachhaken.

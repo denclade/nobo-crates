@@ -1,0 +1,9 @@
+#+TITLE:      Tauri Vergleich
+#+DATE:       [2025-09-20 Sa 22:13]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :nextcloud:
+#+IDENTIFIER: 20250920T221353
+
+* Tauri Vergleich
+
+Quelle: Gespräch von heute Vormittag. Funktioniert soweit wie erwartet.

@@ -1,0 +1,17 @@
+#+TITLE:      Arch Linux Speicherplatz voll
+#+DATE:       [2024-08-26 Mo 23:59]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :buch:sicherheit:
+#+IDENTIFIER: 20240826T235935
+
+* Arch Linux Speicherplatz voll
+
+Auf Nachfrage nochmal nachhaken. War einfacher als erwartet.
+
+- Ergebnis mit Team geteilt
+- Config-Datei gesichert
+- Nächsten Termin vorgemerkt
+- Mit zweitem Gerät getestet
+
+** Weiteres Vorgehen
+Details stehen noch aus.

@@ -1,0 +1,16 @@
+#+TITLE:      Meeting Notizen: Sprint Planning
+#+DATE:       [2024-11-09 Sa 03:52]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arbeit:homeautomation:hardware:
+#+IDENTIFIER: 20241109T035258
+
+* Meeting Notizen: Sprint Planning
+
+Auf Nachfrage nochmal nachhaken.
+
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert
+- Nächsten Termin vorgemerkt
+
+** Weiteres Vorgehen
+Kurzes Fazit nach dem ersten Test.

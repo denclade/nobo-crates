@@ -1,0 +1,9 @@
+#+TITLE:      SSH Sicherheitslücke
+#+DATE:       [2026-05-15 Fr 22:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :garten:kochen:
+#+IDENTIFIER: 20260515T222651
+
+* SSH Sicherheitslücke
+
+Muss ich nochmal genauer testen.

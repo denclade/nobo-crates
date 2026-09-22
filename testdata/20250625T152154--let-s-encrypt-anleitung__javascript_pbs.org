@@ -1,0 +1,14 @@
+#+TITLE:      Let's Encrypt Anleitung
+#+DATE:       [2025-06-25 Mi 15:21]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :javascript:pbs:
+#+IDENTIFIER: 20250625T152154
+
+* Let's Encrypt Anleitung
+
+Hat länger gedauert als gedacht.
+
+- Dokumentation verlinkt
+- Mit zweitem Gerät getestet
+- Logs geprüft
+- Screenshot gemacht

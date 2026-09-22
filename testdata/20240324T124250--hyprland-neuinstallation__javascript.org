@@ -1,0 +1,9 @@
+#+TITLE:      Hyprland Neuinstallation
+#+DATE:       [2024-03-24 So 12:42]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :javascript:
+#+IDENTIFIER: 20240324T124250
+
+* Hyprland Neuinstallation
+
+Details stehen noch aus. Todo: Screenshot ergänzen. Ergebnis war nicht ganz wie erhofft.

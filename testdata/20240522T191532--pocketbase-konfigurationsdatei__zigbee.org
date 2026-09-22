@@ -1,0 +1,13 @@
+#+TITLE:      PocketBase Konfigurationsdatei
+#+DATE:       [2024-05-22 Mi 19:15]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zigbee:
+#+IDENTIFIER: 20240522T191532
+
+* PocketBase Konfigurationsdatei
+
+Kurzes Fazit nach dem ersten Test.
+
+- Logs geprüft
+- Dokumentation verlinkt
+- Config-Datei gesichert

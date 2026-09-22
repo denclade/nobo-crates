@@ -1,0 +1,13 @@
+#+TITLE:      Prometheus Best Practices
+#+DATE:       [2025-01-30 Do 22:07]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :tauri:technik:
+#+IDENTIFIER: 20250130T220753
+
+* Prometheus Best Practices
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+- Mit zweitem Gerät getestet
+- Nächsten Termin vorgemerkt
+- Screenshot gemacht

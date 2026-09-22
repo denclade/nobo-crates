@@ -1,0 +1,9 @@
+#+TITLE:      Grafana Setup
+#+DATE:       [2026-07-04 Sa 07:20]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :nextcloud:ki:tauri:
+#+IDENTIFIER: 20260704T072054
+
+* Grafana Setup
+
+Kurzes Fazit nach dem ersten Test.

@@ -1,0 +1,16 @@
+#+TITLE:      Zigbee Benchmark
+#+DATE:       [2025-04-18 Fr 18:36]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :hardware:docker:llm:
+#+IDENTIFIER: 20250418T183630
+
+* Zigbee Benchmark
+
+Auf Nachfrage nochmal nachhaken. Erster Eindruck ist positiv.
+
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert
+- Logs geprüft
+
+** Weiteres Vorgehen
+Nächster Schritt: Ergebnis dokumentieren.

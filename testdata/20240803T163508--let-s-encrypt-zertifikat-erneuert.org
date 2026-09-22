@@ -1,0 +1,8 @@
+#+TITLE:      Let's Encrypt Zertifikat erneuert
+#+DATE:       [2024-08-03 Sa 16:35]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240803T163508
+
+* Let's Encrypt Zertifikat erneuert
+
+Hat länger gedauert als gedacht. Muss ich nochmal genauer testen. Ergebnis war nicht ganz wie erhofft.

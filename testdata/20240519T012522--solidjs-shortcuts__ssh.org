@@ -1,0 +1,9 @@
+#+TITLE:      SolidJS Shortcuts
+#+DATE:       [2024-05-19 So 01:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ssh:
+#+IDENTIFIER: 20240519T012522
+
+* SolidJS Shortcuts
+
+Hat länger gedauert als gedacht.

@@ -1,0 +1,12 @@
+#+TITLE:      Matter erste Schritte
+#+DATE:       [2025-11-01 Sa 10:17]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :proxmox:
+#+IDENTIFIER: 20251101T101707
+
+* Matter erste Schritte
+
+Kurz notiert, bevor ich es vergesse. Wichtig: vor dem nächsten Schritt nochmal prüfen. Noch offen: genaue Details klären.
+
+** Weiteres Vorgehen
+Wichtig: vor dem nächsten Schritt nochmal prüfen.

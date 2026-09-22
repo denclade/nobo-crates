@@ -1,0 +1,14 @@
+#+TITLE:      PocketBase Best Practices
+#+DATE:       [2024-04-10 Mi 18:11]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :nginx:javascript:
+#+IDENTIFIER: 20240410T181116
+
+* PocketBase Best Practices
+
+Nächster Schritt: Ergebnis dokumentieren. Noch offen: genaue Details klären. Details stehen noch aus.
+
+- Backup vorher gemacht
+- Ergebnis mit Team geteilt
+- Logs geprüft
+- Screenshot gemacht

@@ -1,0 +1,11 @@
+#+TITLE:      Prometheus Troubleshooting
+#+DATE:       [2026-02-15 So 00:33]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260215T003348
+
+* Prometheus Troubleshooting
+
+Referenz für später aufgehoben. Läuft seit dem Update stabil. Noch offen: genaue Details klären.
+
+- Screenshot gemacht
+- Dokumentation verlinkt

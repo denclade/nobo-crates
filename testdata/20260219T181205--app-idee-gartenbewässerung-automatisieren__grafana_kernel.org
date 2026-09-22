@@ -1,0 +1,13 @@
+#+TITLE:      App Idee: Gartenbewässerung automatisieren
+#+DATE:       [2026-02-19 Do 18:12]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :grafana:kernel:
+#+IDENTIFIER: 20260219T181205
+
+* App Idee: Gartenbewässerung automatisieren
+
+Referenz für später aufgehoben. Ein Blick zurück lohnt sich hier. Noch offen: genaue Details klären.
+
+- Ergebnis mit Team geteilt
+- Backup vorher gemacht
+- Mit zweitem Gerät getestet

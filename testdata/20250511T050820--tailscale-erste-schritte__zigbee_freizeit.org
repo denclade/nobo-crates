@@ -1,0 +1,9 @@
+#+TITLE:      Tailscale erste Schritte
+#+DATE:       [2025-05-11 So 05:08]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zigbee:freizeit:
+#+IDENTIFIER: 20250511T050820
+
+* Tailscale erste Schritte
+
+Quelle: Gespräch von heute Vormittag.

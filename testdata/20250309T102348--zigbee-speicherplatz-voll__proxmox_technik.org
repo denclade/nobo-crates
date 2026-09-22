@@ -1,0 +1,15 @@
+#+TITLE:      Zigbee Speicherplatz voll
+#+DATE:       [2025-03-09 So 10:23]
+#+FILETAGS:   :proxmox:technik:
+#+IDENTIFIER: 20250309T102348
+
+* Zigbee Speicherplatz voll
+
+Quelle: Gespräch von heute Vormittag.
+
+- Logs geprüft
+- Ergebnis mit Team geteilt
+- Nächsten Termin vorgemerkt
+
+** Weiteres Vorgehen
+Quelle: Gespräch von heute Vormittag.

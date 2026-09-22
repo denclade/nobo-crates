@@ -1,0 +1,11 @@
+#+TITLE:      Buchnotizen: Clean Code
+#+DATE:       [2025-09-25 Do 03:37]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250925T033744
+
+* Buchnotizen: Clean Code
+
+Nächster Schritt: Ergebnis dokumentieren. Hat länger gedauert als gedacht. Funktioniert soweit wie erwartet.
+
+- Backup vorher gemacht
+- Logs geprüft

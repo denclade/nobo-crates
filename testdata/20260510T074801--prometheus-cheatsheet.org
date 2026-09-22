@@ -1,0 +1,8 @@
+#+TITLE:      Prometheus Cheatsheet
+#+DATE:       [2026-05-10 So 07:48]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260510T074801
+
+* Prometheus Cheatsheet
+
+Hat länger gedauert als gedacht. Klingt nach einer guten Idee für nächste Woche.

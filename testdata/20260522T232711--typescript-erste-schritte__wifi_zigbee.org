@@ -1,0 +1,13 @@
+#+TITLE:      TypeScript erste Schritte
+#+DATE:       [2026-05-22 Fr 23:27]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :wifi:zigbee:
+#+IDENTIFIER: 20260522T232711
+
+* TypeScript erste Schritte
+
+Ein Blick zurück lohnt sich hier. War einfacher als erwartet.
+
+- Ergebnis mit Team geteilt
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert

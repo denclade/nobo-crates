@@ -1,0 +1,9 @@
+#+TITLE:      Borg Absturz analysiert
+#+DATE:       [2025-09-18 Do 11:25]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :proxmox:backup:llm:
+#+IDENTIFIER: 20250918T112519
+
+* Borg Absturz analysiert
+
+Quelle: Gespräch von heute Vormittag. Noch offen: genaue Details klären. Klingt nach einer guten Idee für nächste Woche.

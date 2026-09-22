@@ -1,0 +1,14 @@
+#+TITLE:      Nextcloud Neuinstallation
+#+DATE:       [2025-09-21 So 05:22]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :garten:ki:
+#+IDENTIFIER: 20250921T052210
+
+* Nextcloud Neuinstallation
+
+Nächster Schritt: Ergebnis dokumentieren. Muss ich nochmal genauer testen.
+
+- Screenshot gemacht
+- Nächsten Termin vorgemerkt
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt

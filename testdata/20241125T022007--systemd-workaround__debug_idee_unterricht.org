@@ -1,0 +1,9 @@
+#+TITLE:      systemd Workaround
+#+DATE:       [2024-11-25 Mo 02:20]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :debug:idee:unterricht:
+#+IDENTIFIER: 20241125T022007
+
+* systemd Workaround
+
+Ergebnis war nicht ganz wie erhofft. Nächster Schritt: Ergebnis dokumentieren.

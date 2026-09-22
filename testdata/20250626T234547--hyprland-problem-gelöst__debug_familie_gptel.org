@@ -1,0 +1,16 @@
+#+TITLE:      Hyprland Problem gelöst
+#+DATE:       [2025-06-26 Do 23:45]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :debug:familie:gptel:
+#+IDENTIFIER: 20250626T234547
+
+* Hyprland Problem gelöst
+
+Auf Nachfrage nochmal nachhaken.
+
+- Config-Datei gesichert
+- Logs geprüft
+- Ergebnis mit Team geteilt
+
+** Weiteres Vorgehen
+Erster Eindruck ist positiv.

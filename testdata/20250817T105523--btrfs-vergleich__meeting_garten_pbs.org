@@ -1,0 +1,9 @@
+#+TITLE:      BTRFS Vergleich
+#+DATE:       [2025-08-17 So 10:55]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :meeting:garten:pbs:
+#+IDENTIFIER: 20250817T105523
+
+* BTRFS Vergleich
+
+Todo: Screenshot ergänzen.

@@ -1,0 +1,12 @@
+#+TITLE:      Emacs Best Practices
+#+DATE:       [2024-09-04 Mi 17:41]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240904T174135
+
+* Emacs Best Practices
+
+Erster Eindruck ist positiv. Hat länger gedauert als gedacht.
+
+- Backup vorher gemacht
+- Logs geprüft
+- Nächsten Termin vorgemerkt

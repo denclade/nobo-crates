@@ -1,0 +1,43 @@
+#+TITLE: Beispiel: Einkauf (offline)
+#+NOBO_TYPE: caldav-list
+#+NOBO_CALDAV_URL: https://cloud.example.com/remote.php/dav/calendars/dennis/einkauf/
+#+NOBO_CALDAV_USER: dennis
+#+COMMENT: Von nobo mit einer CalDAV-Liste synchronisiert. Bearbeiten ist erlaubt; Änderungen werden hochgeladen.
+
+* TODO Milch    :Wocheneinkauf:
+:PROPERTIES:
+:CUSTOM_ID: h:a52d9088-4dd5-5cf9-b47e-c3b08a55610e
+:CALDAV_UID: sample-einkauf-1
+:END:
+
+* TODO Haferflocken
+:PROPERTIES:
+:CUSTOM_ID: h:fcf673c0-9274-5302-8ac8-dc19af36d5a0
+:CALDAV_UID: sample-einkauf-2
+:END:
+Die groben, nicht die zarten.
+
+* TODO Obst
+:PROPERTIES:
+:CUSTOM_ID: h:3ab2e5f5-6380-5dc3-b9e6-e448f1070baf
+:CALDAV_UID: sample-einkauf-3
+:END:
+
+** TODO Äpfel
+:PROPERTIES:
+:CUSTOM_ID: h:305a36b6-c9f2-51ad-a742-bf3d58826031
+:CALDAV_UID: sample-einkauf-4
+:END:
+
+** DONE Bananen
+:PROPERTIES:
+:CUSTOM_ID: h:b7b04f6a-68df-5bb4-a137-ca5e4f9c2888
+:CALDAV_UID: sample-einkauf-5
+:END:
+
+* DONE Brot
+:PROPERTIES:
+:CUSTOM_ID: h:5a6d62dd-c786-5542-bfa7-7e6a6c732dc0
+:CALDAV_UID: sample-einkauf-6
+:END:
+

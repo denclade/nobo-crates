@@ -1,0 +1,30 @@
+[package]
+name = "nobo-http"
+version = "0.1.0"
+description = "The one door for HTTP: a client that works on Android, and a failure a person can read."
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# Not in the core, and that is the point: nothing the core does leaves
+# this machine. Three features talk to servers (sync, caldav, calendar),
+# they all need the same two things, and a build without any of them
+# should not carry reqwest and a TLS stack it never calls.
+[dependencies]
+reqwest = { workspace = true }
+log = { workspace = true }
+# For `core::i18n`: the words in a network error are read by a person, and
+# the language they should be in lives in settings.json.
+#
+# This direction is fine and the other one is not: the crate split exists
+# so a build WITHOUT networking carries no HTTP/TLS stack (see
+# docs/architecture.md), i.e. nobo-core must not depend on this crate.
+# Every crate that does depend on this one already has nobo-core.
+nobo-core = { path = "../nobo-core" }
+
+# Android's certificate verifier has to be replaced (see src/tls.rs).
+[target.'cfg(target_os = "android")'.dependencies]
+rustls = { workspace = true }
+webpki-roots = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

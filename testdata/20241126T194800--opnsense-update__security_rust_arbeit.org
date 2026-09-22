@@ -1,0 +1,9 @@
+#+TITLE:      OPNsense Update
+#+DATE:       [2024-11-26 Di 19:48]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :security:rust:arbeit:
+#+IDENTIFIER: 20241126T194800
+
+* OPNsense Update
+
+Klingt nach einer guten Idee für nächste Woche. Details stehen noch aus. Noch offen: genaue Details klären.

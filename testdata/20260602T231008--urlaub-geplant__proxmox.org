@@ -1,0 +1,14 @@
+#+TITLE:      Urlaub geplant
+#+DATE:       [2026-06-02 Di 23:10]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :proxmox:
+#+IDENTIFIER: 20260602T231008
+
+* Urlaub geplant
+
+Details stehen noch aus. Referenz für später aufgehoben.
+
+- Backup vorher gemacht
+- Nächsten Termin vorgemerkt
+- Logs geprüft
+- Dokumentation verlinkt

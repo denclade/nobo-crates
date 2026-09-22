@@ -1,0 +1,9 @@
+#+TITLE:      Chef Fahrrad repariert
+#+DATE:       [2026-08-10 Mo 20:29]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ssh:
+#+IDENTIFIER: 20260810T202904
+
+* Chef Fahrrad repariert
+
+War einfacher als erwartet.

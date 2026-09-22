@@ -1,0 +1,13 @@
+#+TITLE:      FreeBSD Performance-Tuning
+#+DATE:       [2026-05-01 Fr 09:27]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ha:
+#+IDENTIFIER: 20260501T092738
+
+* FreeBSD Performance-Tuning
+
+Funktioniert soweit wie erwartet. Nächster Schritt: Ergebnis dokumentieren. Auf Nachfrage nochmal nachhaken.
+
+- Mit zweitem Gerät getestet
+- Ergebnis mit Team geteilt
+- Logs geprüft

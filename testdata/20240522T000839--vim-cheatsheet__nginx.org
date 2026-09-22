@@ -1,0 +1,14 @@
+#+TITLE:      Vim Cheatsheet
+#+DATE:       [2024-05-22 Mi 00:08]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :nginx:
+#+IDENTIFIER: 20240522T000839
+
+* Vim Cheatsheet
+
+War einfacher als erwartet.
+
+- Backup vorher gemacht
+- Nächsten Termin vorgemerkt
+- Logs geprüft
+- Ergebnis mit Team geteilt

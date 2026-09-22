@@ -1,0 +1,12 @@
+#+TITLE:      SSH Installation
+#+DATE:       [2025-01-14 Di 18:03]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:nginx:
+#+IDENTIFIER: 20250114T180313
+
+* SSH Installation
+
+Auf Nachfrage nochmal nachhaken. Nächster Schritt: Ergebnis dokumentieren. Ergebnis war nicht ganz wie erhofft.
+
+- Screenshot gemacht
+- Ergebnis mit Team geteilt

@@ -1,0 +1,14 @@
+#+TITLE:      Bash Konfiguration
+#+DATE:       [2025-12-23 Di 13:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :gptel:schule:
+#+IDENTIFIER: 20251223T130403
+
+* Bash Konfiguration
+
+Erster Eindruck ist positiv. Wichtig: vor dem nächsten Schritt nochmal prüfen. Ein Blick zurück lohnt sich hier.
+
+- Config-Datei gesichert
+- Ergebnis mit Team geteilt
+- Mit zweitem Gerät getestet
+- Screenshot gemacht

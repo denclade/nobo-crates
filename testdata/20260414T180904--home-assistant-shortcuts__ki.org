@@ -1,0 +1,9 @@
+#+TITLE:      Home Assistant Shortcuts
+#+DATE:       [2026-04-14 Di 18:09]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :ki:
+#+IDENTIFIER: 20260414T180904
+
+* Home Assistant Shortcuts
+
+Funktioniert soweit wie erwartet. War einfacher als erwartet.

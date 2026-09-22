@@ -1,0 +1,9 @@
+#+TITLE:      Sway Automatisierung
+#+DATE:       [2025-02-26 Mi 07:51]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :config:debug:
+#+IDENTIFIER: 20250226T075120
+
+* Sway Automatisierung
+
+Siehe auch die letzte Notiz zu diesem Thema. Referenz für später aufgehoben.

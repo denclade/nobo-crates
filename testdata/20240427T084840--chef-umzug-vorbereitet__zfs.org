@@ -1,0 +1,9 @@
+#+TITLE:      Chef Umzug vorbereitet
+#+DATE:       [2024-04-27 Sa 08:48]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zfs:
+#+IDENTIFIER: 20240427T084840
+
+* Chef Umzug vorbereitet
+
+Muss ich nochmal genauer testen.

@@ -1,0 +1,12 @@
+#+TITLE:      PostgreSQL Neuinstallation
+#+DATE:       [2026-03-16 Mo 21:41]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rezept:
+#+IDENTIFIER: 20260316T214103
+
+* PostgreSQL Neuinstallation
+
+Klingt nach einer guten Idee für nächste Woche. Siehe auch die letzte Notiz zu diesem Thema.
+
+- Nächsten Termin vorgemerkt
+- Screenshot gemacht

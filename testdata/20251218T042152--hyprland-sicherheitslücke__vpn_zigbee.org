@@ -1,0 +1,9 @@
+#+TITLE:      Hyprland Sicherheitslücke
+#+DATE:       [2025-12-18 Do 04:21]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :vpn:zigbee:
+#+IDENTIFIER: 20251218T042152
+
+* Hyprland Sicherheitslücke
+
+Funktioniert soweit wie erwartet.

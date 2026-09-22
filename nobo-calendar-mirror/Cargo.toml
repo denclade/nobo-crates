@@ -1,0 +1,26 @@
+[package]
+name = "nobo-calendar-mirror"
+version = "0.1.0"
+description = "What a calendar looks like inside the vault: the file kind, where it lives, what an entry is, and how it is written as org."
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# Two features write one of these -- an ICS subscription (nobo-calendar)
+# and a CalDAV calendar (nobo-caldav) -- because on disk it is the same
+# file in the same shape. Its own crate rather than one of them owning it:
+# a CalDAV account has nothing to do with ICS subscriptions, and needing
+# them to compile was a dependency nobody could explain.
+[dependencies]
+nobo-core = { path = "../nobo-core" }
+nobo-ical = { path = "../nobo-ical" }
+serde = { workspace = true }
+specta = { workspace = true }
+specta-typescript = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+ical = { workspace = true }
+inventory = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+chrono-tz = { workspace = true }

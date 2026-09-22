@@ -1,0 +1,9 @@
+#+TITLE:      Borg Installation
+#+DATE:       [2025-05-12 Mo 21:13]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :home:
+#+IDENTIFIER: 20250512T211317
+
+* Borg Installation
+
+Siehe auch die letzte Notiz zu diesem Thema. Todo: Screenshot ergänzen. Klingt nach einer guten Idee für nächste Woche.

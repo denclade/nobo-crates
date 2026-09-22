@@ -1,0 +1,31 @@
+#+TITLE:      Verlinkte Notizen Übersicht
+#+DATE:       [2026-08-11 Di 14:03]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :demo:
+#+IDENTIFIER: 20260811T140300
+
+* Verlinkte Notizen Übersicht
+
+Diese Notiz sammelt Links zu den anderen drei Demo-Notizen und ein paar älteren Notizen.
+
+** Demo-Notizen
+
+- [[id:20260811T140000][Feature Showcase: Checklisten & Tabellen]]
+- [[id:20260811T140100][Projekt Kickoff Notizen]]
+- [[id:20260811T140200][Meeting Notizen: Sprint Review]]
+
+** Ältere Notizen zum Vergleich
+
+- [[id:20240920T004813][Matter Absturz analysiert]]
+- [[id:20241020T223426][VPN Konfigurationsdatei]]
+
+** Checkliste: Review abgeschlossen?
+
+- [X] Alle Links geprüft
+- [X] Bilder eingebunden
+- [ ] Von echtem Nutzer gegengelesen
+
+---
+
+#+CAPTION: Letztes Bild im Rundgang
+[[file:.attachments/20260509T153000--skizze-gartenplan.png]]

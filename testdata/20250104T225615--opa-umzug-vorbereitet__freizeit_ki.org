@@ -1,0 +1,9 @@
+#+TITLE:      Opa Umzug vorbereitet
+#+DATE:       [2025-01-04 Sa 22:56]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :freizeit:ki:
+#+IDENTIFIER: 20250104T225615
+
+* Opa Umzug vorbereitet
+
+Ergebnis war nicht ganz wie erhofft. Läuft seit dem Update stabil.

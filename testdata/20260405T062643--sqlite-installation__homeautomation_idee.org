@@ -1,0 +1,9 @@
+#+TITLE:      SQLite Installation
+#+DATE:       [2026-04-05 So 06:26]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :homeautomation:idee:
+#+IDENTIFIER: 20260405T062643
+
+* SQLite Installation
+
+Funktioniert soweit wie erwartet. Quelle: Gespräch von heute Vormittag. Ergebnis war nicht ganz wie erhofft.

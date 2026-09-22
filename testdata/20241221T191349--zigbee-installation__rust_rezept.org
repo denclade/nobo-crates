@@ -1,0 +1,14 @@
+#+TITLE:      Zigbee Installation
+#+DATE:       [2024-12-21 Sa 19:13]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rust:rezept:
+#+IDENTIFIER: 20241221T191349
+
+* Zigbee Installation
+
+Referenz für später aufgehoben. Wichtig: vor dem nächsten Schritt nochmal prüfen.
+
+- Dokumentation verlinkt
+- Ergebnis mit Team geteilt
+- Backup vorher gemacht
+- Screenshot gemacht

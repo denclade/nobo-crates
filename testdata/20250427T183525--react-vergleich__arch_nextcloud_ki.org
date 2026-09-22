@@ -1,0 +1,9 @@
+#+TITLE:      React Vergleich
+#+DATE:       [2025-04-27 So 18:35]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arch:nextcloud:ki:
+#+IDENTIFIER: 20250427T183525
+
+* React Vergleich
+
+Läuft seit dem Update stabil.

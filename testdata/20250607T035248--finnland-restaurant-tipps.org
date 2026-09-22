@@ -1,0 +1,8 @@
+#+TITLE:      Finnland Restaurant Tipps
+#+DATE:       [2025-06-07 Sa 03:52]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250607T035248
+
+* Finnland Restaurant Tipps
+
+Muss ich nochmal genauer testen. Läuft seit dem Update stabil. Ergebnis war nicht ganz wie erhofft.

@@ -1,0 +1,14 @@
+#+TITLE:      Kubernetes Vergleich
+#+DATE:       [2024-11-07 Do 01:40]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :docker:pbs:
+#+IDENTIFIER: 20241107T014043
+
+* Kubernetes Vergleich
+
+Kurzes Fazit nach dem ersten Test. Details stehen noch aus.
+
+- Config-Datei gesichert
+- Backup vorher gemacht
+- Ergebnis mit Team geteilt
+- Logs geprüft

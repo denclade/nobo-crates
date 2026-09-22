@@ -1,0 +1,11 @@
+#+TITLE:      Ansible Zertifikat erneuert
+#+DATE:       [2025-05-01 Do 06:00]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20250501T060023
+
+* Ansible Zertifikat erneuert
+
+War einfacher als erwartet. Ein Blick zurück lohnt sich hier.
+
+- Backup vorher gemacht
+- Config-Datei gesichert

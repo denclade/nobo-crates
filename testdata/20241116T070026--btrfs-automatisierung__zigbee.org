@@ -1,0 +1,9 @@
+#+TITLE:      BTRFS Automatisierung
+#+DATE:       [2024-11-16 Sa 07:00]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :zigbee:
+#+IDENTIFIER: 20241116T070026
+
+* BTRFS Automatisierung
+
+Todo: Screenshot ergänzen.

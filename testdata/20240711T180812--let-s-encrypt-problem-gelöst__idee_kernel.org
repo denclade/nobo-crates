@@ -1,0 +1,9 @@
+#+TITLE:      Let's Encrypt Problem gelöst
+#+DATE:       [2024-07-11 Do 18:08]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :idee:kernel:
+#+IDENTIFIER: 20240711T180812
+
+* Let's Encrypt Problem gelöst
+
+Kurz notiert, bevor ich es vergesse. Details stehen noch aus. Erster Eindruck ist positiv.

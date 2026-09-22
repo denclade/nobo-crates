@@ -1,0 +1,14 @@
+#+TITLE:      Bash Konfigurationsdatei
+#+DATE:       [2025-06-02 Mo 23:08]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:schule:finanzen:
+#+IDENTIFIER: 20250602T230841
+
+* Bash Konfigurationsdatei
+
+Läuft seit dem Update stabil. Referenz für später aufgehoben. Details stehen noch aus.
+
+- Config-Datei gesichert
+- Screenshot gemacht
+- Ergebnis mit Team geteilt
+- Mit zweitem Gerät getestet

@@ -1,0 +1,9 @@
+#+TITLE:      GNOME Notizen
+#+DATE:       [2024-07-15 Mo 23:12]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :projekt:hardware:solidjs:
+#+IDENTIFIER: 20240715T231231
+
+* GNOME Notizen
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Kurzes Fazit nach dem ersten Test. Klingt nach einer guten Idee für nächste Woche.

@@ -1,0 +1,17 @@
+#+TITLE:      Bash Shortcuts
+#+DATE:       [2026-05-16 Sa 07:17]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :rezept:kernel:
+#+IDENTIFIER: 20260516T071749
+
+* Bash Shortcuts
+
+Erster Eindruck ist positiv. Hat länger gedauert als gedacht. Kurz notiert, bevor ich es vergesse.
+
+- Ergebnis mit Team geteilt
+- Config-Datei gesichert
+- Backup vorher gemacht
+- Nächsten Termin vorgemerkt
+
+** Weiteres Vorgehen
+Hat länger gedauert als gedacht.

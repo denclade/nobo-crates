@@ -1,0 +1,13 @@
+#+TITLE:      Matter Konfiguration
+#+DATE:       [2025-08-28 Do 16:23]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :homeautomation:
+#+IDENTIFIER: 20250828T162328
+
+* Matter Konfiguration
+
+Kurz notiert, bevor ich es vergesse.
+
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert
+- Nächsten Termin vorgemerkt

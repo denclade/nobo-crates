@@ -1,0 +1,12 @@
+#+TITLE:      Caddy Best Practices
+#+DATE:       [2025-06-25 Mi 07:15]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:fahrrad:
+#+IDENTIFIER: 20250625T071507
+
+* Caddy Best Practices
+
+Läuft seit dem Update stabil. Auf Nachfrage nochmal nachhaken. Referenz für später aufgehoben.
+
+- Backup vorher gemacht
+- Logs geprüft

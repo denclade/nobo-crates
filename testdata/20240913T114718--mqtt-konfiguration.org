@@ -1,0 +1,11 @@
+#+TITLE:      MQTT Konfiguration
+#+DATE:       [2024-09-13 Fr 11:47]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240913T114718
+
+* MQTT Konfiguration
+
+Todo: Screenshot ergänzen. Läuft seit dem Update stabil. Hat länger gedauert als gedacht.
+
+** Weiteres Vorgehen
+Referenz für später aufgehoben.

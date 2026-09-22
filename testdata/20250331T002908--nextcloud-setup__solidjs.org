@@ -1,0 +1,9 @@
+#+TITLE:      Nextcloud Setup
+#+DATE:       [2025-03-31 Mo 00:29]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :solidjs:
+#+IDENTIFIER: 20250331T002908
+
+* Nextcloud Setup
+
+Quelle: Gespräch von heute Vormittag. Klingt nach einer guten Idee für nächste Woche. Funktioniert soweit wie erwartet.

@@ -1,0 +1,9 @@
+#+TITLE:      PostgreSQL Konfigurationsdatei
+#+DATE:       [2026-08-09 So 05:44]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :garten:
+#+IDENTIFIER: 20260809T054414
+
+* PostgreSQL Konfigurationsdatei
+
+Muss ich nochmal genauer testen.

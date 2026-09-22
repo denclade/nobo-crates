@@ -1,0 +1,9 @@
+#+TITLE:      ZFS Performance-Tuning
+#+DATE:       [2025-05-17 Sa 16:44]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :familie:
+#+IDENTIFIER: 20250517T164450
+
+* ZFS Performance-Tuning
+
+Kurz notiert, bevor ich es vergesse. Erster Eindruck ist positiv.

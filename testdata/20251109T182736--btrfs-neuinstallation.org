@@ -1,0 +1,11 @@
+#+TITLE:      BTRFS Neuinstallation
+#+DATE:       [2025-11-09 So 18:27]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20251109T182736
+
+* BTRFS Neuinstallation
+
+Muss ich nochmal genauer testen. Ergebnis war nicht ganz wie erhofft. Kurzes Fazit nach dem ersten Test.
+
+** Weiteres Vorgehen
+Quelle: Gespräch von heute Vormittag.

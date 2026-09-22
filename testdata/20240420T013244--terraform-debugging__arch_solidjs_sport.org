@@ -1,0 +1,14 @@
+#+TITLE:      Terraform Debugging
+#+DATE:       [2024-04-20 Sa 01:32]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :arch:solidjs:sport:
+#+IDENTIFIER: 20240420T013244
+
+* Terraform Debugging
+
+Funktioniert soweit wie erwartet. Ergebnis war nicht ganz wie erhofft. Noch offen: genaue Details klären.
+
+- Logs geprüft
+- Nächsten Termin vorgemerkt
+- Screenshot gemacht
+- Config-Datei gesichert

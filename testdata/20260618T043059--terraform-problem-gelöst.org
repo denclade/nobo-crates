@@ -1,0 +1,8 @@
+#+TITLE:      Terraform Problem gelöst
+#+DATE:       [2026-06-18 Do 04:30]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20260618T043059
+
+* Terraform Problem gelöst
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen.

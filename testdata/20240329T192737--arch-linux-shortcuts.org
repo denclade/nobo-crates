@@ -1,0 +1,13 @@
+#+TITLE:      Arch Linux Shortcuts
+#+DATE:       [2024-03-29 Fr 19:27]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20240329T192737
+
+* Arch Linux Shortcuts
+
+Klingt nach einer guten Idee für nächste Woche. Noch offen: genaue Details klären. Quelle: Gespräch von heute Vormittag.
+
+- Logs geprüft
+- Mit zweitem Gerät getestet
+- Config-Datei gesichert
+- Nächsten Termin vorgemerkt

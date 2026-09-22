@@ -1,0 +1,14 @@
+#+TITLE:      WireGuard Neuinstallation
+#+DATE:       [2024-04-29 Mo 10:12]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :security:emacs:
+#+IDENTIFIER: 20240429T101256
+
+* WireGuard Neuinstallation
+
+Nächster Schritt: Ergebnis dokumentieren. Todo: Screenshot ergänzen.
+
+- Dokumentation verlinkt
+- Screenshot gemacht
+- Nächsten Termin vorgemerkt
+- Mit zweitem Gerät getestet

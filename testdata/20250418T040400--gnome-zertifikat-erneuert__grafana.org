@@ -1,0 +1,9 @@
+#+TITLE:      GNOME Zertifikat erneuert
+#+DATE:       [2025-04-18 Fr 04:04]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :grafana:
+#+IDENTIFIER: 20250418T040400
+
+* GNOME Zertifikat erneuert
+
+Auf Nachfrage nochmal nachhaken.

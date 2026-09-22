@@ -1,0 +1,65 @@
+#+TITLE: Schnelle Küche
+#+NOBO_TYPE: cookbook
+#+FILETAGS: :kochen:
+
+Der einfachste Fall: ein Rezept pro Überschrift, alles auf einer Ebene.
+
+* Spaghetti Carbonara                                        :pasta:fleisch:schnell:
+:PROPERTIES:
+:CUSTOM_ID: h:rec-carbonara
+:SOURCE-URL: https://example.com/carbonara
+:SERVINGS: 2
+:PREP-TIME: 10
+:COOK-TIME: 15
+:END:
+
+Ein Klassiker aus Rom. Ohne Sahne, bitte.
+
+** Zutaten
+- 200 g Spaghetti
+- 100g Guanciale
+- 2 Eier
+- 50 g Pecorino Romano
+- Eine Prise Salz
+- frisch gemahlener Pfeffer
+
+** Zubereitung
+1. Nudelwasser aufsetzen und kräftig salzen.
+2. Guanciale in Streifen schneiden und auslassen, bis er knusprig ist.
+3. Eier und Pecorino verquirlen, großzügig pfeffern.
+4. Nudeln abgießen, etwas Kochwasser auffangen.
+5. Alles vermischen -- nicht auf der heißen Platte, sonst wird es Rührei.
+
+* Tomatensuppe                                                      :vegan:schnell:
+:PROPERTIES:
+:CUSTOM_ID: h:rec-tomatensuppe
+:SERVINGS: 4
+:PREP-TIME: 5
+:COOK-TIME: 25
+:END:
+
+** Zutaten
+- 1,5 kg reife Tomaten
+- 2-3 Zwiebeln
+- 2 EL Olivenöl
+- ½ TL Zucker
+- 1 Msp. Piment
+- Etwas Basilikum
+
+** Zubereitung
+1. Zwiebeln würfeln und in Olivenöl glasig dünsten.
+2. Tomaten grob schneiden, dazugeben, 20 Minuten köcheln lassen.
+3. Pürieren, mit Zucker, Salz und Piment abschmecken.
+4. Mit Basilikum servieren.
+
+* Omas Kartoffelsalat
+:PROPERTIES:
+:CUSTOM_ID: h:rec-kartoffelsalat
+:END:
+
+Kein sauber strukturiertes Rezept -- so, wie man es sich mal eben notiert.
+Der Fallback muss das trotzdem lesbar anzeigen.
+
+Festkochende Kartoffeln kochen, pellen, in Scheiben schneiden. Warme Brühe
+mit Essig, Senf und Zwiebelwürfeln darübergeben und mindestens eine Stunde
+ziehen lassen. Erst zum Schluss Öl unterheben.

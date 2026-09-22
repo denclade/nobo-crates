@@ -1,0 +1,9 @@
+#+TITLE:      Prometheus Absturz analysiert
+#+DATE:       [2025-08-08 Fr 13:11]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :sicherheit:
+#+IDENTIFIER: 20250808T131122
+
+* Prometheus Absturz analysiert
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Klingt nach einer guten Idee für nächste Woche.

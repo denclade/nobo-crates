@@ -1,0 +1,12 @@
+#+TITLE:      FreeBSD Installation
+#+DATE:       [2024-08-24 Sa 00:53]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :vpn:sport:
+#+IDENTIFIER: 20240824T005323
+
+* FreeBSD Installation
+
+Ein Blick zurück lohnt sich hier.
+
+- Nächsten Termin vorgemerkt
+- Ergebnis mit Team geteilt

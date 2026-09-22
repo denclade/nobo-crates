@@ -1,0 +1,12 @@
+#+TITLE:      ESPHome Automatisierung
+#+DATE:       [2026-03-16 Mo 10:59]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :matter:
+#+IDENTIFIER: 20260316T105918
+
+* ESPHome Automatisierung
+
+Läuft seit dem Update stabil. Quelle: Gespräch von heute Vormittag.
+
+** Weiteres Vorgehen
+Auf Nachfrage nochmal nachhaken.

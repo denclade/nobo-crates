@@ -1,0 +1,9 @@
+#+TITLE:      Zigbee erste Schritte
+#+DATE:       [2026-06-05 Fr 23:01]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :netzwerk:reise:
+#+IDENTIFIER: 20260605T230154
+
+* Zigbee erste Schritte
+
+War einfacher als erwartet.

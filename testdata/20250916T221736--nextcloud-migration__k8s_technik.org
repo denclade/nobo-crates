@@ -1,0 +1,12 @@
+#+TITLE:      Nextcloud Migration
+#+DATE:       [2025-09-16 Di 22:17]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :k8s:technik:
+#+IDENTIFIER: 20250916T221736
+
+* Nextcloud Migration
+
+Funktioniert soweit wie erwartet. Kurz notiert, bevor ich es vergesse.
+
+- Config-Datei gesichert
+- Logs geprüft

@@ -1,0 +1,9 @@
+#+TITLE:      Freunde Versicherung geprüft
+#+DATE:       [2026-01-26 Mo 22:23]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :linux:sicherheit:
+#+IDENTIFIER: 20260126T222316
+
+* Freunde Versicherung geprüft
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Nächster Schritt: Ergebnis dokumentieren.

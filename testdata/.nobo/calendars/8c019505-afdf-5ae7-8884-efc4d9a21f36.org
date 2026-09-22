@@ -1,0 +1,45 @@
+#+TITLE: Beispiel: Schulferien BW (Internet)
+#+NOBO_TYPE: calendar-mirror
+#+NOBO_CALENDAR_URL: https://www.ferienwiki.de/exports/ferien/2026/de/baden-wuerttemberg
+#+COMMENT: Von nobo aus einem ICS-Abo erzeugt. Änderungen gehen beim nächsten Aktualisieren verloren.
+
+* Osterferien
+:PROPERTIES:
+:CUSTOM_ID: h:4b0a86b5-bce9-52ef-92c9-24e3e79c5787
+:ICS_UID: b4ba4fcc-3245-4a2e-916f-a13848645c78
+:END:
+<2026-03-30 Mon>--<2026-04-11 Sat>
+Osterferien 2026 in Baden-Württemberg - Importiert von Ferienwiki
+
+* Pfingstferien
+:PROPERTIES:
+:CUSTOM_ID: h:7830ea26-28c2-5188-ba98-97ba49c8b2af
+:ICS_UID: 87eb71be-333c-443a-aef7-be81b898ffb5
+:END:
+<2026-05-26 Tue>--<2026-06-05 Fri>
+Pfingstferien 2026 in Baden-Württemberg - Importiert von Ferienwiki
+
+* Sommerferien
+:PROPERTIES:
+:CUSTOM_ID: h:2b5f565e-e876-5d70-ad7d-46041a5bef6d
+:ICS_UID: f39dedfe-5177-4e21-8ff8-52ca40b57ccd
+:END:
+<2026-07-30 Thu>--<2026-09-12 Sat>
+Sommerferien 2026 in Baden-Württemberg - Importiert von Ferienwiki
+
+* Herbstferien
+:PROPERTIES:
+:CUSTOM_ID: h:61bb91ab-c391-51d9-ae43-5c053138a589
+:ICS_UID: b1c8ba4d-4871-4104-aae0-2b8506371444
+:END:
+<2026-10-26 Mon>--<2026-10-31 Sat>
+Herbstferien 2026 in Baden-Württemberg - Importiert von Ferienwiki
+
+* Weihnachtsferien
+:PROPERTIES:
+:CUSTOM_ID: h:73f9e788-1e6e-54f0-9470-2997c10b78ea
+:ICS_UID: 6a2f289d-cff6-4df0-94e0-f9e7e315ce03
+:END:
+<2026-12-23 Wed>--<2027-01-09 Sat>
+Weihnachtsferien 2026 in Baden-Württemberg - Importiert von Ferienwiki
+

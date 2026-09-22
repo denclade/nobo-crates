@@ -1,0 +1,14 @@
+#+TITLE:      Grafana Update fehlgeschlagen
+#+DATE:       [2025-03-23 So 19:08]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :emacs:
+#+IDENTIFIER: 20250323T190838
+
+* Grafana Update fehlgeschlagen
+
+Auf Nachfrage nochmal nachhaken. Funktioniert soweit wie erwartet. War einfacher als erwartet.
+
+- Screenshot gemacht
+- Backup vorher gemacht
+- Mit zweitem Gerät getestet
+- Logs geprüft

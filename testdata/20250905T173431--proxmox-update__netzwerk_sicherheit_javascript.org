@@ -1,0 +1,17 @@
+#+TITLE:      Proxmox Update
+#+DATE:       [2025-09-05 Fr 17:34]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :netzwerk:sicherheit:javascript:
+#+IDENTIFIER: 20250905T173431
+
+* Proxmox Update
+
+Ein Blick zurück lohnt sich hier.
+
+- Backup vorher gemacht
+- Logs geprüft
+- Dokumentation verlinkt
+- Ergebnis mit Team geteilt
+
+** Weiteres Vorgehen
+Referenz für später aufgehoben.

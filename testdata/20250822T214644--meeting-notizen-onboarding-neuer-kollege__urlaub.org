@@ -1,0 +1,14 @@
+#+TITLE:      Meeting Notizen: Onboarding neuer Kollege
+#+DATE:       [2025-08-22 Fr 21:46]
+#+AUTHOR:     Dennis Burgermeister
+#+FILETAGS:   :urlaub:
+#+IDENTIFIER: 20250822T214644
+
+* Meeting Notizen: Onboarding neuer Kollege
+
+Wichtig: vor dem nächsten Schritt nochmal prüfen. Muss ich nochmal genauer testen. Todo: Screenshot ergänzen.
+
+** Weiteres Vorgehen
+Erster Eindruck ist positiv.
+
+[[file:.attachments/20250820T133000--diagramm-netzwerk__rust_idee.png]]

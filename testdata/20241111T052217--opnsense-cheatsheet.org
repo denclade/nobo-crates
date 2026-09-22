@@ -1,0 +1,8 @@
+#+TITLE:      OPNsense Cheatsheet
+#+DATE:       [2024-11-11 Mo 05:22]
+#+AUTHOR:     Dennis Burgermeister
+#+IDENTIFIER: 20241111T052217
+
+* OPNsense Cheatsheet
+
+Hat länger gedauert als gedacht. Referenz für später aufgehoben. Nächster Schritt: Ergebnis dokumentieren.
