@@ -238,7 +238,7 @@ pub fn evaluate_trigger(flat: &[Heading], source_line_no: usize) -> Vec<PlannedC
         return Vec::new();
     };
 
-    let Some(raw) = flat[idx].properties.get(ORG_TRIGGER_PROPERTY) else {
+    let Some(raw) = inherited_trigger(flat, idx) else {
         return Vec::new();
     };
 
@@ -261,6 +261,12 @@ pub fn evaluate_trigger(flat: &[Heading], source_line_no: usize) -> Vec<PlannedC
 
     targets
         .into_iter()
+        // A heading that is already finished is never a target. The
+        // positional finders do not look at state -- `next-sibling` of a
+        // task completed out of order can be one that was crossed off
+        // last week -- and "give this project its next step" can never
+        // mean "reopen something that was done".
+        .filter(|&t| !is_finished(&flat[t]))
         .flat_map(|t| {
             spec.actions.iter().map(move |a| PlannedChange {
                 target_line_no: flat[t].line_no,
@@ -271,6 +277,39 @@ pub fn evaluate_trigger(flat: &[Heading], source_line_no: usize) -> Vec<PlannedC
             })
         })
         .collect()
+}
+
+fn is_finished(heading: &Heading) -> bool {
+    heading
+        .state
+        .as_deref()
+        .is_some_and(|state| crate::core::models::FINISHED_STATES.contains(&state))
+}
+
+/// The TRIGGER that applies to the heading at IDX: its own, or the
+/// nearest one an ancestor carries.
+///
+/// Org property inheritance, which is what org-edna itself uses when
+/// TRIGGER is in `org-use-property-inheritance` -- and without it the
+/// feature both frontends offer does not work at all. "Auto-NEXT" is a
+/// switch on the PROJECT, and a project's trigger has to be what fires
+/// when a task under it is completed; read off the source alone, a
+/// project's TRIGGER could only ever fire when the project itself
+/// changed state, which is not what the switch says it does.
+///
+/// The source stays the source: `next-sibling` is resolved against the
+/// task that changed, not against the project the trigger was read from.
+/// That is what makes the inherited spelling mean "when something under
+/// me is finished, move to the one after it".
+fn inherited_trigger(flat: &[Heading], idx: usize) -> Option<&String> {
+    let mut at = Some(idx);
+    while let Some(i) = at {
+        if let Some(raw) = flat[i].properties.get(ORG_TRIGGER_PROPERTY) {
+            return Some(raw);
+        }
+        at = parent_idx(flat, i);
+    }
+    None
 }
 
 /// Re-evaluates the TRIGGER property of the heading at SOURCE_LINE_NO (after
@@ -366,6 +405,52 @@ mod tests {
         let mut heading = heading(line_no, level, title, state);
         heading.properties.insert(key.to_string(), value.to_string());
         heading
+    }
+
+
+    /// Auto-NEXT as both frontends offer it: the switch is on the
+    /// PROJECT, and finishing a task under it moves the next one up.
+    #[test]
+    fn a_projects_trigger_fires_for_a_task_under_it() {
+        let flat = vec![
+            heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY,
+                              "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
+            heading(2, 2, "A", Some("DONE")),
+            heading(3, 2, "B", Some("TODO")),
+            heading(4, 2, "C", Some("TODO")),
+        ];
+
+        let changes = evaluate_trigger(&flat, 2);
+
+        assert_eq!(changes, vec![PlannedChange { target_line_no: 3, new_state: Some("NEXT".into()) }]);
+    }
+
+    /// The task's own trigger still wins: inheritance only fills a gap.
+    #[test]
+    fn a_task_with_its_own_trigger_keeps_it() {
+        let flat = vec![
+            heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY, "next-sibling todo!(NEXT)"),
+            heading_with_prop(2, 2, "A", Some("DONE"), ORG_TRIGGER_PROPERTY, "next-sibling todo!(TODO)"),
+            heading(3, 2, "B", Some("TODO")),
+        ];
+
+        let changes = evaluate_trigger(&flat, 2);
+
+        assert_eq!(changes, vec![PlannedChange { target_line_no: 3, new_state: Some("TODO".into()) }]);
+    }
+
+    /// Completing out of order must not bring a finished task back.
+    #[test]
+    fn a_finished_heading_is_never_a_target() {
+        let flat = vec![
+            heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY,
+                              "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
+            heading(2, 2, "A", Some("DONE")),
+            heading(3, 2, "B", Some("WONT-DO")),
+            heading(4, 2, "C", Some("TODO")),
+        ];
+
+        assert!(evaluate_trigger(&flat, 2).is_empty(), "the next sibling is finished");
     }
 
     #[test]
