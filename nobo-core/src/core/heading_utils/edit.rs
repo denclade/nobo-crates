@@ -195,6 +195,84 @@ impl HeadingEdit {
         Ok(())
     }
 
+    /// Moves the heading and everything under it to where ANCHOR sits --
+    /// directly above that heading -- or last among its siblings when
+    /// there is no anchor.
+    ///
+    /// Reordering only. The anchor has to be a sibling: same level, same
+    /// parent. A drag that lands somewhere else is not a move but a
+    /// refile, and `refile_heading` owns that, with the history entry and
+    /// the trigger handling that belong to it.
+    ///
+    /// One mutation, not a delete followed by an insert. Both ranges are
+    /// read off the same parse and the insertion point is corrected by
+    /// exactly what the lift took out -- doing it as two calls would be
+    /// the stale arithmetic `refuse_second_mutation` exists to stop.
+    pub fn move_subtree_before(&mut self, anchor: Option<usize>) -> Result<(), String> {
+        self.refuse_second_mutation()?;
+
+        // `open_edit` has already refused a file nobody may write. This
+        // is the narrower question the kinds answer separately: whether
+        // the ORDER of the headings is the user's to change. It is the
+        // list itself for a CalDAV list, and the cook's own text in a
+        // cookbook (see FileKindSpec::reorderable).
+        let kind = crate::core::file_kind::from_lines(&self.lines);
+        if !crate::core::file_kind::capabilities(kind).reorderable {
+            return Err(crate::t!(
+                "Die Reihenfolge in dieser Datei lässt sich nicht umstellen.",
+                "The order of the headings in this file is not something to rearrange."
+            ));
+        }
+
+        let heading = self.flat[self.idx].clone();
+        let (first, last) = subtree_line_range(&self.flat, self.idx);
+        let (start, end) = block_range(&self.lines, first, last, &heading.title)?;
+
+        let at = match anchor {
+            Some(other) => {
+                let sibling = self.flat[other].clone();
+                if sibling.level != heading.level
+                    || parent_line_of(&self.flat, other) != parent_line_of(&self.flat, self.idx)
+                {
+                    return Err(crate::t!(
+                        "\"{}\" und \"{}\" stehen nicht auf derselben Ebene -- zum Verschieben unter eine andere Überschrift gibt es das Einsortieren.", "\"{}\" and \"{}\" are not siblings -- moving something under a different heading is what refiling is for.",
+                        heading.title,
+                        sibling.title
+                    ));
+                }
+                if sibling.line_no == 0 || sibling.line_no > self.lines.len() + 1 {
+                    return Err(crate::t!(
+                        "\"{}\" liegt nicht mehr auf Zeile {} (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.", "\"{}\" is no longer at line {} (the file has {}) -- it has changed since, please reload.",
+                        sibling.title,
+                        sibling.line_no,
+                        self.lines.len()
+                    ));
+                }
+                sibling.line_no - 1
+            }
+            // Last among its siblings: the end of what encloses them,
+            // which for a top-level heading is the end of the file.
+            None => match parent_idx_of(&self.flat, self.idx) {
+                Some(parent) => find_subtree_end_line(&self.flat, parent),
+                None => self.lines.len(),
+            },
+        };
+
+        // Dropped where it already is. The lift and the insert would
+        // cancel out, but the write would still touch the file and wake
+        // every watcher -- including the sync that is about to be told
+        // the order changed.
+        if at >= start && at <= end {
+            return Ok(());
+        }
+
+        let block: Vec<String> = self.lines.splice(start..end, Vec::new()).collect();
+        let at = if at > start { at - (end - start) } else { at };
+        self.lines.splice(at..at, block);
+        self.mutated = true;
+        Ok(())
+    }
+
     /// Bumps LAST_ACTIVITY on every enclosing heading, so finishing a
     /// subtask surfaces its project under "sort by last activity".
     ///
@@ -294,6 +372,17 @@ impl HeadingEdit {
         }
         Ok(())
     }
+}
+
+/// The index of the heading enclosing FLAT[IDX], if any.
+fn parent_idx_of(flat: &[Heading], idx: usize) -> Option<usize> {
+    let level = flat[idx].level;
+    flat[..idx].iter().rposition(|h| h.level < level)
+}
+
+/// Its line number -- what two headings have to agree on to be siblings.
+fn parent_line_of(flat: &[Heading], idx: usize) -> Option<usize> {
+    parent_idx_of(flat, idx).map(|i| flat[i].line_no)
 }
 
 /// A target that names nothing but a line -- for the callers that restore
@@ -475,6 +564,154 @@ mod tests {
 
         assert!(edit.write(&renamed("Zweimal")).is_err());
         assert!(edit.delete_subtree().is_err());
+    }
+
+    /* --- reordering --- */
+
+    const THREE: &str = concat!(
+        "* TODO Brot\n",
+        "* TODO Milch\n",
+        "* TODO Käse\n",
+    );
+
+    fn titles(text: &str) -> Vec<&str> {
+        text.lines().filter(|l| l.starts_with('*')).collect()
+    }
+
+    fn move_it(path: &PathBuf, title: &str, before: Option<&str>) -> Result<(), String> {
+        let target = HeadingTarget { line_no: 0, custom_id: None, title: Some(title.to_string()) };
+        let mut edit = open_edit(path, &target, &crate::core::errors::subject::heading())?;
+        let anchor = match before {
+            Some(other) => {
+                let sibling = HeadingTarget { line_no: 0, custom_id: None, title: Some(other.to_string()) };
+                Some(heading_identity::resolve_target(edit.flat(), &sibling, &crate::core::errors::subject::sibling_heading())?)
+            }
+            None => None,
+        };
+        edit.move_subtree_before(anchor)?;
+        edit.commit()
+    }
+
+    #[test]
+    fn a_heading_moved_up_lands_directly_above_the_one_it_was_dropped_on() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "liste.org", THREE);
+
+        move_it(&path, "Käse", Some("Milch")).unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(titles(&text), vec!["* TODO Brot", "* TODO Käse", "* TODO Milch"], "{text}");
+    }
+
+    /// Downwards the lift happens above the target, so the insertion point
+    /// has to come down by what was taken out -- the arithmetic that is
+    /// wrong in every implementation that does this as two edits.
+    #[test]
+    fn a_heading_moved_down_lands_directly_above_the_one_it_was_dropped_on() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "liste.org", THREE);
+
+        move_it(&path, "Brot", Some("Käse")).unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(titles(&text), vec!["* TODO Milch", "* TODO Brot", "* TODO Käse"], "{text}");
+    }
+
+    #[test]
+    fn no_anchor_means_last() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "liste.org", THREE);
+
+        move_it(&path, "Brot", None).unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(titles(&text), vec!["* TODO Milch", "* TODO Käse", "* TODO Brot"], "{text}");
+    }
+
+    /// The children come along, and the drawers with them.
+    #[test]
+    fn a_subtree_moves_whole() {
+        let dir = TempDir::new().unwrap();
+        // The second group carries an id, because a `*`-line with no
+        // state, no tags and no CUSTOM_ID is absorbed as a sub-note
+        // rather than parsed as a heading (see org_parser).
+        let path = write(
+            &dir,
+            "projekte.org",
+            &format!("{PROJECT}** Zweite Gruppe\n:PROPERTIES:\n:CUSTOM_ID: h:zweite\n:END:\n*** TODO Aufgabe C\n"),
+        );
+
+        move_it(&path, "Zweite Gruppe", Some("Gruppe")).unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(
+            titles(&text),
+            vec![
+                "* Projekt                                                          :project:",
+                "** Zweite Gruppe",
+                "*** TODO Aufgabe C",
+                "** Gruppe",
+                "*** TODO Aufgabe A",
+                "*** TODO Aufgabe B",
+            ],
+            "{text}"
+        );
+        assert!(text.contains(":CUSTOM_ID: h:gruppe"), "the drawer travelled with its heading:\n{text}");
+    }
+
+    /// Last among its siblings is the end of what encloses them, not the
+    /// end of the file -- otherwise a subtask dropped at the bottom of its
+    /// project would leave the project altogether.
+    #[test]
+    fn last_among_siblings_stays_inside_the_parent() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "projekte.org", &format!("{PROJECT}* Anderes Projekt                                                  :project:\n"));
+
+        move_it(&path, "Aufgabe A", None).unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(
+            titles(&text),
+            vec![
+                "* Projekt                                                          :project:",
+                "** Gruppe",
+                "*** TODO Aufgabe B",
+                "*** TODO Aufgabe A",
+                "* Anderes Projekt                                                  :project:",
+            ],
+            "{text}"
+        );
+    }
+
+    /// Moving something under a different heading is refiling, which has
+    /// its own command, its own history entry and its own trigger
+    /// handling. A drag cannot be allowed to do it quietly.
+    #[test]
+    fn an_anchor_that_is_not_a_sibling_is_refused() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "projekte.org", PROJECT);
+
+        let err = move_it(&path, "Gruppe", Some("Aufgabe A")).unwrap_err();
+
+        assert!(err.contains("Ebene") || err.contains("siblings"), "{err}");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), PROJECT, "nothing was written");
+    }
+
+    /// Dropped back where it came from: no write at all, because one
+    /// would still touch the file and wake everything watching it.
+    #[test]
+    fn dropping_a_heading_where_it_already_is_writes_nothing() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "liste.org", THREE);
+        let target = HeadingTarget { line_no: 0, custom_id: None, title: Some("Milch".into()) };
+
+        let mut edit = open_edit(&path, &target, &crate::core::errors::subject::heading()).unwrap();
+        let sibling = HeadingTarget { line_no: 0, custom_id: None, title: Some("Käse".into()) };
+        let anchor = heading_identity::resolve_target(edit.flat(), &sibling, &crate::core::errors::subject::sibling_heading()).unwrap();
+        edit.move_subtree_before(Some(anchor)).unwrap();
+
+        // Still open for another mutation, because none has happened.
+        assert!(edit.write(&renamed("Milch 2")).is_ok());
     }
 
     /* --- the write guard, asked before the caller does any work --- */

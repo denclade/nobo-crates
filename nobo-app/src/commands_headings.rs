@@ -698,6 +698,53 @@ pub fn delete_heading_in_file(
     result
 }
 
+/// Reorders a heading among its siblings.
+///
+/// BEFORE names the sibling it should end up above; `None` puts it last.
+/// That is the shape a drag has -- "this one now goes where that one is"
+/// -- and it needs no index, which would be stale the moment anything
+/// else in the file moved.
+///
+/// Only the order changes: the level and the parent stay what they were,
+/// and an anchor that is not a sibling is refused rather than quietly
+/// re-parenting the subtree (see `HeadingEdit::move_subtree_before`).
+/// Recorded as an ordinary file edit, because that is what it is -- the
+/// snapshot pair is the whole file, so undo puts the order back.
+pub fn move_heading_in_file(
+    file_path: String,
+    target: HeadingTarget,
+    before: Option<HeadingTarget>,
+    index_manager: &IndexManager,
+    db: &Mutex<Connection>,
+) -> Result<(), String> {
+    let target_path = PathBuf::from(&file_path);
+
+    let mut edit = heading_utils::open_edit(&target_path, &target, &nobo_core::core::errors::subject::heading())?;
+    // Resolved against the same parse the move will splice, and by
+    // identity like every other write: a line number alone would move the
+    // entry above whatever has since taken that line.
+    let anchor = match &before {
+        Some(sibling) => Some(heading_identity::resolve_target(
+            edit.flat(),
+            sibling,
+            &nobo_core::core::errors::subject::sibling_heading(),
+        )?),
+        None => None,
+    };
+
+    let (snapshot_before, result, snapshot_after) = history::snapshot_around(&target_path, || {
+        edit.move_subtree_before(anchor)?;
+        edit.commit()?;
+        index_manager.update_file(&target_path);
+        Ok(())
+    });
+
+    record_best_effort(&db, HistoryEntryKind::FileEdited { filename: filename_of(&target_path) }, false,
+        vec![FileSnapshot { path: file_path, before: snapshot_before, after: snapshot_after }]);
+
+    result
+}
+
 pub fn archive_done_tasks(
     file_path: String,
     archive_after_days: u32,
