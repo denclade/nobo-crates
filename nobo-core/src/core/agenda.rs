@@ -201,8 +201,6 @@ fn flatten_projects(nodes: &[Heading], project: Option<&str>, out: &mut Vec<Agen
     }
 }
 
-/// Every task this vault knows, from both files, plus what features
-/// contribute for `day`.
 /// The vault's own headings: the projects tree and the actions file.
 ///
 /// Apart from the features, because they are the part that is the same
@@ -226,6 +224,8 @@ fn vault_entries(vault: &Vault, projects_file: &Path, actions_file: &Path) -> Ve
     entries
 }
 
+/// Every task this vault knows, from both files, plus what features
+/// contribute for `day`.
 fn all_entries(vault: &Vault, projects_file: &Path, actions_file: &Path, day: &str) -> Vec<AgendaEntry> {
     let mut entries = vault_entries(vault, projects_file, actions_file);
     for contributor in inventory::iter::<AgendaContributor> {

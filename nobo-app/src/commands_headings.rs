@@ -796,11 +796,6 @@ fn resolve_effort_presets(file_content: Option<&str>, settings_presets_org: Opti
     from_settings.unwrap_or_else(|| effort_utils::parse_effort_all(effort_utils::DEFAULT_EFFORT_PRESETS_ORG))
 }
 
-/// Resolves the Effort quick-select chip values (minutes) for a task in
-/// FILE_PATH -- see resolve_effort_presets for the priority order. A
-/// missing/unreadable file is treated the same as "no directive" rather
-/// than an error -- this is a read-only convenience lookup, not a
-/// correctness-critical operation.
 /// Every `:CATEGORY:` the vault already uses, alphabetically.
 ///
 /// The area of a task is a closed list in practice: a vault accumulates a
@@ -829,6 +824,11 @@ pub fn list_categories(index_state: &IndexManager) -> Vec<String> {
     found
 }
 
+/// Resolves the Effort quick-select chip values (minutes) for a task in
+/// FILE_PATH -- see resolve_effort_presets for the priority order. A
+/// missing/unreadable file is treated the same as "no directive" rather
+/// than an error -- this is a read-only convenience lookup, not a
+/// correctness-critical operation.
 pub fn get_effort_presets(file_path: String) -> Result<Vec<u32>, String> {
     let file_content = std::fs::read_to_string(&file_path).ok();
     let settings_presets_org = Config::load().map(|c| c.effort_presets_org);

@@ -2,6 +2,7 @@ use crate::core::heading_identity;
 use crate::core::heading_utils;
 use crate::core::indexer::IndexManager;
 use crate::core::models::{Heading, HeadingTarget, HeadingUpdatePayload};
+use crate::core::task_utils;
 use std::path::Path;
 
 pub const ORG_TRIGGER_PROPERTY: &str = "TRIGGER";
@@ -181,16 +182,31 @@ fn sibling_indices(flat: &[Heading], idx: usize) -> Vec<usize> {
         .collect()
 }
 
+/// Where a finder points, seen from IDX.
+///
+/// `next-sibling` and `previous-sibling` walk PAST finished headings. They
+/// name a direction, not a position, so "the next one along" is the next
+/// one that is still open. That is what "give this project its next
+/// step" has to mean once tasks get done out of order or one in between
+/// is cancelled -- the only reading under which Auto-NEXT keeps its
+/// promise that a project always has a visible next step. Read literally,
+/// the trigger fired at a task crossed off last week, refused to reopen
+/// it, and left the project with no next step at all.
+///
+/// The set finders (`siblings`, `children`) and the fixed ones (`parent`,
+/// `first-child`) stay literal: "the first child" does not become "the
+/// second" because the first is done. evaluate_trigger keeps finished
+/// targets out of those instead.
 pub fn resolve_finder(flat: &[Heading], idx: usize, finder: &Finder) -> Vec<usize> {
     match finder {
         Finder::NextSibling => sibling_indices(flat, idx)
             .into_iter()
-            .find(|&i| i > idx)
+            .find(|&i| i > idx && !task_utils::is_finished(flat[i].state.as_deref()))
             .into_iter()
             .collect(),
         Finder::PreviousSibling => sibling_indices(flat, idx)
             .into_iter()
-            .filter(|&i| i < idx)
+            .filter(|&i| i < idx && !task_utils::is_finished(flat[i].state.as_deref()))
             .last()
             .into_iter()
             .collect(),
@@ -261,12 +277,13 @@ pub fn evaluate_trigger(flat: &[Heading], source_line_no: usize) -> Vec<PlannedC
 
     targets
         .into_iter()
-        // A heading that is already finished is never a target. The
-        // positional finders do not look at state -- `next-sibling` of a
-        // task completed out of order can be one that was crossed off
-        // last week -- and "give this project its next step" can never
-        // mean "reopen something that was done".
-        .filter(|&t| !is_finished(&flat[t]))
+        // A heading that is already finished is never a target, whichever
+        // finder named it: `children` and `siblings` hand back everything
+        // at their level, done or not, and "give this project its next
+        // step" can never mean "reopen something that was done". The
+        // sibling finders already walk past finished ones (see
+        // resolve_finder); this is the net under the rest.
+        .filter(|&t| !task_utils::is_finished(flat[t].state.as_deref()))
         .flat_map(|t| {
             spec.actions.iter().map(move |a| PlannedChange {
                 target_line_no: flat[t].line_no,
@@ -277,13 +294,6 @@ pub fn evaluate_trigger(flat: &[Heading], source_line_no: usize) -> Vec<PlannedC
             })
         })
         .collect()
-}
-
-fn is_finished(heading: &Heading) -> bool {
-    heading
-        .state
-        .as_deref()
-        .is_some_and(|state| crate::core::models::FINISHED_STATES.contains(&state))
 }
 
 /// The TRIGGER that applies to the heading at IDX: its own, or the
@@ -379,7 +389,6 @@ pub fn apply_triggers(
 mod tests {
     use super::*;
     use crate::core::models::Heading;
-    use std::collections::HashMap;
 
     fn heading(line_no: usize, level: usize, title: &str, state: Option<&str>) -> Heading {
         Heading {
@@ -406,7 +415,6 @@ mod tests {
         heading.properties.insert(key.to_string(), value.to_string());
         heading
     }
-
 
     /// Auto-NEXT as both frontends offer it: the switch is on the
     /// PROJECT, and finishing a task under it moves the next one up.
@@ -439,9 +447,11 @@ mod tests {
         assert_eq!(changes, vec![PlannedChange { target_line_no: 3, new_state: Some("TODO".into()) }]);
     }
 
-    /// Completing out of order must not bring a finished task back.
+    /// Completing out of order: the cancelled task in between is walked
+    /// past, not reopened, and the next OPEN one gets the NEXT -- which is
+    /// what the switch's own hint promises ("die naechste offene").
     #[test]
-    fn a_finished_heading_is_never_a_target() {
+    fn a_finished_sibling_is_walked_past_rather_than_reopened() {
         let flat = vec![
             heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY,
                               "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
@@ -450,7 +460,52 @@ mod tests {
             heading(4, 2, "C", Some("TODO")),
         ];
 
-        assert!(evaluate_trigger(&flat, 2).is_empty(), "the next sibling is finished");
+        let changes = evaluate_trigger(&flat, 2);
+
+        assert_eq!(changes, vec![PlannedChange { target_line_no: 4, new_state: Some("NEXT".into()) }]);
+    }
+
+    /// Nothing open after it means nothing to move to. Nothing before it
+    /// is reached for either: no wrap-around, and certainly no reopening.
+    #[test]
+    fn nothing_open_after_it_means_nothing_happens() {
+        let flat = vec![
+            heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY,
+                              "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
+            heading(2, 2, "A", Some("DONE")),
+            heading(3, 2, "B", Some("DONE")),
+            heading(4, 2, "C", Some("WONT-DO")),
+        ];
+
+        assert!(evaluate_trigger(&flat, 2).is_empty());
+    }
+
+    /// The guarantee underneath, on a finder that names finished headings
+    /// too: `children` hands back every child, and the done one must not
+    /// come back.
+    #[test]
+    fn a_finished_heading_is_never_a_target() {
+        let flat = vec![
+            heading_with_prop(1, 1, "Projekt", Some("DONE"), ORG_TRIGGER_PROPERTY, "children todo!(NEXT)"),
+            heading(2, 2, "A", Some("DONE")),
+            heading(3, 2, "B", Some("TODO")),
+        ];
+
+        let changes = evaluate_trigger(&flat, 1);
+
+        assert_eq!(changes, vec![PlannedChange { target_line_no: 3, new_state: Some("NEXT".into()) }]);
+    }
+
+    #[test]
+    fn previous_sibling_walks_past_finished_ones() {
+        let flat = vec![
+            heading(1, 1, "P", None),
+            heading(2, 2, "A", Some("TODO")),
+            heading(3, 2, "B", Some("DONE")),
+            heading(4, 2, "C", Some("DONE")),
+        ];
+        // idx 3 = C; B (idx 2) is done and walked past, A (idx 1) is the answer
+        assert_eq!(resolve_finder(&flat, 3, &Finder::PreviousSibling), vec![1]);
     }
 
     #[test]
