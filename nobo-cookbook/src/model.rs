@@ -55,6 +55,12 @@ pub struct Recipe {
     pub prep_time: Option<String>,
     #[cfg_attr(feature = "tauri", specta(optional))]
     pub cook_time: Option<String>,
+    /// org-chef's fourth time: when the dish is on the table, which is
+    /// not prep plus cook -- a dough rests, a stew sits. Written by every
+    /// org-chef import and read by nobody until now.
+    #[cfg_attr(feature = "tauri", specta(optional))]
+    #[serde(default)]
+    pub ready_in: Option<String>,
     #[cfg_attr(feature = "tauri", specta(optional))]
     pub source_url: Option<String>,
     /// The prose between the heading and its first section.

@@ -12,6 +12,12 @@ use super::outline::{self, Node};
 
 /// Section headings that introduce the ingredient list, lowercased. A
 /// trailing colon is tolerated (`** Zutaten:`).
+///
+/// "Ingredients" and "Directions" are what org-chef itself writes, and
+/// nothing else: `org-chef-recipe-to-org-element` builds both headlines
+/// with the title fixed and `:level 2`. Everything beyond those two words
+/// -- the German ones, the other English ones below -- is this app
+/// reading what a person typed, not what org-chef produced.
 const INGREDIENT_HEADINGS: &[&str] = &["zutaten", "ingredients"];
 
 /// Section headings that introduce the steps, lowercased.
@@ -29,6 +35,7 @@ use super::ingredients;
 const SERVINGS_KEYS: &[&str] = &["SERVINGS", "PORTIONEN"];
 const PREP_TIME_KEYS: &[&str] = &["PREP-TIME", "VORBEREITUNGSZEIT", "ZUBEREITUNGSZEIT"];
 const COOK_TIME_KEYS: &[&str] = &["COOK-TIME", "KOCHZEIT", "BACKZEIT"];
+const READY_IN_KEYS: &[&str] = &["READY-IN", "FERTIG-IN", "GESAMTZEIT"];
 const SOURCE_KEYS: &[&str] = &["SOURCE-URL", "QUELLE", "SOURCE"];
 
 /// Every recipe in one cookbook file, in file order.
@@ -138,6 +145,7 @@ fn build(file_path: &str, flat: &[Node], index: usize, heading: &Node) -> Recipe
         servings: first_property(heading, SERVINGS_KEYS),
         prep_time: first_property(heading, PREP_TIME_KEYS),
         cook_time: first_property(heading, COOK_TIME_KEYS),
+        ready_in: first_property(heading, READY_IN_KEYS),
         source_url: first_property(heading, SOURCE_KEYS),
         intro: heading.content.trim().to_string(),
         sections: structured.then_some(Sections { ingredients, steps, extras }),

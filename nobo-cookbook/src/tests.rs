@@ -201,6 +201,53 @@ fn a_note_that_merely_mentions_ingredients_is_not_parsed_here() {
     assert!(recipes[0].sections.is_none());
 }
 
+/* --- what org-chef itself writes, held as facts --- */
+
+/// `org-chef-recipe-to-org-element` builds exactly two child headlines,
+/// "Ingredients" and "Directions", both at level 2 under the recipe. That
+/// is the standard; the German headings this parser also accepts are a
+/// courtesy to people, not a second standard.
+#[test]
+fn org_chef_writes_ingredients_and_directions_at_level_two_and_nothing_else() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../testdata/20240404T113000--org-chef-recipes__kochen_rezepte.org");
+    let text = std::fs::read_to_string(path).unwrap();
+    // The Pancakes entry is the one written the way org-chef writes; the
+    // file's other recipes exercise what people type by hand.
+    let start = text.find("* Pancakes").unwrap();
+    let end = text[start + 1..].find("\n* ").map(|i| start + 1 + i).unwrap_or(text.len());
+    let block = &text[start..end];
+    let sections: Vec<&str> = block.lines().filter(|l| l.starts_with("** ")).map(|l| &l[3..]).collect();
+
+    assert_eq!(sections, vec!["Ingredients", "Directions"]);
+    assert!(!block.lines().any(|l| l.starts_with("*** ")), "org-chef nests nothing deeper");
+    // And the parser's own first names for the two sections are those.
+    assert_eq!(INGREDIENT_HEADINGS[1], "ingredients");
+    assert_eq!(DIRECTION_HEADINGS.iter().position(|h| *h == "directions"), Some(3));
+}
+
+/// org-chef stores its four times verbatim -- a bare number of minutes
+/// from a site that gives minutes, "20 Min." from one that writes it so.
+/// All four come through, `ready-in` included, and none is reformatted
+/// on the way: what to show for a bare number is the view's decision.
+#[test]
+fn org_chef_times_come_through_as_written_ready_in_included() {
+    let recipes = org_chef();
+    let pancakes = named(&recipes, "Pancakes");
+
+    assert_eq!(pancakes.prep_time.as_deref(), Some("5"));
+    assert_eq!(pancakes.cook_time.as_deref(), Some("15"));
+    assert_eq!(pancakes.ready_in.as_deref(), Some("20"));
+
+    // A unit somebody wrote stays. Read off the imported file once its
+    // drawer has been given back, where the first recipe's own value is
+    // the first one listed.
+    let (fixed, _) = repair::repair("k.org", &import_text()).unwrap();
+    let recipes = recipes_of("k.org", &fixed);
+    let stew = named(&recipes, "Vegetarisches Erdnuss-Gemüse");
+    assert_eq!(stew.cook_time.as_deref(), Some("30min"));
+}
+
 /* --- what an imported file looks like --- */
 
 /// The one that sent us looking: a step that names a machine setting on
