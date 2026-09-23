@@ -126,6 +126,9 @@ fn reads_properties_whatever_case_they_were_written_in() {
     let pancakes = named(&recipes, "Pancakes");
     assert_eq!(pancakes.servings.as_deref(), Some("4"));
     assert_eq!(pancakes.prep_time.as_deref(), Some("5"));
+    // The fifth key org-chef writes, and the one that used to be dropped:
+    // a recipe that says how long it takes end to end said it in vain.
+    assert_eq!(pancakes.ready_in.as_deref(), Some("20"));
     assert_eq!(pancakes.source_url.as_deref(), Some("https://example.com/pancakes"));
 
     let recipes = simple();

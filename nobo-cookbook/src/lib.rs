@@ -222,6 +222,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             tauri_commands::cookbook_recipes,
             tauri_commands::cookbook_files,
             tauri_commands::set_cookbook,
+            tauri_commands::cookbook_collapsed_properties,
+            tauri_commands::cookbook_repair_collapsed_properties,
         ])
 }
 

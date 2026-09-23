@@ -55,6 +55,11 @@ pub struct Recipe {
     pub prep_time: Option<String>,
     #[cfg_attr(feature = "tauri", specta(optional))]
     pub cook_time: Option<String>,
+    /// How long it takes from start to finish -- org-chef's `:ready-in:`.
+    /// Its own field rather than prep + cook: the hour a dough rests is in
+    /// neither of those, which is exactly why the key exists.
+    #[cfg_attr(feature = "tauri", specta(optional))]
+    pub ready_in: Option<String>,
     #[cfg_attr(feature = "tauri", specta(optional))]
     pub source_url: Option<String>,
     /// The prose between the heading and its first section.

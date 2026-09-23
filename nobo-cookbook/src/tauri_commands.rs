@@ -7,14 +7,16 @@
 //! the same text as in `commands` -- they describe the contract, and the
 //! frontend is who reads them.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
+use rusqlite::Connection;
 use tauri::State;
 
 use nobo_core::core::indexer::IndexManager;
 
 use crate::commands::{self, CookbookFile};
 use crate::model::Recipe;
+use crate::repair::CollapsedProperties;
 
 /// Every org file in the vault that could hold recipes, with the ones that
 /// already declare themselves marked.
@@ -56,4 +58,31 @@ pub async fn set_cookbook(
 #[specta::specta]
 pub async fn cookbook_recipes(index_manager: State<'_, Arc<IndexManager>>) -> Result<Vec<Recipe>, String> {
     commands::cookbook_recipes(index_manager.inner())
+}
+
+/// Every cookbook in the vault whose first recipe is holding everybody
+/// else's properties, and what could be handed back from it.
+///
+/// Read-only, and cheap: it is the same text the index already has.
+#[tauri::command]
+#[specta::specta]
+pub async fn cookbook_collapsed_properties(
+    index_manager: State<'_, Arc<IndexManager>>,
+) -> Result<Vec<CollapsedProperties>, String> {
+    commands::collapsed_properties(index_manager.inner())
+}
+
+/// Hands them back, and says for which files.
+///
+/// One write per file, recorded in the history like any other edit -- so
+/// a repair the user did not want is one undo away. Keys that cannot be
+/// distributed without guessing are left exactly where they are and named
+/// in `left_alone` (see `crate::repair`).
+#[tauri::command]
+#[specta::specta]
+pub async fn cookbook_repair_collapsed_properties(
+    index_manager: State<'_, Arc<IndexManager>>,
+    db: State<'_, Arc<Mutex<Connection>>>,
+) -> Result<Vec<CollapsedProperties>, String> {
+    commands::repair_collapsed_properties(index_manager.inner(), db.inner())
 }
