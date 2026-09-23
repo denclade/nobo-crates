@@ -450,22 +450,41 @@ pub struct FullTextSearchResult {
     pub occurrences: usize,
 }
 
+/// A field that can be set, cleared, or left alone: `null` clears it, a
+/// value sets it, and leaving it out keeps whatever the heading has.
+///
+/// Plain serde cannot tell the first from the last. `Option<Option<T>>`
+/// maps a JSON null to the OUTER `None`, which is exactly what an absent
+/// field gives -- so "take the deadline away" arrived as "change
+/// nothing", and every doc comment below describing `Some(None)` was
+/// describing a state nothing could produce. This is what makes them
+/// true: whatever arrives, including null, is wrapped in `Some`, and only
+/// an absent field is left as `None` by the `default`.
+fn clearable<'de, T, D>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
+where
+    T: Deserialize<'de>,
+    D: serde::Deserializer<'de>,
+{
+    Option::deserialize(deserializer).map(Some)
+}
+
 /// All fields are individually omittable (partial-update payload)
 #[derive(Clone, Deserialize, Default, specta::Type)]
 pub struct HeadingUpdatePayload {
     #[specta(optional)]
     pub state: Option<String>,
     /// `Some(Some("A"))` sets it, `Some(None)` clears it, `None` leaves it
-    /// -- the same shape `scheduled` and `deadline` use, and for the same
-    /// reason: plain serde maps a JSON null to `None`, so "clear this"
-    /// needs a level of nesting to be sayable at all.
+    /// -- the same shape `scheduled` and `deadline` use (see `clearable`).
     #[specta(optional)]
+    #[serde(default, deserialize_with = "clearable")]
     pub priority: Option<Option<String>>,
     #[specta(optional)]
     pub title: Option<String>,
     #[specta(optional)]
+    #[serde(default, deserialize_with = "clearable")]
     pub scheduled: Option<Option<OrgTimestamp>>,
     #[specta(optional)]
+    #[serde(default, deserialize_with = "clearable")]
     pub deadline: Option<Option<OrgTimestamp>>,
     #[specta(optional)]
     pub content: Option<String>,
@@ -480,6 +499,7 @@ pub struct HeadingUpdatePayload {
     #[specta(optional)]
     pub tags: Option<Vec<String>>,
     #[specta(optional)]
+    #[serde(default, deserialize_with = "clearable")]
     pub effort_minutes: Option<Option<u32>>,
 }
 
@@ -897,5 +917,49 @@ mod tests {
         assert!(remove_property(&mut p, "EFFORT"));
         assert!(!remove_property(&mut p, "EFFORT"), "already gone");
         assert_eq!(p.len(), 1, "left everything else alone: {p:?}");
+    }
+
+    /* --- a field that can be set, cleared, or left alone --- */
+
+    fn payload(json: &str) -> HeadingUpdatePayload {
+        serde_json::from_str(json).unwrap_or_else(|e| panic!("{json}: {e}"))
+    }
+
+    /// The three states, on the three fields that have them. The middle
+    /// one is why `clearable` exists: plain serde gave a JSON null the
+    /// same answer as an absent field, so nothing could ever say "take
+    /// this away" -- and every caller that tried wrote a shape the core
+    /// refused outright.
+    #[test]
+    fn null_clears_a_field_and_an_absent_one_leaves_it_alone() {
+        let set = payload(r#"{"effort_minutes": 45, "priority": "A"}"#);
+        assert_eq!(set.effort_minutes, Some(Some(45)));
+        assert_eq!(set.priority, Some(Some("A".to_string())));
+
+        let cleared = payload(r#"{"effort_minutes": null, "priority": null, "scheduled": null}"#);
+        assert_eq!(cleared.effort_minutes, Some(None), "null means take it away");
+        assert_eq!(cleared.priority, Some(None));
+        assert!(matches!(cleared.scheduled, Some(None)));
+
+        let untouched = payload(r#"{"title": "unrelated"}"#);
+        assert_eq!(untouched.effort_minutes, None, "absent means leave it alone");
+        assert_eq!(untouched.priority, None);
+        assert!(untouched.scheduled.is_none());
+    }
+
+    /// A timestamp is sent as itself. It used to be wrapped in a
+    /// one-element array by callers who read the doc comment as "nest it
+    /// once", which serde reads as a struct given its fields positionally
+    /// -- refused with a message about the first field's type, and
+    /// nowhere near the real mistake.
+    #[test]
+    fn a_timestamp_is_sent_as_itself_not_wrapped() {
+        let set = payload(r#"{"scheduled": {"start_date": "2026-09-23", "active": true, "raw": ""}}"#);
+        let stamp = set.scheduled.expect("present").expect("set");
+        assert_eq!(stamp.start_date, "2026-09-23");
+
+        assert!(serde_json::from_str::<HeadingUpdatePayload>(
+            r#"{"scheduled": [{"start_date": "2026-09-23", "active": true, "raw": ""}]}"#
+        ).is_err(), "a wrapped timestamp is refused rather than half-read");
     }
 }
