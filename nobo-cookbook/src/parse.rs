@@ -35,7 +35,10 @@ use super::ingredients;
 const SERVINGS_KEYS: &[&str] = &["SERVINGS", "PORTIONEN"];
 const PREP_TIME_KEYS: &[&str] = &["PREP-TIME", "VORBEREITUNGSZEIT", "ZUBEREITUNGSZEIT"];
 const COOK_TIME_KEYS: &[&str] = &["COOK-TIME", "KOCHZEIT", "BACKZEIT"];
-const READY_IN_KEYS: &[&str] = &["READY-IN", "FERTIG-IN", "GESAMTZEIT"];
+/// The fifth of the five org-chef writes, and the one that was missing:
+/// how long the recipe takes end to end. Neither the sum of the other two
+/// nor derivable from them -- dough that rests for an hour is in neither.
+const READY_IN_KEYS: &[&str] = &["READY-IN", "FERTIG-IN", "GESAMTZEIT", "GESAMTDAUER"];
 const SOURCE_KEYS: &[&str] = &["SOURCE-URL", "QUELLE", "SOURCE"];
 
 /// Every recipe in one cookbook file, in file order.
