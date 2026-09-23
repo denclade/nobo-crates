@@ -719,7 +719,7 @@ pub fn move_heading_in_file(
 ) -> Result<(), String> {
     let target_path = PathBuf::from(&file_path);
 
-    let mut edit = heading_utils::open_edit(&target_path, &target, &nobo_core::core::errors::subject::heading())?;
+    let edit = heading_utils::open_edit(&target_path, &target, &nobo_core::core::errors::subject::heading())?;
     // Resolved against the same parse the move will splice, and by
     // identity like every other write: a line number alone would move the
     // entry above whatever has since taken that line.
@@ -732,14 +732,34 @@ pub fn move_heading_in_file(
         None => None,
     };
 
-    let (snapshot_before, result, snapshot_after) = history::snapshot_around(&target_path, || {
-        edit.move_subtree_before(anchor)?;
+    reorder(edit, anchor, &target_path, file_path, index_manager, db)
+}
+
+/// The tail every reorder shares: the move, the write, the reindex, the
+/// history entry -- or none of it. A drop that lands where the heading
+/// already is leaves `move_subtree_before` with nothing mutated, and
+/// committing anyway would rewrite the file for no change and wake every
+/// watcher on it, including the sync about to be told the order changed.
+fn reorder(
+    mut edit: heading_utils::HeadingEdit,
+    anchor: Option<usize>,
+    path: &Path,
+    file_path: String,
+    index_manager: &IndexManager,
+    db: &Mutex<Connection>,
+) -> Result<(), String> {
+    edit.move_subtree_before(anchor)?;
+    if !edit.is_mutated() {
+        return Ok(());
+    }
+
+    let (snapshot_before, result, snapshot_after) = history::snapshot_around(path, || {
         edit.commit()?;
-        index_manager.update_file(&target_path);
+        index_manager.update_file(path);
         Ok(())
     });
 
-    record_best_effort(&db, HistoryEntryKind::FileEdited { filename: filename_of(&target_path) }, false,
+    record_best_effort(&db, HistoryEntryKind::FileEdited { filename: filename_of(path) }, false,
         vec![FileSnapshot { path: file_path, before: snapshot_before, after: snapshot_after }]);
 
     result
@@ -972,6 +992,33 @@ pub fn refile_heading(
     let src_path = std::path::PathBuf::from(&source_file);
     let tgt_path = std::path::PathBuf::from(&target_file);
     let same_file = source_file == target_file;
+
+    // A drop beside a sibling is a reorder, not a refile, and reordering
+    // has exactly one implementation: `HeadingEdit::move_subtree_before`.
+    // The line arithmetic of lifting a block out and putting it back in
+    // the same buffer is the kind that goes wrong quietly, and two copies
+    // of it would each need their own fixes. Deciding here rather than in
+    // the frontend keeps a drop what it is to the caller -- (target,
+    // zone) -- while the file's kind still gets to say whether its order
+    // is the user's at all (see FileKindSpec::reorderable).
+    //
+    // Only when the refile would have changed nothing but the order: a
+    // `default_state` handed in for a heading that has none is a state
+    // change, and that stays a refile with its trigger and its entry.
+    if same_file && matches!(position, RefilePosition::Before | RefilePosition::After) {
+        if let Some(beside) = &target_parent {
+            let edit = heading_utils::open_edit(&src_path, &source, &nobo_core::core::errors::subject::source_heading())?;
+            let other = heading_identity::resolve_target(edit.flat(), beside, &nobo_core::core::errors::subject::target_heading())?;
+            let keeps_state = default_state.is_none() || edit.heading().state.is_some();
+            if edit.is_sibling(other) && keeps_state {
+                let anchor = match position {
+                    RefilePosition::Before => Some(other),
+                    _ => edit.next_sibling_of(other),
+                };
+                return reorder(edit, anchor, &src_path, source_file, index_manager, db);
+            }
+        }
+    }
 
     // Lines and parse from one read (heading_utils::read_and_parse): the
     // subtree extracted below is cut out of the very text these line
@@ -1956,6 +2003,105 @@ mod tests {
         assert!(err.contains("h:weg"), "{err}");
         let after = index.get_headings_or_parse(&path);
         assert_eq!(after[0].content, "Eigener Text.", "the heading at that line kept its own content");
+    }
+
+    /* --- a drop beside a sibling goes through the one reorder --- */
+
+    const LIST: &str = "* TODO Brot\n* TODO Milch\n* TODO Käse\n";
+
+    fn titles(path: &std::path::Path) -> Vec<String> {
+        std::fs::read_to_string(path).unwrap().lines().filter(|l| l.starts_with('*')).map(String::from).collect()
+    }
+
+    fn by_title(title: &str) -> HeadingTarget {
+        HeadingTarget { line_no: 0, custom_id: None, title: Some(title.to_string()) }
+    }
+
+    fn refile_in(path: &std::path::Path, what: &str, beside: &str, position: RefilePosition, state: Option<&str>, index: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
+        let file = path.to_string_lossy().into_owned();
+        refile_heading(file.clone(), by_title(what), file, Some(by_title(beside)), Some(position), state.map(String::from), index, db)
+    }
+
+    fn history_kinds(db: &Mutex<Connection>, path: &std::path::Path) -> Vec<String> {
+        let conn = db.lock().unwrap();
+        history::list_for_path(&conn, &path.to_string_lossy(), 10).unwrap().into_iter().map(|e| format!("{:?}", e.kind)).collect()
+    }
+
+    /// What the list's drag-and-drop sends: same file, Before/After, the
+    /// target a sibling. It is a reorder, recorded as the file edit it is
+    /// -- not a refile, which would run the trigger cascade and record
+    /// "Refiled" for something that never left its parent.
+    #[test]
+    fn a_drop_before_a_sibling_reorders_instead_of_refiling() {
+        let (dir, index, db) = setup();
+        let path = dir.path().join("liste.org");
+        std::fs::write(&path, LIST).unwrap();
+
+        refile_in(&path, "Käse", "Milch", RefilePosition::Before, None, &index, &db).unwrap();
+
+        assert_eq!(titles(&path), vec!["* TODO Brot", "* TODO Käse", "* TODO Milch"]);
+        let kinds = history_kinds(&db, &path);
+        assert_eq!(kinds.len(), 1, "{kinds:?}");
+        assert!(kinds[0].starts_with("FileEdited"), "a reorder is a file edit, not a refile: {kinds:?}");
+    }
+
+    /// "After" resolves to the sibling that follows the target -- and to
+    /// "last" when there is none.
+    #[test]
+    fn a_drop_after_a_sibling_lands_behind_it() {
+        let (dir, index, db) = setup();
+        let path = dir.path().join("liste.org");
+        std::fs::write(&path, LIST).unwrap();
+
+        refile_in(&path, "Brot", "Milch", RefilePosition::After, None, &index, &db).unwrap();
+        assert_eq!(titles(&path), vec!["* TODO Milch", "* TODO Brot", "* TODO Käse"]);
+
+        refile_in(&path, "Milch", "Käse", RefilePosition::After, None, &index, &db).unwrap();
+        assert_eq!(titles(&path), vec!["* TODO Brot", "* TODO Käse", "* TODO Milch"]);
+    }
+
+    /// Dropped where it already is: no write, no entry. Committing anyway
+    /// would touch the file for no change and wake the sync.
+    #[test]
+    fn a_drop_where_it_already_is_writes_nothing() {
+        let (dir, index, db) = setup();
+        let path = dir.path().join("liste.org");
+        std::fs::write(&path, LIST).unwrap();
+        let before = std::fs::metadata(&path).unwrap().modified().unwrap();
+
+        refile_in(&path, "Brot", "Milch", RefilePosition::Before, None, &index, &db).unwrap();
+
+        assert_eq!(std::fs::metadata(&path).unwrap().modified().unwrap(), before, "the file was not rewritten");
+        assert!(history_kinds(&db, &path).is_empty(), "nothing to undo");
+    }
+
+    /// A state handed in for a heading that has none is more than a
+    /// reorder -- that stays a refile, and the heading comes out with the
+    /// state, as it always did.
+    #[test]
+    fn a_drop_that_would_set_a_state_is_still_a_refile() {
+        let (dir, index, db) = setup();
+        let path = dir.path().join("liste.org");
+        std::fs::write(&path, "* Brot\n* TODO Milch\n* TODO Käse\n").unwrap();
+
+        refile_in(&path, "Brot", "Käse", RefilePosition::Before, Some("TODO"), &index, &db).unwrap();
+
+        assert_eq!(titles(&path), vec!["* TODO Milch", "* TODO Brot", "* TODO Käse"], "moved AND given the state");
+        assert!(history_kinds(&db, &path)[0].starts_with("Refiled"));
+    }
+
+    /// Beside something that is not a sibling -- a task next to a project
+    /// -- is a refile, with the level shift that comes with it.
+    #[test]
+    fn a_drop_beside_a_non_sibling_is_still_a_refile() {
+        let (dir, index, db) = setup();
+        let path = dir.path().join("projekte.org");
+        std::fs::write(&path, "* Projekt :project:\n** TODO Aufgabe\n* Anderes :project:\n").unwrap();
+
+        refile_in(&path, "Aufgabe", "Anderes", RefilePosition::Before, None, &index, &db).unwrap();
+
+        assert_eq!(titles(&path), vec!["* Projekt :project:", "* TODO Aufgabe", "* Anderes :project:"], "lifted to the project's level");
+        assert!(history_kinds(&db, &path)[0].starts_with("Refiled"));
     }
 
     fn setup() -> (TempDir, IndexManager, Mutex<Connection>) {

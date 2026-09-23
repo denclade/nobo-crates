@@ -132,6 +132,36 @@ impl HeadingEdit {
         self.idx
     }
 
+    /// Whether a structural mutation has happened. `move_subtree_before`
+    /// deliberately does nothing for a drop that lands where the heading
+    /// already is -- and a caller that commits regardless still rewrites
+    /// the file and wakes every watcher, which is exactly what that
+    /// no-op is there to avoid.
+    pub fn is_mutated(&self) -> bool {
+        self.mutated
+    }
+
+    /// Whether FLAT[OTHER] is a sibling of the heading being edited: same
+    /// level, same parent. The question a drop next to another heading
+    /// asks first -- a sibling means reordering, anything else means
+    /// refiling, and the two are different commands.
+    pub fn is_sibling(&self, other: usize) -> bool {
+        self.flat[other].level == self.flat[self.idx].level
+            && parent_line_of(&self.flat, other) == parent_line_of(&self.flat, self.idx)
+    }
+
+    /// The sibling following FLAT[OTHER], if any -- what "drop it after
+    /// that one" resolves to as an anchor for `move_subtree_before`. The
+    /// run ends where the parent's subtree does, so the last sibling has
+    /// none, which is the `None` that means "last".
+    pub fn next_sibling_of(&self, other: usize) -> Option<usize> {
+        let level = self.flat[other].level;
+        let parent = parent_line_of(&self.flat, other);
+        (other + 1..self.flat.len())
+            .take_while(|&i| self.flat[i].level >= level)
+            .find(|&i| self.flat[i].level == level && parent_line_of(&self.flat, i) == parent)
+    }
+
     /// The enclosing headings, nearest first.
     pub fn ancestors(&self) -> Vec<Heading> {
         ancestors_of(&self.flat, self.idx)
@@ -231,9 +261,7 @@ impl HeadingEdit {
         let at = match anchor {
             Some(other) => {
                 let sibling = self.flat[other].clone();
-                if sibling.level != heading.level
-                    || parent_line_of(&self.flat, other) != parent_line_of(&self.flat, self.idx)
-                {
+                if !self.is_sibling(other) {
                     return Err(crate::t!(
                         "\"{}\" und \"{}\" stehen nicht auf derselben Ebene -- zum Verschieben unter eine andere Überschrift gibt es das Einsortieren.", "\"{}\" and \"{}\" are not siblings -- moving something under a different heading is what refiling is for.",
                         heading.title,
