@@ -453,6 +453,15 @@ pub struct FullTextSearchResult {
 /// A field that can be set, cleared, or left alone: `null` clears it, a
 /// value sets it, and leaving it out keeps whatever the heading has.
 ///
+/// Every field using it also names its wire type to specta
+/// (`#[specta(type = Option<T>)]`), and that is not decoration: specta
+/// refuses to export a type whose serde attributes could change its wire
+/// shape, and says so only in the host that exports it. This crate never
+/// exports `HeadingUpdatePayload` itself, so its own tests stayed green
+/// while the desktop app's `bindings.ts` could no longer be written at
+/// all. What the frontend sends is unchanged -- `T`, `null`, or nothing --
+/// which is exactly `Option<T>` on an optional field.
+///
 /// Plain serde cannot tell the first from the last. `Option<Option<T>>`
 /// maps a JSON null to the OUTER `None`, which is exactly what an absent
 /// field gives -- so "take the deadline away" arrived as "change
@@ -475,15 +484,15 @@ pub struct HeadingUpdatePayload {
     pub state: Option<String>,
     /// `Some(Some("A"))` sets it, `Some(None)` clears it, `None` leaves it
     /// -- the same shape `scheduled` and `deadline` use (see `clearable`).
-    #[specta(optional)]
+    #[specta(optional, type = Option<String>)]
     #[serde(default, deserialize_with = "clearable")]
     pub priority: Option<Option<String>>,
     #[specta(optional)]
     pub title: Option<String>,
-    #[specta(optional)]
+    #[specta(optional, type = Option<OrgTimestamp>)]
     #[serde(default, deserialize_with = "clearable")]
     pub scheduled: Option<Option<OrgTimestamp>>,
-    #[specta(optional)]
+    #[specta(optional, type = Option<OrgTimestamp>)]
     #[serde(default, deserialize_with = "clearable")]
     pub deadline: Option<Option<OrgTimestamp>>,
     #[specta(optional)]
@@ -498,7 +507,7 @@ pub struct HeadingUpdatePayload {
     pub clocks: Option<Vec<String>>,
     #[specta(optional)]
     pub tags: Option<Vec<String>>,
-    #[specta(optional)]
+    #[specta(optional, type = Option<u32>)]
     #[serde(default, deserialize_with = "clearable")]
     pub effort_minutes: Option<Option<u32>>,
 }
