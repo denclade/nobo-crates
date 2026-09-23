@@ -65,14 +65,27 @@ pub struct Recipe {
     pub sections: Option<Sections>,
 }
 
-/// The two structured halves, each already flattened to lines. Sub-headings
-/// inside them (`*** Für den Teig`, `*** Belag`) become groups rather than
-/// being lost or being mistaken for recipes of their own.
+/// The structured parts of a recipe, each already flattened to lines.
+/// Sub-headings inside them (`*** Für den Teig`, `*** Belag`) become
+/// groups rather than being lost or being mistaken for recipes of their
+/// own.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 #[cfg_attr(feature = "tauri", derive(specta::Type))]
 pub struct Sections {
     pub ingredients: Vec<IngredientGroup>,
     pub steps: Vec<StepGroup>,
+    /// Every other section the recipe has -- the nutrition table, the
+    /// tips, the "meal prep" note, whatever else somebody wrote under
+    /// their recipe. Kept because it is theirs: a reading view that only
+    /// knew ingredients and steps showed half of such a recipe and said
+    /// nothing about the other half.
+    ///
+    /// A `StepGroup` because that is what one is: a titled list of lines.
+    /// Its `title` is always set here, since an untitled section is not a
+    /// section at all.
+    #[cfg_attr(feature = "tauri", specta(optional))]
+    #[serde(default)]
+    pub extras: Vec<StepGroup>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]

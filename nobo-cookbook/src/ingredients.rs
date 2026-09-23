@@ -48,10 +48,17 @@ fn parse_amount(text: &str) -> Option<Amount> {
     let (from, mut rest) = read_number(text.trim_start())?;
 
     // A range: "2-3 Zwiebeln", "2 - 3". An en dash is what a text editor
-    // makes of the hyphen, so both count.
+    // makes of the hyphen and what a recipe site pastes in, and "--" is
+    // how org itself writes one, so all three count. The double hyphen is
+    // tried first, or its first half would be taken for the whole
+    // separator and the rest read as an unusable item.
     let mut to = None;
     let dashed = rest.trim_start();
-    if let Some(after_dash) = dashed.strip_prefix('-').or_else(|| dashed.strip_prefix('–')) {
+    if let Some(after_dash) = dashed
+        .strip_prefix("--")
+        .or_else(|| dashed.strip_prefix('-'))
+        .or_else(|| dashed.strip_prefix('–'))
+    {
         if let Some((upper, after_upper)) = read_number(after_dash) {
             to = Some(upper);
             rest = after_upper;

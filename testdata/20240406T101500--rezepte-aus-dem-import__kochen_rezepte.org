@@ -1,0 +1,136 @@
+#+TITLE: Rezepte aus dem Import
+#+DATE: [2024-04-06 Sa 10:15]
+#+IDENTIFIER: 20240406T101500
+#+FILETAGS: :kochen:
+#+NOBO_TYPE: cookbook
+
+Ein Kochbuch, wie es wirklich aussieht, wenn Rezepte aus dem Netz und aus
+anderen Programmen darin gelandet sind. Die anderen Dateien hier zeigen die
+saubere Form; diese zeigt, was daneben noch vorkommt, und jede Eigenheit
+darin ist einmal in einer echten Datei aufgeschlagen:
+
+- Nur das erste Rezept hat überhaupt eine Eigenschaften-Schublade, und in
+  der stehen die Werte *aller* Rezepte übereinander -- so kommt eine Datei
+  aus einem Import zurück, bei dem die Schubladen zusammengefallen sind.
+  Alle anderen Rezepte haben gar keine, also auch keine Portionsangabe.
+- Schritte laufen über mehrere Zeilen: eine Anweisung und darunter,
+  eingerückt, die Geräteeinstellungen. Eine Zeile ist kein Schritt.
+- In einem Schritt steckt eine eigene Unterliste.
+- Abschnitte, die weder Zutaten noch Zubereitung sind: Nährwerte, Tipps,
+  Mealprep -- der Text gehört dem Koch und darf nicht verschwinden.
+- Mengen in jeder Schreibweise, die Rezeptseiten so hergeben: ½, 1 ½, 1/2,
+  0.5, 1kg, 150--200 g, 6-8, und Zutatenzeilen, die mit Leerzeichen in
+  Spalten gesetzt sind.
+
+* Vegetarisches Erdnuss-Gemüse
+:PROPERTIES:
+:cook-time: 30min
+:cook-time: 20min
+:prep-time: 20min
+:prep-time: 10
+:servings: 4
+:servings: 2
+:source-url: https://example.com/erdnuss-gemuese
+:source-url: https://example.com/poke-bowl
+:CUSTOM_ID: h:rec-erdnuss
+:END:
+** Ingredients
+- 250 g Kohlrabi
+- 400 g Kartoffel(n)
+- 2 Knoblauchzehe(n)
+- 2 EL Öl
+- 350 ml Gemüsebrühe
+- Salz und Pfeffer
+- Chilipulver
+** Directions
+1. Gemüse putzen und in mundgerechte Stücke schneiden.
+2. Öl erhitzen, Currypulver kurz anbraten, Gemüse zugeben.
+3. Zugedeckt 20--30 Minuten köcheln, bis das Gemüse gar ist.
+
+* Poke Bowl mit Tahini-Sauce
+** Ingredients
+- 180   g        Jasminreis   ungekocht, oder eine andere Reissorte
+- 360   ml        Wasser
+- ½   TL        Salz
+- 1   Rezept        knuspriger Tofu   oder knusprige Kichererbsen
+- 6-8        Radieschen   in Scheiben geschnitten
+- 2-4   EL        Wasser   bis zur gewünschten Konsistenz
+- Sesam
+- frische Kräuter   z.B. Koriander oder Thai-Basilikum
+** Directions
+1. Reis und Wasser in einen Topf geben und zum Kochen bringen.
+2. Gemüse schneiden, Edamame auftauen, Avocado würfeln.
+3. Alle Zutaten für die Sauce glatt pürieren.
+
+* Kartoffelgulasch
+** Ingredients
+- 700 g Kartoffel(n)
+- etwas Kokosöl
+- 1 ½ EL Tomatenmark
+- ½ TL Paprikapulver
+- 1/2 TL Rohrzucker
+- 1kg Möhren
+- 2--3 Zwiebeln
+- 2 TL Speisestärke
+** Directions
+1. Die Kartoffeln in kleine Würfel schneiden und anbraten.
+2. Paprikapulver, Tomatenmark und Zucker untermischen und 3 Minuten mitrösten.
+
+* Porridge
+** Ingredients
+- 2 Äpfel
+- Zimt
+- Haferflocken
+- Hafermilch
+** Directions
+1. Die Äpfel schälen und in kleine Würfel schneiden.
+2. Äpfel in einem Topf leicht anbraten.
+3. Parallel dazu die Schokosoße vorbereiten:
+   - Kakaopulver in eine Tasse, dazu etwas Agavendicksaft, dann verrühren
+   - Leicht mit Hafermilch auffüllen und gut durchrühren
+4. Alles in einer Schüssel anrichten und die Schokosoße darüberträufeln.
+
+* Protein-Kartoffelgratin
+** Nährwerte
+- Kalorien: ca. 580 kcal
+- Protein: ca. 40–45 g
+- Fett: ca. 18 g
+** Ingredients
+- 300 g Kartoffeln vorwiegend festkochend, geschält und in dünne Scheiben
+- 150–200 g körniger Frischkäse
+- 1 kleine Zwiebel, halbiert
+- 0.5 TL Muskat
+- 1 Prise( ) Salz
+- Gewürze: Salz, Pfeffer, Muskat, Paprika, Thymian
+** Directions
+1. *Tofu zerkleinern:*
+   5 Sek / Stufe 5, umfüllen
+
+2. *Zwiebel hacken & andünsten:*
+   3 Sek / Stufe 5
+   1 TL Öl zugeben
+   3 Min / Varoma / Stufe 1
+
+3. *Backen:*
+   180 °C Umluft, 35--40 Min
+** 📦 Mealprep
+- Hält 2--3 Tage im Kühlschrank, auch kalt essbar
+- Eignet sich zum Einfrieren
+** 🔁 Varianten
+- Mit Süßkartoffeln oder Zucchini kombinieren
+
+* Grüner Salat mit Joghurt-Dressing
+** Nährwerte (pro Portion, ca.)
+- Kalorien: 90 kcal
+- Protein: 3 g
+** Ingredients
+- 400 g gemischter grüner Salat
+- 1 Gurke
+- 4 Tomaten
+- 6 EL Sojajoghurt (natur, ungesüßt)
+- 2 TL Senf
+** Directions
+1. Salat waschen und trocken schleudern.
+2. Für das Dressing alles verrühren und abschmecken.
+** Tipps
+Hält sich angemacht nicht -- das Dressing erst am Tisch darübergeben.

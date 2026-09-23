@@ -5,6 +5,7 @@
 //! someone's kitchen.
 
 use super::*;
+use crate::model::Amount;
 use std::path::PathBuf;
 
 fn sample(name: &str) -> Vec<Recipe> {
@@ -25,6 +26,11 @@ fn org_chef() -> Vec<Recipe> {
 }
 fn nested() -> Vec<Recipe> {
     sample("20240405T160000--rezepte-mit-teilschritten__kochen_rezepte.org")
+}
+/// The messy one: recipes as they come back from an import, which is
+/// where every assertion below it was learned.
+fn imported() -> Vec<Recipe> {
+    sample("20240406T101500--rezepte-aus-dem-import__kochen_rezepte.org")
 }
 
 fn named<'a>(recipes: &'a [Recipe], title: &str) -> &'a Recipe {
@@ -192,4 +198,136 @@ fn a_note_that_merely_mentions_ingredients_is_not_parsed_here() {
     // function itself needs the structure, not a file name or a path.
     let recipes = recipes_of("notiz.org", "* Einkaufen\n- 2 Eier\n- Milch\n");
     assert!(recipes[0].sections.is_none());
+}
+
+/* --- what an imported file looks like --- */
+
+/// The one that sent us looking: a step that names a machine setting on
+/// the next line is one step, not two. A recipe of three was numbered to
+/// seven, and the numbers are what a cook follows.
+#[test]
+fn a_step_that_runs_over_several_lines_stays_one_step() {
+    let recipes = imported();
+    let recipe = named(&recipes, "Protein-Kartoffelgratin");
+    let steps = &recipe.sections.as_ref().unwrap().steps[0].steps;
+
+    assert_eq!(steps.len(), 3, "{steps:#?}");
+    assert!(steps[1].starts_with("*Zwiebel hacken"), "{:?}", steps[1]);
+    assert!(steps[1].contains("3 Min / Varoma / Stufe 1"), "the settings belong to their step: {:?}", steps[1]);
+}
+
+/// Indentation decides, not the bullet: a list nested inside a step is
+/// part of that step, however it is marked.
+#[test]
+fn a_sub_list_inside_a_step_stays_inside_it() {
+    let recipes = imported();
+    let recipe = named(&recipes, "Porridge");
+    let steps = &recipe.sections.as_ref().unwrap().steps[0].steps;
+
+    assert_eq!(steps.len(), 4, "{steps:#?}");
+    assert!(steps[2].contains("Kakaopulver"), "{:?}", steps[2]);
+    assert!(steps[2].contains("Hafermilch auffüllen"), "{:?}", steps[2]);
+}
+
+/// Nutrition, tips, meal prep: somebody wrote them under their recipe, so
+/// they come back with it. Dropping them showed half a recipe.
+#[test]
+fn a_section_that_is_neither_ingredients_nor_steps_is_kept_with_its_heading() {
+    let recipes = imported();
+    let recipe = named(&recipes, "Protein-Kartoffelgratin");
+    let extras = &recipe.sections.as_ref().unwrap().extras;
+
+    assert_eq!(
+        extras.iter().map(|g| g.title.clone().unwrap_or_default()).collect::<Vec<_>>(),
+        vec!["Nährwerte", "📦 Mealprep", "🔁 Varianten"],
+    );
+    assert_eq!(extras[0].steps[0], "Kalorien: ca. 580 kcal");
+}
+
+/// A qualifier after the heading is still that section's own name, and
+/// still not a recipe.
+#[test]
+fn an_extra_section_keeps_the_heading_as_written() {
+    let recipes = imported();
+    let recipe = named(&recipes, "Grüner Salat mit Joghurt-Dressing");
+    let extras = &recipe.sections.as_ref().unwrap().extras;
+
+    assert_eq!(extras[0].title.as_deref(), Some("Nährwerte (pro Portion, ca.)"));
+    assert!(recipes.iter().all(|r| r.title != "Nährwerte (pro Portion, ca.)"));
+}
+
+/// An import that lost the drawers leaves most recipes with no properties
+/// at all. They are still recipes, and everything but the metadata is
+/// still there.
+#[test]
+fn a_recipe_without_a_property_drawer_is_still_read_in_full() {
+    let recipes = imported();
+    let recipe = named(&recipes, "Kartoffelgulasch");
+
+    assert_eq!(recipe.servings, None);
+    assert_eq!(recipe.custom_id, None);
+    assert_eq!(flat_items(recipe).len(), 8);
+    assert_eq!(recipe.sections.as_ref().unwrap().steps[0].steps.len(), 2);
+}
+
+/// Repeated keys in one drawer -- the other half of that import. Org
+/// reads the last one; what matters here is that it is one value and not
+/// a crash.
+#[test]
+fn a_drawer_with_a_key_repeated_answers_with_one_value() {
+    let recipes = imported();
+    let recipe = named(&recipes, "Vegetarisches Erdnuss-Gemüse");
+
+    assert_eq!(recipe.servings.as_deref(), Some("2"));
+    assert_eq!(recipe.cook_time.as_deref(), Some("20min"));
+}
+
+/// Ingredient lines set in columns with runs of spaces, which is what a
+/// site that renders a table pastes in.
+#[test]
+fn an_amount_survives_being_set_in_columns() {
+    let recipes = imported();
+    let recipe = named(&recipes, "Poke Bowl mit Tahini-Sauce");
+    let items = &recipe.sections.as_ref().unwrap().ingredients[0].items;
+
+    let rice = items[0].amount.as_ref().unwrap();
+    assert_eq!((rice.from, rice.unit.as_str()), (180.0, "g"));
+    assert!(rice.item.starts_with("Jasminreis"), "{:?}", rice.item);
+
+    let salt = items[2].amount.as_ref().unwrap();
+    assert_eq!((salt.from, salt.unit.as_str(), salt.item.as_str()), (0.5, "TL", "Salz"));
+}
+
+/// Every spelling of an amount these files actually contain, read off the
+/// sample rather than made up next to the assertion.
+#[test]
+fn reads_the_amounts_an_imported_file_actually_holds() {
+    let recipes = imported();
+    let recipe = named(&recipes, "Kartoffelgulasch");
+    let items = &recipe.sections.as_ref().unwrap().ingredients[0].items;
+    let amounts: Vec<Option<f64>> = items.iter().map(|i| i.amount.as_ref().map(|a| a.from)).collect();
+
+    assert_eq!(amounts, vec![Some(700.0), None, Some(1.5), Some(0.5), Some(0.5), Some(1.0), Some(2.0), Some(2.0)]);
+    assert_eq!(items[5].amount.as_ref().unwrap().unit, "kg", "a unit glued to the number");
+    assert_eq!(items[6].amount.as_ref().unwrap().to, Some(3.0), "a range written org's own way");
+}
+
+/// A range, whichever dash was written between its ends: an en dash from
+/// a recipe site, org's own "--" from Emacs. Both ends are kept, so
+/// doubling the recipe moves them together.
+#[test]
+fn reads_a_range_whichever_dash_was_used() {
+    let recipes = imported();
+    let cheese = named_item(named(&recipes, "Protein-Kartoffelgratin"), "körniger Frischkäse");
+    assert_eq!(((cheese.from, cheese.to), cheese.unit.as_str()), ((150.0, Some(200.0)), "g"));
+
+    let onions = named_item(named(&recipes, "Kartoffelgulasch"), "Zwiebeln");
+    assert_eq!((onions.from, onions.to), (2.0, Some(3.0)));
+}
+
+fn named_item<'a>(recipe: &'a Recipe, item: &str) -> &'a Amount {
+    recipe.sections.as_ref().unwrap().ingredients.iter()
+        .flat_map(|group| group.items.iter())
+        .find_map(|i| i.amount.as_ref().filter(|a| a.item == item))
+        .unwrap_or_else(|| panic!("no ingredient {item:?}"))
 }

@@ -95,6 +95,7 @@ fn recipe_level(flat: &[Node]) -> usize {
 fn build(file_path: &str, flat: &[Node], index: usize, heading: &Node) -> Recipe {
     let mut ingredients = Vec::new();
     let mut steps = Vec::new();
+    let mut extras = Vec::new();
     let mut structured = false;
 
     for (child_index, child) in children_of(flat, index, heading.level) {
@@ -115,7 +116,15 @@ fn build(file_path: &str, flat: &[Node], index: usize, heading: &Node) -> Recipe
                     .map(|(title, steps)| StepGroup { title, steps })
                     .collect();
             }
-            None => {}
+            // Neither, and therefore somebody's own section: the
+            // nutrition table, the tips, the "meal prep" note. Kept
+            // whole rather than dropped -- see Sections::extras.
+            None => {
+                let lines = list_lines(&child.content);
+                if !lines.is_empty() {
+                    extras.push(StepGroup { title: Some(child.title.clone()), steps: lines });
+                }
+            }
         }
     }
 
@@ -131,7 +140,7 @@ fn build(file_path: &str, flat: &[Node], index: usize, heading: &Node) -> Recipe
         cook_time: first_property(heading, COOK_TIME_KEYS),
         source_url: first_property(heading, SOURCE_KEYS),
         intro: heading.content.trim().to_string(),
-        sections: structured.then_some(Sections { ingredients, steps }),
+        sections: structured.then_some(Sections { ingredients, steps, extras }),
     }
 }
 
@@ -173,32 +182,68 @@ fn groups_of<T>(
     groups
 }
 
-/// The list items in a section body, with their markers removed. Anything
-/// that is not a list item (a stray sentence between the steps) is kept as
-/// its own line -- dropping content is worse than showing an unnumbered
-/// line.
+/// The list items in a section body, with their markers removed.
+///
+/// An item is not a line. Org lets one run over as many lines as it
+/// likes, and recipes use that constantly -- a step names what to do and
+/// then the machine settings under it, a sub-list spells out a sauce
+/// inside the step that calls for it. Indentation is what says so, and
+/// it is the only thing that does: a line indented past the item above it
+/// belongs to that item, whether or not it carries a bullet of its own.
+///
+/// Splitting on newlines instead turned a recipe of six steps into
+/// eighteen, each continuation line numbered as a step in its own right.
+///
+/// Anything that is not a list item and has nothing to continue -- a
+/// stray sentence before the first one -- is kept as its own entry:
+/// dropping content is worse than showing an unnumbered line.
 fn list_lines(content: &str) -> Vec<String> {
-    content
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty())
-        .map(|line| strip_marker(line).to_string())
-        .collect()
+    let mut items: Vec<String> = Vec::new();
+    // How far the item being built is indented, so its continuations can
+    // be told from the item that follows it.
+    let mut indent = 0;
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let at = line.len() - line.trim_start().len();
+        let marker = strip_marker(trimmed);
+
+        match marker {
+            Some(rest) if at <= indent || items.is_empty() => {
+                items.push(rest.to_string());
+                indent = at;
+            }
+            // Either a deeper bullet or a plain wrapped line: both
+            // continue the item above.
+            _ => match items.last_mut() {
+                Some(item) => {
+                    item.push('\n');
+                    item.push_str(trimmed);
+                }
+                None => items.push(trimmed.to_string()),
+            },
+        }
+    }
+    items
 }
 
-fn strip_marker(line: &str) -> &str {
+/// The line without its list marker, or `None` when it carries none.
+fn strip_marker(line: &str) -> Option<&str> {
     if let Some(rest) = line.strip_prefix("- ").or_else(|| line.strip_prefix("+ ")) {
-        return rest.trim_start();
+        return Some(rest.trim_start());
     }
     // "1." / "1)" -- an ordered list, which is what steps normally are.
     let digits: String = line.chars().take_while(char::is_ascii_digit).collect();
     if !digits.is_empty() {
         let rest = &line[digits.len()..];
         if let Some(rest) = rest.strip_prefix('.').or_else(|| rest.strip_prefix(')')) {
-            return rest.trim_start();
+            return Some(rest.trim_start());
         }
     }
-    line
+    None
 }
 
 /// The headings directly below INDEX, i.e. its own children -- not its
