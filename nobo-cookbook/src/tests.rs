@@ -466,3 +466,45 @@ fn named_item<'a>(recipe: &'a Recipe, item: &str) -> &'a Amount {
         .find_map(|i| i.amount.as_ref().filter(|a| a.item == item))
         .unwrap_or_else(|| panic!("no ingredient {item:?}"))
 }
+
+// The check, against the same files: the import fixture is the shape a
+// real cookbook came back in, and the four clean ones are what "in order"
+// has to keep meaning.
+
+fn sample_text(name: &str) -> (String, String) {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../testdata").join(name);
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|e| panic!("sample file {}: {e}", path.display()));
+    (path.to_string_lossy().into_owned(), text)
+}
+
+#[test]
+fn the_import_fixture_is_found_collapsed_and_fixable_and_the_repair_clears_it() {
+    let (path, text) = sample_text("20240406T101500--rezepte-aus-dem-import__kochen_rezepte.org");
+    let before = crate::check::check(&path, &text);
+    assert!(before.is_fixable(), "{:?}", before.findings);
+    assert_eq!(before.findings[0].kind, crate::check::Kind::CollapsedProperties);
+
+    let (fixed, _) = repair::repair(&path, &text).expect("the fixture is collapsed");
+    let after = crate::check::check(&path, &fixed);
+    assert!(!after.is_fixable(), "{:?}", after.findings);
+    // What it cannot hand back -- four sources for six recipes -- is still
+    // said, rather than vanishing along with the rest.
+    assert!(after.findings.iter().any(|finding| finding.kind == crate::check::Kind::RepeatedProperty
+                                                && finding.keys == vec!["source-url".to_string()]),
+            "{:?}", after.findings);
+}
+
+#[test]
+fn the_clean_sample_cookbooks_have_nothing_fixable() {
+    for name in [
+        "20240402T181500--rezepte-schnelle-kueche__kochen_rezepte.org",
+        "20240403T094500--kochbuch-nach-kategorien__kochen_rezepte.org",
+        "20240404T113000--org-chef-recipes__kochen_rezepte.org",
+        "20240405T160000--rezepte-mit-teilschritten__kochen_rezepte.org",
+    ] {
+        let (path, text) = sample_text(name);
+        let check = crate::check::check(&path, &text);
+        assert!(!check.is_fixable(), "{name}: {:?}", check.findings);
+    }
+}

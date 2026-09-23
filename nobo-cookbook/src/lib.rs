@@ -47,6 +47,7 @@
 pub mod ingredients;
 pub mod parse;
 pub mod repair;
+pub mod check;
 pub use parse::recipes_of;
 
 pub mod commands;
@@ -85,6 +86,7 @@ mod outline;
 
 pub use model::{Amount, Ingredient, IngredientGroup, Recipe, Sections, StepGroup};
 pub use repair::CollapsedProperties;
+pub use check::{FileCheck, Finding};
 
 // Recipes, as a search anyone can ask for by name.
 //

@@ -125,6 +125,20 @@ Ok(Vault::new(index_manager, &vault_root)
     .collect())
 }
 
+/// Every cookbook file, and what is wrong with it (see `crate::check`).
+///
+/// All of them, including the ones with nothing to say -- the settings
+/// page shows each chosen file with its verdict, and "in order" is an
+/// answer somebody looking for a problem wants to read too.
+pub fn check_cookbooks(index_manager: &IndexManager) -> Result<Vec<crate::check::FileCheck>, String> {
+    let vault_root = Config::require_vault_root()?;
+    Ok(Vault::new(index_manager, &vault_root)
+        .files_of_kind(crate::KIND)
+        .into_iter()
+        .map(|(path, text)| crate::check::check(&path.to_string_lossy(), &text))
+        .collect())
+}
+
 /// Hands them back, and says for which files.
 ///
 /// One write per file, recorded in the history like any other edit -- so
