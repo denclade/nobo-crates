@@ -6,6 +6,7 @@
 
 use super::*;
 use crate::model::Amount;
+use crate::repair;
 use std::path::PathBuf;
 
 fn sample(name: &str) -> Vec<Recipe> {
@@ -270,16 +271,100 @@ fn a_recipe_without_a_property_drawer_is_still_read_in_full() {
     assert_eq!(recipe.sections.as_ref().unwrap().steps[0].steps.len(), 2);
 }
 
-/// Repeated keys in one drawer -- the other half of that import. Org
-/// reads the last one; what matters here is that it is one value and not
-/// a crash.
+/// Repeated keys in one drawer -- the other half of that import. What
+/// matters here is that a reader gets one value and not a crash; putting
+/// them back where they belong is `repair`, below.
 #[test]
 fn a_drawer_with_a_key_repeated_answers_with_one_value() {
     let recipes = imported();
     let recipe = named(&recipes, "Vegetarisches Erdnuss-Gemüse");
 
-    assert_eq!(recipe.servings.as_deref(), Some("2"));
-    assert_eq!(recipe.cook_time.as_deref(), Some("20min"));
+    assert_eq!(recipe.servings.as_deref(), Some("4"));
+    assert_eq!(recipe.cook_time.as_deref(), Some("0"));
+}
+
+/* --- giving a collapsed drawer back --- */
+
+fn import_text() -> String {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../testdata/20240406T101500--rezepte-aus-dem-import__kochen_rezepte.org");
+    std::fs::read_to_string(path).unwrap()
+}
+
+/// Six recipes, six values per key -- except `:source-url:`, which has
+/// four because two recipes never had a source. One is arithmetic, the
+/// other is a guess, and only the first is offered.
+#[test]
+fn a_collapsed_drawer_is_recognised_and_says_what_it_can_give_back() {
+    let report = repair::find("k.org", &import_text()).expect("nothing found");
+
+    assert_eq!(report.recipe_count, 6);
+    assert_eq!(report.title, "Vegetarisches Erdnuss-Gemüse");
+    assert_eq!(report.keys, vec!["cook-time", "prep-time", "servings"]);
+    assert_eq!(report.left_alone, vec!["source-url"]);
+}
+
+/// The Nth value to the Nth recipe -- checked against a recipe in the
+/// middle, where an off-by-one would show.
+#[test]
+fn every_recipe_gets_its_own_values_back() {
+    let (fixed, _) = repair::repair("k.org", &import_text()).unwrap();
+    let recipes = recipes_of("k.org", &fixed);
+
+    let got: Vec<(&str, Option<&str>, Option<&str>)> = recipes
+        .iter()
+        .map(|r| (r.title.as_str(), r.servings.as_deref(), r.cook_time.as_deref()))
+        .collect();
+    assert_eq!(
+        got,
+        vec![
+            ("Vegetarisches Erdnuss-Gemüse", Some("4"), Some("30min")),
+            ("Poke Bowl mit Tahini-Sauce", Some("2"), None),
+            ("Kartoffelgulasch", Some("3"), Some("20min")),
+            ("Porridge", Some("1"), Some("10min")),
+            ("Protein-Kartoffelgratin", Some("2"), Some("40")),
+            ("Grüner Salat mit Joghurt-Dressing", Some("4"), Some("0")),
+        ],
+    );
+}
+
+/// What it does not touch: the id the first recipe is known by, the key
+/// it could not place, and the recipes themselves.
+#[test]
+fn a_repair_leaves_alone_what_it_cannot_place() {
+    let before = import_text();
+    let (fixed, _) = repair::repair("k.org", &before).unwrap();
+
+    // Counted as drawer lines: the file's own header mentions the key in
+    // prose, and that is not a property.
+    let sources = fixed.lines().filter(|line| line.starts_with(":source-url:")).count();
+    assert_eq!(sources, 4, "all four stay where they were");
+    assert_eq!(fixed.matches(":CUSTOM_ID: h:rec-erdnuss").count(), 1);
+    assert_eq!(
+        recipes_of("k.org", &fixed).iter().map(|r| r.title.clone()).collect::<Vec<_>>(),
+        recipes_of("k.org", &before).iter().map(|r| r.title.clone()).collect::<Vec<_>>(),
+    );
+    assert_eq!(flat_items(named(&recipes_of("k.org", &fixed), "Kartoffelgulasch")).len(), 8);
+}
+
+/// Run twice it finds nothing the second time -- which is what lets the
+/// app do it without asking every time it opens the cookbook.
+#[test]
+fn a_repaired_file_is_not_repaired_again() {
+    let (fixed, _) = repair::repair("k.org", &import_text()).unwrap();
+
+    assert!(repair::find("k.org", &fixed).is_none());
+    assert!(repair::repair("k.org", &fixed).is_none());
+}
+
+/// An ordinary cookbook has nothing to give back.
+#[test]
+fn a_file_with_one_drawer_per_recipe_is_left_alone() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../testdata/20240404T113000--org-chef-recipes__kochen_rezepte.org");
+    let text = std::fs::read_to_string(path).unwrap();
+
+    assert!(repair::find("k.org", &text).is_none());
 }
 
 /// Ingredient lines set in columns with runs of spaces, which is what a

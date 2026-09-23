@@ -7,7 +7,13 @@
 #![allow(clippy::needless_return)]
 
 use crate::model::Recipe;
+use crate::repair::CollapsedProperties;
 use nobo_core::core::file_kind;
+use nobo_core::core::history::{self, record_best_effort};
+use nobo_core::core::models::{FileSnapshot, HistoryEntryKind};
+use nobo_core::utils::fs_utils::filename_of;
+use rusqlite::Connection;
+use std::sync::Mutex;
 use nobo_core::config::settings::Config;
 use nobo_core::core::indexer::IndexManager;
 use nobo_core::core::vault::Vault;
@@ -103,4 +109,57 @@ Ok(bodies
     .iter()
     .flat_map(|(path, text)| crate::parse::recipes_of(path, text))
     .collect())
+}
+
+/// Every cookbook in the vault whose first recipe is holding everybody
+/// else's properties, and what could be handed back from it.
+///
+/// Read-only, and cheap: it is the same text the index already has.
+pub fn collapsed_properties(index_manager: &IndexManager) -> Result<Vec<CollapsedProperties>, String> {
+
+let vault_root = Config::require_vault_root()?;
+Ok(Vault::new(index_manager, &vault_root)
+    .files_of_kind(crate::KIND)
+    .into_iter()
+    .filter_map(|(path, text)| crate::repair::find(&path.to_string_lossy(), &text))
+    .collect())
+}
+
+/// Hands them back, and says for which files.
+///
+/// One write per file, recorded in the history like any other edit -- so
+/// a repair the user did not want is one undo away, which is what makes
+/// it safe to do without asking (see `crate::repair` on what it refuses
+/// to guess).
+pub fn repair_collapsed_properties(
+    index_manager: &IndexManager,
+    db: &Mutex<Connection>,
+) -> Result<Vec<CollapsedProperties>, String> {
+
+let vault_root = Config::require_vault_root()?;
+let files: Vec<(std::path::PathBuf, String)> = Vault::new(index_manager, &vault_root)
+    .files_of_kind(crate::KIND)
+    .into_iter()
+    .collect();
+
+let mut repaired = Vec::new();
+for (path, text) in files {
+    let Some((fixed, report)) = crate::repair::repair(&path.to_string_lossy(), &text) else {
+        continue;
+    };
+    let (before, result, after) = history::snapshot_around(&path, || {
+        fs_utils::write_atomic_checked(&path, &fixed).map_err(|e| e.to_string())?;
+        index_manager.update_file(&path);
+        Ok(())
+    });
+    record_best_effort(
+        db,
+        HistoryEntryKind::FileEdited { filename: filename_of(&path) },
+        false,
+        vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before, after }],
+    );
+    result?;
+    repaired.push(report);
+}
+Ok(repaired)
 }

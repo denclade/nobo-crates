@@ -46,6 +46,7 @@
 
 pub mod ingredients;
 pub mod parse;
+pub mod repair;
 pub use parse::recipes_of;
 
 pub mod commands;
@@ -83,6 +84,7 @@ inventory::submit! {
 mod outline;
 
 pub use model::{Amount, Ingredient, IngredientGroup, Recipe, Sections, StepGroup};
+pub use repair::CollapsedProperties;
 
 // Recipes, as a search anyone can ask for by name.
 //

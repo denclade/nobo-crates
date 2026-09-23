@@ -22,6 +22,11 @@ specta-typescript = { workspace = true, optional = true }
 # The core and nothing else of nobo's, unless a line below says otherwise:
 # reaching into another feature is a compile error here, not a lint
 # failure.
+# The repair writes a file and records it in the history, which is what
+# makes an automatic repair undoable -- same db handle every other
+# history-recording command takes.
+rusqlite = { workspace = true }
+
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }

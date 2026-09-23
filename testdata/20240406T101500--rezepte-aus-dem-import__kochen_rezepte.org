@@ -10,9 +10,12 @@ saubere Form; diese zeigt, was daneben noch vorkommt, und jede Eigenheit
 darin ist einmal in einer echten Datei aufgeschlagen:
 
 - Nur das erste Rezept hat überhaupt eine Eigenschaften-Schublade, und in
-  der stehen die Werte *aller* Rezepte übereinander -- so kommt eine Datei
-  aus einem Import zurück, bei dem die Schubladen zusammengefallen sind.
-  Alle anderen Rezepte haben gar keine, also auch keine Portionsangabe.
+  der stehen die Werte *aller sechs* Rezepte übereinander -- so kommt eine
+  Datei aus einem Import zurück, bei dem die Schubladen zusammengefallen
+  sind. Alle anderen Rezepte haben gar keine, also auch keine
+  Portionsangabe. `:source-url:` hat dabei vier Werte statt sechs, weil
+  zwei Rezepte nie eine Quelle hatten: der Schlüssel bleibt deshalb liegen,
+  wo er ist (siehe `repair.rs`).
 - Schritte laufen über mehrere Zeilen: eine Anweisung und darunter,
   eingerückt, die Geräteeinstellungen. Eine Zeile ist kein Schritt.
 - In einem Schritt steckt eine eigene Unterliste.
@@ -25,13 +28,27 @@ darin ist einmal in einer echten Datei aufgeschlagen:
 * Vegetarisches Erdnuss-Gemüse
 :PROPERTIES:
 :cook-time: 30min
+:cook-time: 
 :cook-time: 20min
+:cook-time: 10min
+:cook-time: 40
+:cook-time: 0
 :prep-time: 20min
+:prep-time: 15min
+:prep-time: 10min
+:prep-time: 5min
+:prep-time: 20
 :prep-time: 10
 :servings: 4
 :servings: 2
+:servings: 3
+:servings: 1
+:servings: 2
+:servings: 4
 :source-url: https://example.com/erdnuss-gemuese
 :source-url: https://example.com/poke-bowl
+:source-url: 
+:source-url: https://example.com/porridge
 :CUSTOM_ID: h:rec-erdnuss
 :END:
 ** Ingredients
