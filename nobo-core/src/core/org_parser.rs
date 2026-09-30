@@ -176,6 +176,66 @@ pub(crate) fn block_end_name(line: &str) -> Option<&str> {
     if name.is_empty() { None } else { Some(name) }
 }
 
+/// Which of LINES sit inside a closed literal block -- `#+BEGIN_SRC` ...
+/// `#+END_SRC` and every other `#+BEGIN_<name>`, its own two marker lines
+/// included. What is inside is text: no line there is a heading, and
+/// nothing that rewrites headings may touch it.
+///
+/// The one place that decides it. The reader, the writer that demotes
+/// `*`-lines in a description, and the refile that shifts levels all ask
+/// here, because any two of them disagreeing about a line is a file
+/// written wrong: the writer added stars inside a code block that the
+/// reader then never took off again, and every save made it deeper.
+///
+/// Two rules beyond "begin to end":
+///
+/// - **A block that is never closed is no block.** Its `#+BEGIN_` line is
+///   ordinary text and everything after it is read as usual -- org's own
+///   behaviour. Treating it as open until the end of the file hid every
+///   heading below it inside one task's description, where deleting
+///   that task deleted all of them.
+/// - **Blocks of one name nest.** A `#+BEGIN_SRC org` quoting a file that
+///   holds a src block of its own is the common case of wanting to show
+///   org code, and the inner `#+END_SRC` must not end the outer block.
+///   Only markers of the SAME name count: a `#+begin_quote` inside a src
+///   block is text. (Org itself does not nest these; it asks for the inner
+///   lines to be escaped with a comma. Nesting is what people type, and it
+///   costs nothing on a well-formed file.)
+pub fn closed_block_lines<S: AsRef<str>>(lines: &[S]) -> Vec<bool> {
+    let mut inside = vec![false; lines.len()];
+    let mut i = 0;
+    while i < lines.len() {
+        let Some(name) = block_begin_name(lines[i].as_ref().trim_start()) else {
+            i += 1;
+            continue;
+        };
+        let mut depth = 1usize;
+        let mut end = None;
+        for (j, line) in lines.iter().enumerate().skip(i + 1) {
+            let trimmed = line.as_ref().trim_start();
+            if block_begin_name(trimmed).is_some_and(|n| n.eq_ignore_ascii_case(name)) {
+                depth += 1;
+            } else if block_end_name(trimmed).is_some_and(|n| n.eq_ignore_ascii_case(name)) {
+                depth -= 1;
+                if depth == 0 {
+                    end = Some(j);
+                    break;
+                }
+            }
+        }
+        match end {
+            Some(end) => {
+                inside[i..=end].iter_mut().for_each(|x| *x = true);
+                i = end + 1;
+            }
+            // Never closed: the begin line is text, and reading carries on
+            // with the very next line as if it were not there.
+            None => i += 1,
+        }
+    }
+    inside
+}
+
 /// Inverts `apply_content_heading_offset`: a `*`-line absorbed as content
 /// was demoted on write by `offset` extra stars, so it lands deep enough
 /// to be absorbed rather than escaping as a sibling. Stripping them back
@@ -364,13 +424,6 @@ where
     // above the body -- and prose is perfectly free to start a line with
     // `SCHEDULED:` or `CLOCK:` further down. See where this is read.
     let mut in_metadata_prefix = false;
-    // The name of the open block, so it only closes on a matching
-    // `#+END_`. Block bodies are opaque to structural parsing per org's
-    // own rules, so column-0 `*` lines inside one stay inert.
-    //
-    // Owned rather than borrowed: it outlives the iteration that produced
-    // it, unlike `line` and `trimmed`.
-    let mut in_block: Option<String> = None;
     let mut total_lines = 0usize;
 
     let file_path_str = file_path.to_string_lossy().into_owned();
@@ -380,6 +433,9 @@ where
     // deciding whether to absorb it as a sub-note needs to see past its
     // own line, into whatever PROPERTIES drawer follows.
     let lines: Vec<S> = lines.into_iter().collect();
+    // Which lines are the inside of a closed block -- decided once, up
+    // front, by the same rule every writer uses (see closed_block_lines).
+    let in_block = closed_block_lines(&lines);
 
     for (i, raw_line) in lines.iter().enumerate() {
         let line = raw_line.as_ref();
@@ -387,24 +443,12 @@ where
         total_lines = line_no;
         let trimmed = line.trim_start();
 
-        // Everything inside a literal block is opaque content, checked
-        // before even the heading check below -- a `*`-prefixed line in
-        // here must NOT be reinterpreted as a new heading.
-        if let Some(open_name) = &in_block {
-            let is_end = block_end_name(trimmed).is_some_and(|n| n.eq_ignore_ascii_case(open_name));
-            if let Some(ref mut heading) = current_heading {
-                heading.content.push_str(line);
-                heading.content.push('\n');
-                heading.raw_content.push_str(line);
-                heading.raw_content.push('\n');
-            }
-            if is_end {
-                in_block = None;
-            }
-            continue;
-        }
-        if let Some(name) = block_begin_name(trimmed) {
-            in_block = Some(name.to_string());
+        // Everything inside a closed literal block is opaque content,
+        // checked before even the heading check below -- a `*`-prefixed
+        // line in here must NOT be reinterpreted as a new heading. Kept
+        // verbatim, stars and all: the writer leaves these lines alone
+        // too, so there is no offset to take off.
+        if in_block[i] {
             if let Some(ref mut heading) = current_heading {
                 heading.content.push_str(line);
                 heading.content.push('\n');
@@ -668,6 +712,82 @@ mod tests {
         let mut file = NamedTempFile::with_suffix(".org").unwrap();
         write!(file, "{}", content).unwrap();
         file
+    }
+
+    /* --- code blocks: what is inside is text --- */
+
+    fn parsed(text: &str) -> Vec<Heading> {
+        let lines: Vec<&str> = text.lines().collect();
+        parse_headings_from_lines(Path::new("t.org"), lines)
+    }
+
+    fn titles(text: &str) -> Vec<String> {
+        parsed(text).into_iter().map(|h| format!("{} {}", h.level, h.title)).collect()
+    }
+
+    /// The reported case: org code quoted in a task's description, with a
+    /// src block of its own inside. The inner `#+END_SRC` used to close the
+    /// OUTER block, and the rest of the quote became real tasks -- two
+    /// levels below their parent, undeletable, duplicated on every save.
+    #[test]
+    fn a_src_block_inside_a_src_block_stays_inside() {
+        let text = "\
+* TODO Projekt :project:
+** TODO Bug melden
+#+BEGIN_SRC org
+**** TODO zitiert
+#+BEGIN_SRC org
+***** TODO noch tiefer zitiert
+#+END_SRC
+***** TODO nach dem inneren Block
+#+END_SRC
+** TODO Nächste Aufgabe
+";
+        assert_eq!(titles(text), vec!["1 Projekt", "2 Bug melden", "2 Nächste Aufgabe"]);
+        let bug = &parsed(text)[1];
+        assert!(bug.content.contains("***** TODO nach dem inneren Block"), "kept verbatim:\n{}", bug.content);
+    }
+
+    /// The dangerous one. A block that is never closed -- an `#+END_SRC`
+    /// deleted by hand, or a paste cut short -- used to stay open until the
+    /// end of the file: every project below vanished into one task's
+    /// description, and deleting that task deleted all of them. Org itself
+    /// treats an unclosed begin line as text, and so does this now.
+    #[test]
+    fn a_block_that_is_never_closed_hides_nothing() {
+        let text = "\
+* TODO Projekt A :project:
+** TODO Aufgabe
+#+BEGIN_SRC org
+* TODO nicht geschlossen
+* TODO Projekt B :project:
+* DONE Projekt C :project:
+";
+        let found = titles(text);
+        assert!(found.contains(&"1 Projekt B".to_string()), "{found:?}");
+        assert!(found.contains(&"1 Projekt C".to_string()), "{found:?}");
+    }
+
+    /// Only markers of the block's own name count. A quote inside a src
+    /// block is text; it neither opens nor closes anything.
+    #[test]
+    fn a_block_of_another_name_inside_is_just_text() {
+        let text = "\
+* TODO A
+#+BEGIN_SRC org
+#+begin_quote
+** TODO zitiert
+#+END_SRC
+* TODO B
+";
+        assert_eq!(titles(text), vec!["1 A", "1 B"]);
+    }
+
+    #[test]
+    fn the_block_rule_marks_exactly_the_closed_blocks() {
+        let lines = ["a", "#+BEGIN_SRC org", "#+BEGIN_SRC org", "x", "#+END_SRC", "y", "#+END_SRC", "b", "#+begin_example", "z"];
+        let inside = closed_block_lines(&lines);
+        assert_eq!(inside, vec![false, true, true, true, true, true, true, false, false, false]);
     }
 
     #[test]

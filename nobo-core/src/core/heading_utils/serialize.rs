@@ -112,7 +112,7 @@ pub fn build_new_heading_block(payload: &HeadingCreatePayload, level: usize) -> 
             // "* TODO Schritt" land as a real level-1 heading: the new
             // task lost everything from that line on, and every heading
             // after the insertion point silently re-parented under it.
-            lines.extend(apply_content_heading_offset(content, level));
+            lines.extend(with_ids_on_new_tasks(apply_content_heading_offset(content, level)));
         }
     }
 
@@ -428,7 +428,7 @@ fn build_org_heading_block_inner(
         // heading's body instead of becoming a heading in its own right.
         Some(edited) => {
             if !edited.trim().is_empty() {
-                lines.extend(apply_content_heading_offset(edited, heading.level));
+                lines.extend(with_ids_on_new_tasks(apply_content_heading_offset(edited, heading.level)));
             }
         }
         // Not edited: written back exactly as it was read. See
@@ -443,6 +443,69 @@ fn build_org_heading_block_inner(
         }
     }
 
+    lines
+}
+
+/// Gives every task that a description is about to BECOME its own
+/// `CUSTOM_ID`.
+///
+/// A `* TODO` line typed or pasted into a description is written as a
+/// real task (see `apply_content_heading_offset` -- the user's own rule:
+/// a TODO keyword or a :project: tag is structure). Tasks made that way
+/// were the only ones without an id: everything created through the app
+/// gets one, this path did not. Without one, a task is found by its title,
+/// and a title that occurs twice -- the same link pasted twice -- is
+/// refused by every write (heading_identity::resolve_target). The result
+/// was tasks that could be seen and not deleted, completed or moved.
+///
+/// Into the task's own drawer when the pasted text brought one (it
+/// usually does: a copied task comes with `:CREATED:` and the like),
+/// otherwise a new drawer right under the heading -- after its planning
+/// line if it has one, which is where org requires the drawer to be.
+/// A task that already carries an id keeps it, and nothing inside a code
+/// block is touched: those lines are text.
+fn with_ids_on_new_tasks(mut lines: Vec<String>) -> Vec<String> {
+    let in_block = org_parser::closed_block_lines(&lines);
+    let is_task = |line: &str| {
+        org_parser::parse_heading_line(line).is_some_and(|parsed| is_real_structure(&parsed.state, &parsed.tags))
+    };
+    let is_planning = |line: &str| {
+        let t = line.trim_start();
+        ["SCHEDULED:", "DEADLINE:", "CLOSED:"].iter().any(|k| t.starts_with(k))
+    };
+    let has_id = |line: &str| {
+        org_parser::parse_property(line.trim_start())
+            .is_some_and(|(key, value)| key.eq_ignore_ascii_case(heading_identity::CUSTOM_ID_PROPERTY) && !value.trim().is_empty())
+    };
+
+    // Collected first and applied from the bottom up, so no insertion
+    // moves a position that is still waiting.
+    let mut inserts: Vec<(usize, Vec<String>)> = Vec::new();
+    for i in 0..lines.len() {
+        if in_block[i] || !is_task(&lines[i]) {
+            continue;
+        }
+        let mut at = i + 1;
+        if at < lines.len() && is_planning(&lines[at]) {
+            at += 1;
+        }
+        let id_line = format!(":{}: {}", heading_identity::CUSTOM_ID_PROPERTY, heading_identity::generate_custom_id());
+        if at < lines.len() && lines[at].trim().eq_ignore_ascii_case(ORG_PROPERTIES_START) {
+            let end = (at + 1..lines.len()).find(|&k| lines[k].trim().eq_ignore_ascii_case(ORG_PROPERTIES_END));
+            // An unclosed drawer is left exactly as it is -- adding to it
+            // would guess where the user meant it to end.
+            if let Some(end) = end {
+                if !lines[at + 1..end].iter().any(|l| has_id(l)) {
+                    inserts.push((end, vec![id_line]));
+                }
+            }
+        } else {
+            inserts.push((at, vec![ORG_PROPERTIES_START.to_string(), id_line, ORG_PROPERTIES_END.to_string()]));
+        }
+    }
+    for (at, new_lines) in inserts.into_iter().rev() {
+        lines.splice(at..at, new_lines);
+    }
     lines
 }
 
@@ -514,9 +577,21 @@ fn apply_content_heading_offset(content: &str, host_level: usize) -> Vec<String>
     // last -- see the doc comment above.
     let mut real_ancestors: Vec<(usize, usize)> = Vec::new();
 
-    content
-        .lines()
-        .map(|line| {
+    // A code block's lines are text, whatever they start with: they are
+    // written exactly as typed and the reader keeps them exactly as read
+    // (org_parser::closed_block_lines). Demoting them was one-way -- the
+    // reader never takes stars off inside a block -- so each save pushed
+    // the org code in a `#+BEGIN_SRC org` a few levels deeper.
+    let lines: Vec<&str> = content.lines().collect();
+    let in_block = org_parser::closed_block_lines(&lines);
+
+    lines
+        .iter()
+        .zip(in_block)
+        .map(|(&line, in_block)| {
+            if in_block {
+                return line.to_string();
+            }
             let typed_level = count_leading_stars(line);
             if typed_level == 0 {
                 return line.to_string();
@@ -576,7 +651,14 @@ fn apply_content_heading_offset(content: &str, host_level: usize) -> Vec<String>
 /// then refiles -- rewriting its leading run turns the markup into
 /// `**Wichtig*`.
 pub fn adjust_heading_levels(lines: &mut Vec<String>, diff: isize) {
-    for line in lines.iter_mut() {
+    // Not inside a code block: those lines are text, and shifting their
+    // stars rewrote the org code someone was quoting every time the task
+    // holding it moved (org_parser::closed_block_lines).
+    let in_block = org_parser::closed_block_lines(lines);
+    for (line, in_block) in lines.iter_mut().zip(in_block) {
+        if in_block {
+            continue;
+        }
         let stars_count = count_leading_stars(line);
         if stars_count == 0 {
             continue;

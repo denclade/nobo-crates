@@ -439,6 +439,10 @@ pub fn promote_org_file_to_note(
 ) -> Result<Note, String> {
     crate::blocking(|| {
         let old_path = PathBuf::from(&path);
+        // Promoting RENAMES the file to its Denote name -- the step that
+        // made a user's whole projects.org vanish when the notes editor
+        // still did this on every save (see core::app_files).
+        nobo_core::core::app_files::refuse_if_app_owned(&old_path, "zur Notiz machen", "turned into a note")?;
         let old_filename = filename_of(&old_path);
         let note = note_utils::promote_org_file_to_note(&old_path).to_cmd()?;
 

@@ -5,6 +5,7 @@
         ORG_PROPERTIES_END, ORG_PROPERTIES_START, ORG_TAGS_COLUMN,
     };
     use crate::core::org_parser;
+    use crate::core::heading_identity;
     use crate::core::task_utils::{
         annotate_progress, find_archivable_project_ranges, subtree_progress,
     };
@@ -1455,6 +1456,142 @@
         assert_eq!(lines[0], "** Aufgabe");
         assert_eq!(lines[1], "*Wichtig* nicht vergessen", "emphasis is not a heading");
         assert_eq!(lines[2], "*** Unteraufgabe");
+    }
+
+    /* --- a code block in a description is written exactly as typed --- */
+
+    /// The reported corruption: org code quoted in a `#+BEGIN_SRC org`
+    /// came back a few stars deeper after every save -- `***` became
+    /// `*****`, then `*******`. The writer demoted the block's lines and
+    /// the reader, rightly, never took anything off inside a block.
+    ///
+    /// Five saves in a row, each fed what the previous one read back: the
+    /// block has to come out exactly as it went in.
+    #[test]
+    fn saving_a_description_leaves_a_code_block_untouched_however_often() {
+        let quoted = "\
+Beispiel:
+#+BEGIN_SRC org
+*** TODO zitiert :rust:
+:PROPERTIES:
+:URL: https://docs.rs/reqwest
+:END:
+#+BEGIN_SRC org
+***** TODO noch tiefer
+#+END_SRC
+#+END_SRC";
+        let mut heading = Heading { level: 2, state: Some("TODO".into()), title: "Bug".into(), ..Default::default() };
+        heading.content = quoted.to_string();
+
+        for round in 1..=5 {
+            let payload = HeadingUpdatePayload { content: Some(heading.content.clone()), ..Default::default() };
+            let written = build_org_heading_block(&heading, &payload);
+            let reread = org_parser::parse_headings_from_lines(Path::new("t.org"), written.iter());
+            assert_eq!(reread.len(), 1, "round {round}: the quote became tasks:\n{}", written.join("\n"));
+            assert_eq!(reread[0].content, quoted, "round {round}: the block changed");
+            heading = reread.into_iter().next().unwrap();
+        }
+    }
+
+    /// A description `*`-line OUTSIDE a block still gets its demotion --
+    /// the rule that keeps "* Notiz" from escaping as a sibling -- and
+    /// comes back as typed. Only the inside of the block is exempt.
+    #[test]
+    fn a_star_line_outside_the_block_is_still_demoted_and_restored() {
+        let typed = "* Notiz\n#+BEGIN_SRC org\n* zitiert\n#+END_SRC";
+        let heading = Heading { level: 2, state: Some("TODO".into()), title: "T".into(), ..Default::default() };
+        let payload = HeadingUpdatePayload { content: Some(typed.into()), ..Default::default() };
+        let written = build_org_heading_block(&heading, &payload);
+
+        assert!(written.contains(&"*** Notiz".to_string()), "demoted below the host: {written:?}");
+        assert!(written.contains(&"* zitiert".to_string()), "the block is not: {written:?}");
+        let reread = org_parser::parse_headings_from_lines(Path::new("t.org"), written.iter());
+        assert_eq!(reread[0].content, typed);
+    }
+
+    /// Refiling shifts every heading of the moved subtree -- and must not
+    /// shift the org code quoted inside it.
+    #[test]
+    fn refiling_does_not_shift_the_stars_inside_a_code_block() {
+        let mut lines: Vec<String> = ["** TODO Aufgabe", "#+BEGIN_SRC org", "* zitiert", "#+END_SRC", "*** TODO Unteraufgabe"]
+            .iter().map(|l| l.to_string()).collect();
+
+        adjust_heading_levels(&mut lines, -1);
+
+        assert_eq!(lines, vec!["* TODO Aufgabe", "#+BEGIN_SRC org", "* zitiert", "#+END_SRC", "** TODO Unteraufgabe"]);
+    }
+
+    /* --- a task a description turns into gets an id --- */
+
+    fn written_and_reread(parent: &Heading, content: &str) -> Vec<Heading> {
+        let payload = HeadingUpdatePayload { content: Some(content.into()), ..Default::default() };
+        let written = build_org_heading_block(parent, &payload);
+        org_parser::parse_headings_from_lines(Path::new("t.org"), written.iter())
+    }
+
+    /// The reported case: the same link pasted twice as a TODO. Both became
+    /// real tasks with one title and no id -- and every write refuses a
+    /// title that occurs twice without an id, so neither could be deleted,
+    /// finished or moved. Each now gets its own id on the way in.
+    #[test]
+    fn two_identical_pasted_tasks_each_get_their_own_id() {
+        let parent = Heading { level: 2, state: Some("TODO".into()), title: "konzept".into(), ..Default::default() };
+        let pasted = "\
+Notizen dazu.
+* TODO [[https://docs.rs/reqwest][reqwest - Rust]] :rust:
+:PROPERTIES:
+:URL: https://docs.rs/reqwest
+:END:
+* TODO [[https://docs.rs/reqwest][reqwest - Rust]] :rust:
+:PROPERTIES:
+:URL: https://docs.rs/reqwest
+:END:";
+        let headings = written_and_reread(&parent, pasted);
+
+        assert_eq!(headings.len(), 3, "parent and two tasks: {headings:?}");
+        let ids: Vec<_> = headings[1..].iter().map(|h| heading_identity::custom_id_of(h).map(str::to_string)).collect();
+        assert!(ids.iter().all(Option::is_some), "both have an id: {ids:?}");
+        assert_ne!(ids[0], ids[1], "and not the same one");
+        // The drawer that came with the paste is kept, not replaced.
+        assert_eq!(headings[2].properties.get("URL").map(String::as_str), Some("https://docs.rs/reqwest"));
+
+        // Which is what makes the second one addressable -- by id, the way
+        // the delete would find it.
+        let target = HeadingTarget { line_no: 0, custom_id: ids[1].clone(), title: Some(headings[2].title.clone()) };
+        assert_eq!(heading_identity::resolve_target(&headings, &target, "t"), Ok(2));
+    }
+
+    /// A pasted task with an id of its own keeps it; one with none and no
+    /// drawer gets a drawer -- after its planning line, where org wants it.
+    #[test]
+    fn an_existing_id_is_kept_and_a_missing_drawer_goes_after_the_planning_line() {
+        let parent = Heading { level: 1, state: Some("TODO".into()), title: "P".into(), ..Default::default() };
+        let pasted = "\
+* TODO mit ID
+:PROPERTIES:
+:CUSTOM_ID: h:eigen
+:END:
+* TODO ohne Schublade
+SCHEDULED: <2026-10-01 Thu>";
+        let payload = HeadingUpdatePayload { content: Some(pasted.into()), ..Default::default() };
+        let written = build_org_heading_block(&parent, &payload);
+        let headings = org_parser::parse_headings_from_lines(Path::new("t.org"), written.iter());
+
+        assert_eq!(heading_identity::custom_id_of(&headings[1]), Some("h:eigen"));
+        assert!(heading_identity::custom_id_of(&headings[2]).is_some(), "{}", written.join("\n"));
+        assert!(headings[2].scheduled.is_some(), "the planning line is still a planning line:\n{}", written.join("\n"));
+    }
+
+    /// A TODO line inside a code block is text -- no drawer is injected
+    /// into org code someone is quoting.
+    #[test]
+    fn a_task_quoted_in_a_code_block_gets_nothing() {
+        let parent = Heading { level: 2, state: Some("TODO".into()), title: "Bug".into(), ..Default::default() };
+        let quoted = "#+BEGIN_SRC org\n*** TODO zitiert\n#+END_SRC";
+        let headings = written_and_reread(&parent, quoted);
+
+        assert_eq!(headings.len(), 1);
+        assert_eq!(headings[0].content, quoted);
     }
 
     /* --- CLOSED: is stamped for every finished state, not just DONE --- */

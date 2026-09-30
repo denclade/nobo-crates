@@ -122,6 +122,9 @@ pub fn delete_note(
     db: &Mutex<Connection>,
 ) -> Result<(), String> {
     let target = Path::new(&path);
+    // Before anything else: deleting projects.org from the notes view is
+    // every project gone at once (see core::app_files).
+    nobo_core::core::app_files::refuse_if_app_owned(target, "löschen", "deleted")?;
     // The index is updated explicitly, like every other mutating command:
     // history's undo path needs it in sync without waiting for the
     // filesystem watcher round-trip.
@@ -203,6 +206,7 @@ pub fn rename_note(
     db: &Mutex<Connection>,
 ) -> Result<String, String> {
     let old = Path::new(&old_path);
+    nobo_core::core::app_files::refuse_if_app_owned(old, "umbenennen", "renamed")?;
     let parent = old.parent().ok_or("Invalid path")?;
     let new_path = parent.join(&new_name);
 
@@ -242,6 +246,8 @@ pub fn retitle_note(
     db: &Mutex<Connection>,
 ) -> Result<String, String> {
     let old = Path::new(&path);
+    // Retitling renames the file to match its new title -- the same move.
+    nobo_core::core::app_files::refuse_if_app_owned(old, "umbenennen", "renamed")?;
     let before = std::fs::read_to_string(old).ok();
 
     let new_path = note_utils::retitle_note(old, &title, &tags).map_err(|e| match e.kind() {
@@ -378,6 +384,7 @@ pub fn move_note(
     db: &Mutex<Connection>,
 ) -> Result<String, String> {
     let old = Path::new(&path);
+    nobo_core::core::app_files::refuse_if_app_owned(old, "verschieben", "moved")?;
     let file_name = old.file_name().ok_or("Invalid path")?;
     let new_path = Path::new(&target_dir).join(file_name);
 

@@ -28,6 +28,7 @@ pub mod favorites;
 pub mod features;
 pub mod file_kind;
 pub mod vault;
+pub mod app_files;
 pub mod merge;
 pub mod once_at_a_time;
 pub mod migrations;
