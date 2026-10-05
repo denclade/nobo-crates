@@ -124,6 +124,18 @@ pub fn parse_heading_line(line: &str) -> Option<HeadingLine> {
     crate::core::org_parser::parse_heading_line(line)
 }
 
+/// Which lines sit inside a closed code block (`#+BEGIN_SRC` ... `#+END_SRC`
+/// and every other `#+BEGIN_<name>`), marker lines included.
+///
+/// For a feature that scans a file its own way: what is inside is text,
+/// and a scan that reads a `*`-line in there as a heading disagrees with
+/// the core about where things are -- which turns into a WRITE at the
+/// wrong place the moment the scan decides where to insert something.
+/// The rule itself is the core's (org_parser::closed_block_lines).
+pub fn closed_block_lines<S: AsRef<str>>(lines: &[S]) -> Vec<bool> {
+    crate::core::org_parser::closed_block_lines(lines)
+}
+
 /// One `:KEY: value` property line.
 pub fn parse_property(line: &str) -> Option<(String, String)> {
     crate::core::org_parser::parse_property(line)

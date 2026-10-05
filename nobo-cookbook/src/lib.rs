@@ -138,7 +138,10 @@ inventory::submit! {
         // No `cfg!`: linked means in the build (see crates/nobo-babel).
         compiled_in: true,
         needs: &[],
-        built_on: &[],
+        // The shared HTTP door, for the web import -- and only in a build
+        // that has the import at all: a list naming a library the build
+        // left out would be as wrong as one leaving out a library it has.
+        built_on: if cfg!(feature = "import") { &["nobo-http"] } else { &[] },
     }
 }
 
@@ -221,13 +224,32 @@ pub fn init() -> tauri::plugin::TauriPlugin<tauri::Wry> {
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
     tauri_specta::Builder::<tauri::Wry>::new()
         .plugin_name("nobo-cookbook")
-        .commands(tauri_specta::collect_commands![
-            tauri_commands::cookbook_recipes,
-            tauri_commands::cookbook_files,
-            tauri_commands::set_cookbook,
-            tauri_commands::cookbook_collapsed_properties,
-            tauri_commands::cookbook_repair_collapsed_properties,
-        ])
+        .commands(command_list())
+}
+
+#[cfg(all(feature = "tauri", feature = "import"))]
+fn command_list() -> tauri_specta::Commands<tauri::Wry> {
+    tauri_specta::collect_commands![
+        tauri_commands::cookbook_recipes,
+        tauri_commands::cookbook_files,
+        tauri_commands::set_cookbook,
+        tauri_commands::cookbook_collapsed_properties,
+        tauri_commands::cookbook_repair_collapsed_properties,
+        tauri_commands::cookbook_import_preview,
+        tauri_commands::cookbook_import_save,
+    ]
+}
+
+/// The same without the import, for a build that leaves networking out.
+#[cfg(all(feature = "tauri", not(feature = "import")))]
+fn command_list() -> tauri_specta::Commands<tauri::Wry> {
+    tauri_specta::collect_commands![
+        tauri_commands::cookbook_recipes,
+        tauri_commands::cookbook_files,
+        tauri_commands::set_cookbook,
+        tauri_commands::cookbook_collapsed_properties,
+        tauri_commands::cookbook_repair_collapsed_properties,
+    ]
 }
 
 /// Writes this plugin's `bindings.ts` next to the frontend half that

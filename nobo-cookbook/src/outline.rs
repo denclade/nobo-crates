@@ -27,11 +27,19 @@ pub struct Node {
 pub fn read(text: &str) -> Vec<Node> {
     let mut nodes: Vec<Node> = Vec::new();
     let mut in_drawer = false;
+    // A `*`-line inside a code block is text, as everywhere else in the
+    // app (see vault::closed_block_lines). Read as a heading here, a
+    // quoted org outline became recipes in the cookbook view -- and an
+    // import, which places itself by this outline, was written into the
+    // middle of the quote.
+    let lines: Vec<&str> = text.lines().collect();
+    let in_block = vault::closed_block_lines(&lines);
 
-    for (index, line) in text.lines().enumerate() {
+    for (index, line) in lines.iter().copied().enumerate() {
         let trimmed = line.trim();
 
-        if let Some(heading) = vault::parse_heading_line(line) {
+        let heading_here = if in_block[index] { None } else { vault::parse_heading_line(line) };
+        if let Some(heading) = heading_here {
             let (level, title, tags) = (heading.level, heading.title, heading.tags);
             nodes.push(Node {
                 level,

@@ -213,9 +213,11 @@ pub async fn import_save(
     db: &Mutex<Connection>,
 ) -> Result<ImportedAt, String> {
     let path = std::path::PathBuf::from(&file_path);
-    let text = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    if file_kind::from_lines(&text.lines().collect::<Vec<_>>()) != crate::KIND {
-        return Err(nobo_core::t!("{file_path} ist kein Kochbuch", "{file_path} is not a cookbook"));
+    let is_cookbook = |text: &str| file_kind::from_lines(&text.lines().collect::<Vec<_>>()) == crate::KIND;
+    let not_a_cookbook = || nobo_core::t!("{file_path} ist kein Kochbuch", "{file_path} is not a cookbook");
+    // Checked before the download too, so a wrong target costs no traffic.
+    if !is_cookbook(&std::fs::read_to_string(&path).map_err(|e| e.to_string())?) {
+        return Err(not_a_cookbook());
     }
 
     let image_link = match recipe.image_url.as_deref().filter(|_| with_image) {
@@ -225,6 +227,16 @@ pub async fn import_save(
             .ok(),
         None => None,
     };
+
+    // Read AFTER the picture, not before it: the download is a network
+    // round trip of seconds, and a file read before it and written after
+    // it overwrote whatever happened to the cookbook in between -- an
+    // edit in the other pane, a sync pull. Only the in-memory insert lies
+    // between this read and the write now.
+    let text = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    if !is_cookbook(&text) {
+        return Err(not_a_cookbook());
+    }
 
     let (updated, line_no) =
         crate::import::insert(&text, &category, |level| crate::import::to_org(&recipe, level, image_link.as_deref()));

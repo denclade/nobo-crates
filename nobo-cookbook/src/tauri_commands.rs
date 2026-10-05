@@ -86,3 +86,29 @@ pub async fn cookbook_repair_collapsed_properties(
 ) -> Result<Vec<CollapsedProperties>, String> {
     commands::repair_collapsed_properties(index_manager.inner(), db.inner())
 }
+
+/// The recipe on the page at URL, read but not saved -- what the import
+/// shows before anything is written.
+#[cfg(feature = "import")]
+#[tauri::command]
+#[specta::specta]
+pub async fn cookbook_import_preview(url: String) -> Result<crate::import::ImportedRecipe, String> {
+    commands::import_preview(url).await
+}
+
+/// RECIPE (as the preview gave it) into the cookbook FILE_PATH, under
+/// CATEGORY (a heading path, empty for the top level), with its picture
+/// when WITH_IMAGE. One history entry, so an import is one undo away.
+#[cfg(feature = "import")]
+#[tauri::command]
+#[specta::specta]
+pub async fn cookbook_import_save(
+    recipe: crate::import::ImportedRecipe,
+    file_path: String,
+    category: Vec<String>,
+    with_image: bool,
+    index_manager: State<'_, Arc<IndexManager>>,
+    db: State<'_, Arc<Mutex<Connection>>>,
+) -> Result<commands::ImportedAt, String> {
+    commands::import_save(recipe, file_path, category, with_image, index_manager.inner(), db.inner()).await
+}
