@@ -48,6 +48,7 @@ pub mod ingredients;
 pub mod parse;
 pub mod repair;
 pub mod check;
+pub mod import;
 pub use parse::recipes_of;
 
 pub mod commands;

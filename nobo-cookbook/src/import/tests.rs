@@ -1,0 +1,146 @@
+//! The import, on real pages.
+//!
+//! The fixtures are three live recipe pages cut down to what is read from
+//! them (see the comment at the top of each): one WP Recipe Maker blog,
+//! Cookidoo, and a site with nothing but plain schema.org data.
+
+use super::*;
+use crate::parse::recipes_of;
+
+const BIANCA: &str = include_str!("fixtures/biancazapatka.html");
+const COOKIDOO: &str = include_str!("fixtures/cookidoo.html");
+const ZJW: &str = include_str!("fixtures/zuckerjagdwurst.html");
+
+fn titles(groups: &[Group]) -> Vec<Option<&str>> {
+    groups.iter().map(|group| group.title.as_deref()).collect()
+}
+
+#[test]
+fn a_wprm_page_gets_its_ingredient_groups_back() {
+    let recipe = parse_page("https://biancazapatka.com/de/vegane-poke-bowl-mit-tahini-sauce/", BIANCA).unwrap();
+
+    assert_eq!(recipe.title, "Vegane Poke Bowl mit Tahini-Sauce");
+    assert_eq!(recipe.servings.as_deref(), Some("4 Portionen"));
+    assert_eq!((recipe.prep_time.as_deref(), recipe.cook_time.as_deref(), recipe.ready_in.as_deref()), (Some("20"), Some("25"), Some("45")));
+    assert_eq!(
+        titles(&recipe.ingredients),
+        [Some("Reis"), Some("Tofu"), Some("Gemüse (nach Belieben)"), Some("Tahini-Sauce"), Some("Zum Garnieren (optional)")]
+    );
+    // The salt goes into the rice, which is the whole point of the groups.
+    assert_eq!(recipe.ingredients[0].lines.last().map(String::as_str), Some("½ TL Salz"));
+    assert_eq!(recipe.ingredients[4].lines, ["Sesam", "frische Zitronen (oder Limetten)", "Jalapeños (in Scheiben geschnitten)", "frische Kräuter (z.B. Koriander oder Thai-Basilikum)"]);
+    // The sections of steps come from the JSON-LD itself.
+    assert!(titles(&recipe.steps).contains(&Some("Tahini-Sauce")));
+    assert_eq!(
+        recipe.image_url.as_deref(),
+        Some("https://biancazapatka.com/wp-content/uploads/2020/07/vegane-poke-bowl-mit-tofu-und-tahini-sauce.jpg")
+    );
+}
+
+#[test]
+fn cookidoo_keeps_how_things_are_cut_and_says_where_the_steps_are() {
+    let url = "https://cookidoo.de/recipes/recipe/de-DE/r449784";
+    let recipe = parse_page(url, COOKIDOO).unwrap();
+
+    assert_eq!(recipe.title, "Bihunsuppe");
+    let lines = &recipe.ingredients[0].lines;
+    assert_eq!(lines[0], "200 g Hähnchenbrust, in Würfeln (2 cm)");
+    // The entity Cookidoo writes into its own data, decoded.
+    assert_eq!(lines[9], "½ - 1 TL Sambal Oelek, nach Geschmack");
+    assert!(recipe.steps.is_empty());
+    assert_eq!(recipe.notes.len(), 1);
+    assert!(recipe.notes[0].contains(url), "{}", recipe.notes[0]);
+}
+
+#[test]
+fn plain_schema_org_data_is_enough_and_colon_lines_become_groups() {
+    let recipe = parse_page("https://www.zuckerjagdwurst.com/de/rezepte/vegane-blaetterteig-hasen-mit-zwiebel-pilz-fuellung", ZJW).unwrap();
+
+    assert_eq!(recipe.title, "Vegane Blätterteig-Hasen mit Zwiebel-Pilz-Füllung");
+    assert_eq!(recipe.servings.as_deref(), Some("15–20 Stück"));
+    assert_eq!(recipe.ready_in.as_deref(), Some("50"));
+    assert_eq!(titles(&recipe.ingredients), [Some("Für die Blätterteig-Hasen"), Some("Für die Zwiebel-Pilz-Füllung"), Some("Zum Servieren")]);
+    assert_eq!(recipe.steps.len(), 1);
+    assert!(recipe.steps[0].lines.len() >= 5);
+    assert!(recipe.image_url.as_deref().unwrap_or("").contains("zuckerjagdwurst"));
+}
+
+#[test]
+fn a_page_without_recipe_data_says_so() {
+    assert!(parse_page("https://example.org", "<html><body>Kuchen</body></html>").is_err());
+}
+
+/// The round trip that matters: what the import writes, the cookbook
+/// reads back as the same recipe -- groups, properties, picture and all.
+#[test]
+fn an_imported_recipe_reads_back_as_the_recipe_it_was() {
+    let recipe = parse_page("https://biancazapatka.com/de/vegane-poke-bowl-mit-tahini-sauce/", BIANCA).unwrap();
+    let text = to_org(&recipe, 1, Some(".attachments/poke.jpg"));
+
+    let read = recipes_of("/vault/kochbuch.org", &text);
+    assert_eq!(read.len(), 1);
+    let back = &read[0];
+    assert_eq!(back.title, recipe.title);
+    assert_eq!(back.servings, recipe.servings);
+    assert_eq!(back.ready_in.as_deref(), Some("45"));
+    assert_eq!(back.source_url.as_deref(), Some(recipe.source_url.as_str()));
+    assert_eq!(back.image.as_deref(), Some("/vault/.attachments/poke.jpg"));
+    assert!(!back.intro.contains("[[file:"), "the picture is not prose: {}", back.intro);
+    let sections = back.sections.as_ref().expect("structured");
+    assert_eq!(sections.ingredients.len(), 5);
+    assert_eq!(sections.ingredients[0].items[0].text, "180 g Jasminreis (ungekocht, oder eine andere Reissorte oder Reisnudeln oder Quinoa (*siehe Anmerkungen))");
+    assert_eq!(sections.steps.iter().map(|g| g.steps.len()).sum::<usize>(), recipe.steps.iter().map(|g| g.lines.len()).sum::<usize>());
+}
+
+#[test]
+fn notes_become_their_own_section_not_steps() {
+    let recipe = parse_page("https://cookidoo.de/recipes/recipe/de-DE/r449784", COOKIDOO).unwrap();
+    let read = recipes_of("/k.org", &to_org(&recipe, 1, None));
+    let sections = read[0].sections.as_ref().unwrap();
+    assert!(sections.steps.is_empty());
+    assert_eq!(sections.extras.len(), 1);
+}
+
+#[test]
+fn an_entry_goes_under_its_category_one_level_down() {
+    let file = "#+NOBO_TYPE: cookbook\n* Suppen\n** Linsensuppe\n*** Zutaten\n- Linsen\n\n* Desserts\n** Tiramisu\n";
+    let (text, line) = insert(file, &["Suppen".to_string()], |level| format!("{} Neu\n", "*".repeat(level)));
+
+    assert_eq!(text, "#+NOBO_TYPE: cookbook\n* Suppen\n** Linsensuppe\n*** Zutaten\n- Linsen\n\n** Neu\n\n* Desserts\n** Tiramisu\n");
+    assert_eq!(text.lines().nth(line - 1), Some("** Neu"));
+}
+
+#[test]
+fn without_a_category_an_entry_goes_to_the_end_at_the_top() {
+    let (text, line) = insert("* A\ntext\n\n", &[], |level| format!("{} Neu\n", "*".repeat(level)));
+    assert_eq!(text, "* A\ntext\n\n* Neu\n\n");
+    assert_eq!(text.lines().nth(line - 1), Some("* Neu"));
+
+    let (text, line) = insert("", &[], |level| format!("{} Neu\n", "*".repeat(level)));
+    assert_eq!((text.as_str(), line), ("* Neu\n", 1));
+}
+
+#[test]
+fn a_missing_category_falls_back_to_the_top_level() {
+    let (text, _) = insert("* Suppen\n", &["Kuchen".to_string()], |level| format!("{} Neu\n", "*".repeat(level)));
+    assert_eq!(text, "* Suppen\n\n* Neu\n");
+}
+
+#[test]
+fn a_description_cannot_turn_into_a_heading() {
+    let recipe = ImportedRecipe {
+        title: "T".into(),
+        source_url: "https://x".into(),
+        description: Some("* Tipp: vorher einweichen".into()),
+        ..Default::default()
+    };
+    let read = recipes_of("/k.org", &to_org(&recipe, 1, None));
+    assert_eq!(read.len(), 1);
+    assert_eq!(read[0].intro, "* Tipp: vorher einweichen");
+}
+
+#[test]
+fn image_names_are_safe_and_readable() {
+    assert_eq!(image_filename("Vegane Blätterteig-Hasen mit Zwiebel-Pilz-Füllung", "jpg"), "vegane-blaetterteig-hasen-mit-zwiebel-pilz-fuellung.jpg");
+    assert_eq!(image_filename("??", "png"), "recipe.png");
+}

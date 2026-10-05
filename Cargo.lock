@@ -2890,6 +2890,8 @@ dependencies = [
  "inventory",
  "log",
  "nobo-core",
+ "nobo-http",
+ "reqwest",
  "rusqlite",
  "serde",
  "serde_json",

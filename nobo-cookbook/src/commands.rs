@@ -177,3 +177,90 @@ for (path, text) in files {
 }
 Ok(repaired)
 }
+
+/// The recipe on the page at URL, read but not saved anywhere -- what the
+/// import shows before anything is written.
+#[cfg(feature = "import")]
+pub async fn import_preview(url: String) -> Result<crate::import::ImportedRecipe, String> {
+    let url = url.trim().to_string();
+    let html = crate::import::fetch::page(&url).await?;
+    crate::import::parse_page(&url, &html)
+}
+
+/// Where a saved import landed, so the caller can open it.
+#[derive(Debug, Clone, serde::Serialize)]
+#[cfg_attr(feature = "tauri", derive(specta::Type))]
+pub struct ImportedAt {
+    pub file_path: String,
+    #[cfg_attr(feature = "tauri", specta(type = specta_typescript::Number))]
+    pub line_no: usize,
+}
+
+/// RECIPE (as `import_preview` gave it) into the cookbook FILE_PATH,
+/// under CATEGORY (a heading path, empty for the top level), with its
+/// picture when WITH_IMAGE.
+///
+/// The picture is a nicety, never a reason to fail: a page whose image
+/// cannot be fetched still gives its recipe, without one. One history
+/// entry for the cookbook file, so an import is one undo away.
+#[cfg(feature = "import")]
+pub async fn import_save(
+    recipe: crate::import::ImportedRecipe,
+    file_path: String,
+    category: Vec<String>,
+    with_image: bool,
+    index_manager: &IndexManager,
+    db: &Mutex<Connection>,
+) -> Result<ImportedAt, String> {
+    let path = std::path::PathBuf::from(&file_path);
+    let text = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    if file_kind::from_lines(&text.lines().collect::<Vec<_>>()) != crate::KIND {
+        return Err(nobo_core::t!("{file_path} ist kein Kochbuch", "{file_path} is not a cookbook"));
+    }
+
+    let image_link = match recipe.image_url.as_deref().filter(|_| with_image) {
+        Some(url) => save_picture(url, &recipe.title, &path, index_manager, db)
+            .await
+            .map_err(|error| log::warn!("[import] recipe saved without its picture: {error}"))
+            .ok(),
+        None => None,
+    };
+
+    let (updated, line_no) =
+        crate::import::insert(&text, &category, |level| crate::import::to_org(&recipe, level, image_link.as_deref()));
+    let (before, result, after) = history::snapshot_around(&path, || {
+        fs_utils::write_atomic_checked(&path, &updated).map_err(|e| e.to_string())?;
+        index_manager.update_file(&path);
+        Ok(())
+    });
+    record_best_effort(
+        db,
+        HistoryEntryKind::FileEdited { filename: filename_of(&file_path) },
+        false,
+        vec![FileSnapshot { path: file_path.clone(), before, after }],
+    );
+    result?;
+    Ok(ImportedAt { file_path, line_no })
+}
+
+/// The picture, into the cookbook's attachment folder. Returns the link
+/// target relative to the cookbook file.
+#[cfg(feature = "import")]
+async fn save_picture(
+    url: &str,
+    title: &str,
+    cookbook: &std::path::Path,
+    index_manager: &IndexManager,
+    db: &Mutex<Connection>,
+) -> Result<String, String> {
+    let (bytes, extension) = crate::import::fetch::image(url).await?;
+    let folder = Config::load().map(|config| config.attachments_dir).unwrap_or_else(|| ".attachments".to_string());
+    let directory = cookbook.parent().unwrap_or(std::path::Path::new("")).join(&folder);
+    let saved = fs_utils::place_attachment(&directory, &crate::import::image_filename(title, extension), |dest| {
+        std::fs::write(dest, &bytes)
+    })
+    .map_err(|e| e.to_string())?;
+    index_manager.update_file(std::path::Path::new(&saved));
+    record_best_effort(db, HistoryEntryKind::AttachmentAdded { filename: filename_of(&saved) }, false, vec![]);
+    Ok(format!("{folder}/{}", filename_of(&saved)))
+}

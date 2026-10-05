@@ -62,6 +62,13 @@ pub struct Recipe {
     pub ready_in: Option<String>,
     #[cfg_attr(feature = "tauri", specta(optional))]
     pub source_url: Option<String>,
+    /// The recipe's picture, as an absolute path: a link to an image file
+    /// on a line of its own, first thing under the heading -- where an
+    /// import puts it. Taken out of `intro`, which is prose, so a view
+    /// shows the picture as a picture rather than as link syntax.
+    #[cfg_attr(feature = "tauri", specta(optional))]
+    #[serde(default)]
+    pub image: Option<String>,
     /// The prose between the heading and its first section.
     pub intro: String,
     /// `None` for a heading with neither section -- the reading view falls

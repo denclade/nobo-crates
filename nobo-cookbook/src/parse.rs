@@ -138,6 +138,7 @@ fn build(file_path: &str, flat: &[Node], index: usize, heading: &Node) -> Recipe
         }
     }
 
+    let (image, intro) = picture_of(file_path, heading.content.trim());
     Recipe {
         file_path: file_path.to_string(),
         line_no: heading.line_no,
@@ -150,10 +151,40 @@ fn build(file_path: &str, flat: &[Node], index: usize, heading: &Node) -> Recipe
         cook_time: first_property(heading, COOK_TIME_KEYS),
         ready_in: first_property(heading, READY_IN_KEYS),
         source_url: first_property(heading, SOURCE_KEYS),
-        intro: heading.content.trim().to_string(),
+        image,
+        intro,
         sections: structured.then_some(Sections { ingredients, steps, extras }),
     }
 }
+
+/// The picture leading the intro, and the intro without it.
+///
+/// Only a link that stands alone on the first line counts: one in the
+/// middle of somebody's prose is part of what they wrote.
+fn picture_of(file_path: &str, intro: &str) -> (Option<String>, String) {
+    let (first, rest) = intro.split_once('\n').unwrap_or((intro, ""));
+    let target = first
+        .trim()
+        .strip_prefix("[[file:")
+        .and_then(|link| link.strip_suffix("]]"))
+        .map(|link| link.split("][").next().unwrap_or(link));
+    let is_image = |path: &str| {
+        let lower = path.to_lowercase();
+        IMAGE_EXTENSIONS.iter().any(|extension| lower.ends_with(extension))
+    };
+    match target.filter(|path| is_image(path)) {
+        Some(path) => {
+            let absolute = match std::path::Path::new(path).is_absolute() {
+                true => std::path::PathBuf::from(path),
+                false => std::path::Path::new(file_path).parent().unwrap_or(std::path::Path::new("")).join(path),
+            };
+            (Some(absolute.to_string_lossy().into_owned()), rest.trim().to_string())
+        }
+        None => (None, intro.to_string()),
+    }
+}
+
+const IMAGE_EXTENSIONS: &[&str] = &[".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
 enum Section {
     Ingredients,
