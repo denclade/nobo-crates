@@ -259,6 +259,37 @@ fn forget_what_a_store_told_us() {
     if let Ok(mut empty) = legacy_names_known_empty().lock() {
         empty.clear();
     }
+    if let Ok(mut answers) = known_answers().lock() {
+        answers.clear();
+    }
+}
+
+/// What the store last said for a key, empty answers included -- held for
+/// as long as the process runs, and replaced by every write through this
+/// module.
+///
+/// Background reads are answered from here once a key has been read. On
+/// Sailfish every keychain read can bring up a confirmation prompt, and
+/// the CalDAV list overview asks "does this account have a password" once
+/// per account each time the vault index moves -- which on a phone is
+/// every few seconds, and was a prompt every few seconds, also for the
+/// accounts that simply have none on this device. What the store holds
+/// only changes through `save`/`delete` here (which keep this current) or
+/// outside the app entirely; for the latter, an interactive read -- the
+/// user pressing something -- asks again and refreshes the answer.
+fn known_answers() -> &'static Mutex<HashMap<String, Option<String>>> {
+    static KNOWN: OnceLock<Mutex<HashMap<String, Option<String>>>> = OnceLock::new();
+    KNOWN.get_or_init(Default::default)
+}
+
+fn remember_answer(key: &str, value: Option<&str>) {
+    if let Ok(mut known) = known_answers().lock() {
+        known.insert(key.to_string(), value.map(str::to_string));
+    }
+}
+
+fn known_answer(key: &str) -> Option<Option<String>> {
+    known_answers().lock().ok().and_then(|known| known.get(key).cloned())
 }
 
 fn legacy_name_is_known_empty(legacy_key: &str) -> bool {
@@ -386,6 +417,11 @@ impl Secrets {
     /// [`load_interactive`](Self::load_interactive).
     pub async fn load_as(&self, name: &str, intent: Intent) -> Result<Option<String>, String> {
         let key = self.key(name);
+        if intent == Intent::Background {
+            if let Some(answer) = known_answer(&key) {
+                return Ok(answer);
+            }
+        }
 
         match join_or_lead(&key) {
             Flight::Follower(mut leader) => match leader.recv().await {
@@ -399,6 +435,11 @@ impl Secrets {
             Flight::Leader(followers) => {
                 let _leading = LeadingRead(key.clone());
                 let result = self.read_through(&key, name, intent).await;
+                // Only a real answer is remembered: an unreachable store
+                // has said nothing about what it holds.
+                if let Ok(answer) = &result {
+                    remember_answer(&key, answer.as_deref());
+                }
                 // Fails only when nobody joined, which is the normal case.
                 let _ = followers.send(result.clone());
                 result.map_err(|e| e.to_string())
@@ -450,6 +491,7 @@ impl Secrets {
     async fn save_with(&self, name: &str, value: &str, intent: Intent) -> Result<(), String> {
         let store = store()?;
         store.save(&self.key(name), value, intent).await.map_err(|e| e.to_string())?;
+        remember_answer(&self.key(name), Some(value));
         // Otherwise the old entry would sit there forever, holding a
         // password the user has just replaced. Skipped once the old name
         // is known to hold nothing -- which, after one read, it is.
@@ -469,6 +511,7 @@ impl Secrets {
             .delete(&self.key(name), Intent::Background)
             .await
             .map_err(|e| e.to_string())?;
+        remember_answer(&self.key(name), None);
         if let Some(legacy_key) = self.legacy_key(name).filter(|key| !legacy_name_is_known_empty(key)) {
             store
                 .delete(&legacy_key, Intent::Background)
@@ -483,6 +526,10 @@ impl Secrets {
     /// only ever logged, so there is nothing to wait for.
     pub fn delete_detached(&self, name: &str) {
         let key = self.key(name);
+        // Gone as far as this process is concerned at once: the delete
+        // itself happens later, and a read in between must not answer
+        // with the value being removed.
+        remember_answer(&key, None);
         let legacy_key = self.legacy_key(name);
         spawn_detached(async move {
             match store() {
@@ -747,6 +794,21 @@ impl SecretStore for Keychain {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The reason for the memo: once the store has answered for a key,
+    /// background reads take that answer instead of asking again -- and a
+    /// write through this module keeps it current.
+    #[test]
+    fn a_known_answer_is_given_back_and_a_write_replaces_it() {
+        let key = "test-known-answers:account-1";
+        assert_eq!(known_answer(key), None, "nothing known before the first read");
+        remember_answer(key, None);
+        assert_eq!(known_answer(key), Some(None), "an empty answer is remembered too");
+        remember_answer(key, Some("geheim"));
+        assert_eq!(known_answer(key), Some(Some("geheim".to_string())));
+        forget_what_a_store_told_us();
+        assert_eq!(known_answer(key), None, "a different store means nothing is known");
+    }
 
     /// The key is the prefix plus the name, and nothing else -- it is the
     /// on-disk format, and a test is the only thing that will notice if
