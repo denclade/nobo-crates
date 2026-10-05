@@ -660,6 +660,17 @@ pub fn create_heading_in_file(
                 edit.commit()?;
             }
             None => {
+                // The same rule HeadingEdit applies on insert: a task
+                // pasted into the new heading's description, drawer and
+                // id included, must not arrive with an id the file
+                // already has (see heading_utils::renew_taken_ids). A
+                // file that does not exist yet has none to collide with.
+                let mut new_lines = new_lines;
+                if target_path.exists() {
+                    let (_, flat) = heading_utils::read_and_parse(&target_path)?;
+                    let taken = heading_utils::ids_in_file_except(&flat, None);
+                    heading_utils::renew_taken_ids(&mut new_lines, &taken, false);
+                }
                 fs_utils::append_lines(&target_path, new_lines).to_cmd()?;
             }
         }

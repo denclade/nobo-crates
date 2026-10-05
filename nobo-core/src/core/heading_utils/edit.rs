@@ -169,9 +169,13 @@ impl HeadingEdit {
 
     /// Replaces the heading's own block -- its heading line, drawers and
     /// body, but not its children.
-    pub fn replace(&mut self, block: Vec<String>) -> Result<(), String> {
+    pub fn replace(&mut self, mut block: Vec<String>) -> Result<(), String> {
         self.refuse_second_mutation()?;
         let heading = self.flat[self.idx].clone();
+        // The edited heading keeps its own id; the tasks a pasted
+        // description turns into must not take one the file already has.
+        let taken = ids_in_file_except(&self.flat, Some(self.idx));
+        renew_taken_ids(&mut block, &taken, true);
         self.splice(heading.line_no, heading.last_line, block, &heading.title)
     }
 
@@ -210,7 +214,9 @@ impl HeadingEdit {
 
     /// Puts NEW_LINES directly after the heading's whole subtree -- where
     /// a new child belongs.
-    pub fn insert_after_subtree(&mut self, new_lines: Vec<String>) -> Result<(), String> {
+    pub fn insert_after_subtree(&mut self, mut new_lines: Vec<String>) -> Result<(), String> {
+        let taken = ids_in_file_except(&self.flat, None);
+        renew_taken_ids(&mut new_lines, &taken, false);
         self.refuse_second_mutation()?;
         let after = find_subtree_end_line(&self.flat, self.idx);
         if after > self.lines.len() {
@@ -399,6 +405,58 @@ impl HeadingEdit {
             ));
         }
         Ok(())
+    }
+}
+
+/// Every CUSTOM_ID the file's headings carry, but the one at EXCEPT --
+/// the heading being rewritten, whose id is its own to keep.
+pub fn ids_in_file_except(flat: &[Heading], except: Option<usize>) -> std::collections::HashSet<String> {
+    flat.iter()
+        .enumerate()
+        .filter(|(i, _)| Some(*i) != except)
+        .filter_map(|(_, h)| heading_identity::custom_id_of(h).map(str::to_string))
+        .collect()
+}
+
+/// Gives a fresh CUSTOM_ID to every task in LINES whose id the file
+/// already has (TAKEN) or that occurs twice within LINES itself.
+///
+/// The case it exists for: a task copied together with its drawer and
+/// pasted into a description. On save it becomes a real task -- with the
+/// SAME id as the original. Every write finds a task by its id first
+/// (heading_identity::resolve_target), so from then on an edit, a tick or
+/// a delete meant for one of the two could land on the other.
+///
+/// The original keeps its id -- links and history point at it -- and the
+/// copy gets a new one. KEEP_FIRST spares the first heading in LINES: when
+/// a heading's own block is rewritten, that one IS the original. Nothing
+/// inside a code block is touched; those lines are text.
+pub fn renew_taken_ids(lines: &mut [String], taken: &std::collections::HashSet<String>, keep_first: bool) {
+    let in_block = org_parser::closed_block_lines(lines);
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut headings_seen = 0usize;
+    for (i, line) in lines.iter_mut().enumerate() {
+        if in_block[i] {
+            continue;
+        }
+        if org_parser::parse_heading_line(line).is_some() {
+            headings_seen += 1;
+            continue;
+        }
+        let Some((key, value)) = org_parser::parse_property(line.trim_start()) else { continue };
+        if !key.eq_ignore_ascii_case(heading_identity::CUSTOM_ID_PROPERTY) {
+            continue;
+        }
+        let value = value.trim().to_string();
+        if value.is_empty() || (keep_first && headings_seen <= 1) {
+            seen.insert(value);
+            continue;
+        }
+        if taken.contains(&value) || seen.contains(&value) {
+            *line = format!(":{}: {}", heading_identity::CUSTOM_ID_PROPERTY, heading_identity::generate_custom_id());
+        } else {
+            seen.insert(value);
+        }
     }
 }
 
@@ -592,6 +650,83 @@ mod tests {
 
         assert!(edit.write(&renamed("Zweimal")).is_err());
         assert!(edit.delete_subtree().is_err());
+    }
+
+    /* --- a pasted copy of a task does not share the original's id --- */
+
+    const WITH_ORIGINAL: &str = concat!(
+        "* TODO Projekt :project:\n",
+        ":PROPERTIES:\n",
+        ":CUSTOM_ID: h:projekt\n",
+        ":END:\n",
+        "** TODO Original\n",
+        ":PROPERTIES:\n",
+        ":CUSTOM_ID: h:orig\n",
+        ":END:\n",
+        "** TODO Notizen\n",
+        ":PROPERTIES:\n",
+        ":CUSTOM_ID: h:notizen\n",
+        ":END:\n",
+    );
+
+    fn ids_after(path: &PathBuf) -> Vec<(String, String)> {
+        let (_, flat) = read_and_parse(path).unwrap();
+        flat.iter().map(|h| (h.title.clone(), heading_identity::custom_id_of(h).unwrap_or("").to_string())).collect()
+    }
+
+    /// The case that was left open: a task copied WITH its drawer and
+    /// pasted into another task's description. It became a real task with
+    /// the original's id -- and every write finds a task by its id first,
+    /// so an edit or a delete meant for one could land on the other.
+    #[test]
+    fn a_pasted_copy_gets_its_own_id_and_the_original_keeps_its() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "projects.org", WITH_ORIGINAL);
+        let target = HeadingTarget { line_no: 0, custom_id: Some("h:notizen".into()), title: None };
+        let pasted = "Kopie:\n* TODO Original\n:PROPERTIES:\n:CUSTOM_ID: h:orig\n:END:";
+
+        let mut edit = open_edit(&path, &target, "t").unwrap();
+        edit.write(&HeadingUpdatePayload { content: Some(pasted.into()), ..Default::default() }).unwrap();
+        edit.commit().unwrap();
+
+        let ids = ids_after(&path);
+        let originals: Vec<_> = ids.iter().filter(|(t, _)| t == "Original").collect();
+        assert_eq!(originals.len(), 2, "{ids:?}");
+        assert_eq!(originals[0].1, "h:orig", "the original keeps its id: {ids:?}");
+        assert!(!originals[1].1.is_empty() && originals[1].1 != "h:orig", "the copy gets its own: {ids:?}");
+        let notizen = ids.iter().find(|(t, _)| t == "Notizen").unwrap();
+        assert_eq!(notizen.1, "h:notizen", "the edited task keeps its own id too");
+    }
+
+    /// The same copy pasted twice: the two copies must differ from each
+    /// other, not only from the original.
+    #[test]
+    fn two_copies_in_one_paste_differ_from_each_other() {
+        let dir = TempDir::new().unwrap();
+        let path = write(&dir, "projects.org", WITH_ORIGINAL);
+        let target = HeadingTarget { line_no: 0, custom_id: Some("h:notizen".into()), title: None };
+        let copy = "* TODO Kopie\n:PROPERTIES:\n:CUSTOM_ID: h:neu\n:END:";
+        let pasted = format!("{copy}\n{copy}");
+
+        let mut edit = open_edit(&path, &target, "t").unwrap();
+        edit.write(&HeadingUpdatePayload { content: Some(pasted), ..Default::default() }).unwrap();
+        edit.commit().unwrap();
+
+        let copies: Vec<_> = ids_after(&path).into_iter().filter(|(t, _)| t == "Kopie").map(|(_, id)| id).collect();
+        assert_eq!(copies.len(), 2);
+        assert_eq!(copies[0], "h:neu", "the first is unique and keeps it");
+        assert_ne!(copies[0], copies[1]);
+    }
+
+    /// Org code quoted in a block is text: an id inside it is not an id.
+    #[test]
+    fn an_id_inside_a_code_block_is_left_alone() {
+        let mut lines: Vec<String> = ["** TODO X", "#+BEGIN_SRC org", ":CUSTOM_ID: h:orig", "#+END_SRC"].iter().map(|l| l.to_string()).collect();
+        let taken: std::collections::HashSet<String> = ["h:orig".to_string()].into();
+
+        renew_taken_ids(&mut lines, &taken, false);
+
+        assert_eq!(lines[2], ":CUSTOM_ID: h:orig");
     }
 
     /* --- reordering --- */
