@@ -9,12 +9,11 @@
 //! `wprm-recipe-ingredient` per line, in the JSON-LD's order.
 //!
 //! So the groups are taken from the markup and the lines from the
-//! JSON-LD, which has them as clean text already. Only when the counts
-//! agree: if they do not, the two are not describing the same list, and
-//! the flat one is kept.
+//! JSON-LD, which has them as clean text already (see
+//! `regroup_ingredients`).
 
 use super::super::html::elements;
-use super::super::{Group, ImportedRecipe, Page};
+use super::super::{ImportedRecipe, Page};
 use super::Refiner;
 
 pub struct WpRecipeMaker;
@@ -44,15 +43,7 @@ impl Refiner for WpRecipeMaker {
             })
             .collect();
 
-        let lines: Vec<String> = recipe.ingredients.iter().flat_map(|g| g.lines.iter().cloned()).collect();
-        if shape.iter().map(|(_, count)| count).sum::<usize>() != lines.len() || shape.len() < 2 {
-            return;
-        }
-        let mut rest = lines.into_iter();
-        recipe.ingredients = shape
-            .into_iter()
-            .map(|(title, count)| Group { title, lines: rest.by_ref().take(count).collect() })
-            .collect();
+        super::regroup_ingredients(recipe, shape);
     }
 }
 

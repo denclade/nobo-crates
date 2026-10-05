@@ -21,7 +21,7 @@ use super::outline::{self, Node};
 const INGREDIENT_HEADINGS: &[&str] = &["zutaten", "ingredients"];
 
 /// Section headings that introduce the steps, lowercased.
-const DIRECTION_HEADINGS: &[&str] = &[
+pub(crate) const DIRECTION_HEADINGS: &[&str] = &[
     "zubereitung", "schritte", "anleitung",
     "directions", "preparation", "instructions", "steps", "method",
 ];

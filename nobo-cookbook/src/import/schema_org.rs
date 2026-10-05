@@ -6,9 +6,12 @@
 //! the big portals. What varies is the shape: a `Recipe` at the top, in
 //! an `@graph`, in an array; instructions as one string, as steps, as
 //! sections of steps; an image as a URL, a list of them or an
-//! `ImageObject`. All of that is absorbed here, so a site refiner only
+//! `ImageObject` -- or a bare `{"@id": ...}` pointing at one elsewhere in
+//! the graph (Yoast, Chefkoch). All of that is absorbed here, so a site refiner only
 //! deals with what a site does differently, never with schema.org's
 //! many spellings of the same thing.
+
+use std::collections::HashMap;
 
 use serde_json::Value;
 
@@ -18,14 +21,19 @@ use super::{Group, ImportedRecipe};
 /// The first `Recipe` in any of the page's JSON-LD blocks, read into the
 /// import model. `None` when the page has none.
 pub fn read(url: &str, blocks: &[&str]) -> Option<ImportedRecipe> {
-    let recipe = blocks.iter().filter_map(|block| parse_json(block)).find_map(|value| find_recipe(&value).cloned())?;
+    let values: Vec<Value> = blocks.iter().filter_map(|block| parse_json(block)).collect();
+    let recipe = values.iter().find_map(find_recipe)?;
+    let mut graph = HashMap::new();
+    for value in &values {
+        index_ids(value, &mut graph);
+    }
 
     let title = text(recipe.get("name"))?;
     Some(ImportedRecipe {
         title,
         source_url: text(recipe.get("url")).filter(|u| u.starts_with("http")).unwrap_or_else(|| url.to_string()),
         description: text(recipe.get("description")),
-        image_url: image(recipe.get("image")),
+        image_url: image(recipe.get("image"), &graph),
         servings: servings(recipe.get("recipeYield")),
         prep_time: minutes(recipe.get("prepTime")),
         cook_time: minutes(recipe.get("cookTime")),
@@ -96,12 +104,35 @@ fn clean(raw: &str) -> String {
 /// The first image the page offers. Sites list the same picture in
 /// several crops, largest first by convention, and the first is the one
 /// they chose to lead with.
-fn image(value: Option<&Value>) -> Option<String> {
+fn image(value: Option<&Value>, graph: &HashMap<&str, &Value>) -> Option<String> {
     match value? {
         Value::String(url) => Some(url.trim().to_string()).filter(|u| u.starts_with("http")),
-        Value::Array(items) => items.iter().find_map(|item| image(Some(item))),
-        Value::Object(map) => image(map.get("url").or_else(|| map.get("contentUrl"))),
+        Value::Array(items) => items.iter().find_map(|item| image(Some(item), graph)),
+        Value::Object(map) => match (map.get("url").or_else(|| map.get("contentUrl")), map.get("@id")) {
+            (Some(url), _) => image(Some(url), graph),
+            // A reference: the object itself sits elsewhere in the graph.
+            (None, Some(Value::String(id))) => graph.get(id.as_str()).and_then(|object| {
+                // Only a full object -- a reference to itself would loop.
+                object.get("url").or_else(|| object.get("contentUrl")).and_then(|url| image(Some(url), graph))
+            }),
+            _ => None,
+        },
         _ => None,
+    }
+}
+
+/// Every object in the graph that has an `@id` AND says something about
+/// itself -- not the bare references to it.
+fn index_ids<'a>(value: &'a Value, graph: &mut HashMap<&'a str, &'a Value>) {
+    match value {
+        Value::Object(map) => {
+            if let (Some(Value::String(id)), true) = (map.get("@id"), map.len() > 1) {
+                graph.entry(id.as_str()).or_insert(value);
+            }
+            map.values().for_each(|child| index_ids(child, graph));
+        }
+        Value::Array(items) => items.iter().for_each(|child| index_ids(child, graph)),
+        _ => {}
     }
 }
 
@@ -205,6 +236,16 @@ fn instructions(value: Option<&Value>) -> Vec<Group> {
         groups.insert(0, loose);
     }
     groups.retain(|group| !group.lines.is_empty());
+    // One section called "Zubereitung" (Chefkoch) is no section: under
+    // `** Directions` it would only say the same word a second time.
+    if let [only] = groups.as_mut_slice() {
+        let named_like_its_heading = only.title.as_deref().is_some_and(|title| {
+            crate::parse::DIRECTION_HEADINGS.contains(&title.trim().trim_end_matches(':').to_lowercase().as_str())
+        });
+        if named_like_its_heading {
+            only.title = None;
+        }
+    }
     groups
 }
 
@@ -262,6 +303,24 @@ mod tests {
         assert_eq!(recipe.title, "Suppe");
         assert_eq!(recipe.steps[0].lines, ["Kochen.", "Essen."]);
         assert_eq!(recipe.source_url, "https://example.org/suppe");
+    }
+
+    #[test]
+    fn an_image_given_by_reference_is_looked_up_in_the_graph() {
+        let block = r##"{"@graph":[{"@type":"Recipe","name":"Suppe","image":{"@id":"#img"}},{"@type":"ImageObject","@id":"#img","url":"https://x/s.jpg"}]}"##;
+        assert_eq!(read("https://x", &[block]).and_then(|r| r.image_url).as_deref(), Some("https://x/s.jpg"));
+    }
+
+    #[test]
+    fn a_lone_section_named_like_the_heading_is_no_section() {
+        let groups = instructions(Some(&json!([{"@type":"HowToSection","name":"Zubereitung","itemListElement":[{"@type":"HowToStep","text":"Kochen."}]}])));
+        assert_eq!(groups.len(), 1);
+        assert_eq!(groups[0].title, None);
+        // Two of them are real sections, whatever they are called.
+        let two = instructions(Some(&json!([
+            {"@type":"HowToSection","name":"Zubereitung","itemListElement":[{"@type":"HowToStep","text":"A"}]},
+            {"@type":"HowToSection","name":"Sauce","itemListElement":[{"@type":"HowToStep","text":"B"}]}])));
+        assert_eq!(two[0].title.as_deref(), Some("Zubereitung"));
     }
 
     #[test]

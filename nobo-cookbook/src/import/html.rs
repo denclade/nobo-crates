@@ -76,6 +76,18 @@ fn attribute(tag: &str, name: &str) -> Option<String> {
     value[1..].split(quote).next().map(str::to_string)
 }
 
+/// The text of the first element named TAG (`h1`), whatever its
+/// attributes -- for the one element on a page that needs no class to be
+/// found.
+pub fn first_tag_text(html: &str, tag: &str) -> Option<String> {
+    let lower = html.to_ascii_lowercase();
+    let open = format!("<{tag}");
+    let start = find_tag(&lower, &open)?;
+    let content = start + lower[start..].find('>')? + 1;
+    let end = matching_end(html, content, tag);
+    Some(text_of(&html[content..end])).filter(|text| !text.is_empty())
+}
+
 /// Every element in HTML whose class list contains CLASS -- the whole
 /// word, so `wprm-recipe-ingredient` does not also find
 /// `wprm-recipe-ingredients`.
@@ -345,6 +357,12 @@ mod tests {
         let html = r#"<meta content="https://x/a.jpg" property="og:image"><meta property="og:title" content="T">"#;
         assert_eq!(meta_content(html, "og:image").as_deref(), Some("https://x/a.jpg"));
         assert_eq!(meta_content(html, "og:description"), None);
+    }
+
+    #[test]
+    fn the_first_heading_is_found_without_a_class() {
+        assert_eq!(first_tag_text("<header><h1 data-v-1>Bihun-Suppe <small>x</small></h1></header>", "h1").as_deref(), Some("Bihun-Suppe x"));
+        assert_eq!(first_tag_text("<h2>no</h2>", "h1"), None);
     }
 
     #[test]

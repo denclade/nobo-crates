@@ -10,6 +10,8 @@ use crate::parse::recipes_of;
 const BIANCA: &str = include_str!("fixtures/biancazapatka.html");
 const COOKIDOO: &str = include_str!("fixtures/cookidoo.html");
 const ZJW: &str = include_str!("fixtures/zuckerjagdwurst.html");
+const CHEFKOCH: &str = include_str!("fixtures/chefkoch.html");
+const CHEFKOCH_GROUPED: &str = include_str!("fixtures/chefkoch-lasagne.html");
 
 fn titles(groups: &[Group]) -> Vec<Option<&str>> {
     groups.iter().map(|group| group.title.as_deref()).collect()
@@ -63,6 +65,36 @@ fn plain_schema_org_data_is_enough_and_colon_lines_become_groups() {
     assert_eq!(recipe.steps.len(), 1);
     assert!(recipe.steps[0].lines.len() >= 5);
     assert!(recipe.image_url.as_deref().unwrap_or("").contains("zuckerjagdwurst"));
+}
+
+#[test]
+fn chefkoch_without_the_user_the_advert_or_a_section_called_zubereitung() {
+    let recipe = parse_page("https://www.chefkoch.de/rezepte/519331148201779/Bihun-Suppe.html", CHEFKOCH).unwrap();
+
+    assert_eq!(recipe.title, "Bihun-Suppe");
+    assert_eq!(recipe.description, None, "the template advert is not a description");
+    // A reference into the graph, resolved.
+    assert_eq!(
+        recipe.image_url.as_deref(),
+        Some("https://img.chefkoch-cdn.de/rezepte/519331148201779/bilder/1457319/crop-960x540/bihun-suppe.jpg")
+    );
+    assert_eq!(recipe.servings.as_deref(), Some("4 Portionen"));
+    assert_eq!((recipe.prep_time.as_deref(), recipe.ready_in.as_deref()), (Some("30"), Some("60")));
+    assert_eq!(recipe.ingredients.len(), 1, "one table: no groups to make");
+    assert_eq!(recipe.ingredients[0].lines.len(), 12);
+    assert_eq!(recipe.steps.len(), 1);
+    assert_eq!(recipe.steps[0].title, None);
+    assert_eq!(recipe.steps[0].lines.len(), 5);
+}
+
+#[test]
+fn chefkoch_ingredient_groups_come_back_from_its_tables() {
+    let recipe = parse_page("https://www.chefkoch.de/rezepte/1143511220703880/Julies-feine-Gemueselasagne.html", CHEFKOCH_GROUPED).unwrap();
+
+    assert_eq!(recipe.title, "Julies feine Gemüselasagne");
+    assert_eq!(titles(&recipe.ingredients), [Some("Für die Lasagne"), Some("Für die Sauce")]);
+    assert_eq!(recipe.ingredients[0].lines.last().map(String::as_str), Some("9 Lasagneplatte(n)"));
+    assert_eq!(recipe.ingredients[1].lines[0], "2 Knoblauchzehe(n)");
 }
 
 #[test]
