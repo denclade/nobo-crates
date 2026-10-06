@@ -1,6 +1,6 @@
 [package]
 name = "nobo-app"
-version = "0.1.0"
+version.workspace = true
 description = "What nobo's commands do, without a host: the bodies behind the Tauri command layer, callable from any front end."
 edition = "2021"
 license = "GPL-3.0-or-later"

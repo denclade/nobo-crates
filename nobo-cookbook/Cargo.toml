@@ -1,6 +1,6 @@
 [package]
 name = "nobo-cookbook"
-version = "0.1.0"
+version.workspace = true
 description = "Reading org files that declare themselves a cookbook as recipes."
 edition = "2021"
 license = "GPL-3.0-or-later"

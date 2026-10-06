@@ -1,6 +1,6 @@
 [package]
 name = "nobo-http"
-version = "0.1.0"
+version.workspace = true
 description = "The one door for HTTP: a client that works on Android, and a failure a person can read."
 edition = "2021"
 license = "GPL-3.0-or-later"

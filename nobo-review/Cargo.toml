@@ -1,6 +1,6 @@
 [package]
 name = "nobo-review"
-version = "0.1.0"
+version.workspace = true
 description = "The GTD weekly review: its checklist state in the vault, and how often it is due."
 edition = "2021"
 license = "GPL-3.0-or-later"

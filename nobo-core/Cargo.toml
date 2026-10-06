@@ -1,6 +1,6 @@
 [package]
 name = "nobo-core"
-version = "0.1.0"
+version.workspace = true
 description = "Everything nobo is made of that is not a feature: org files, the index, search, file kinds, secrets, migrations, settings."
 edition = "2021"
 license = "GPL-3.0-or-later"

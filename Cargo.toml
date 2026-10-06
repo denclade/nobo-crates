@@ -19,6 +19,12 @@
 members = ["nobo-*"]
 resolver = "2"
 
+# One version for every crate here: they are released together, as one
+# tag of this repository (see scripts/release.mjs in the app, and
+# CHANGELOG.md). A crate does not get a version of its own.
+[workspace.package]
+version = "0.1.0"
+
 # Only for building these crates on their own -- `cargo test` in here.
 # The app's own profile governs the app's build, because a dependency's
 # workspace profile is ignored; see ../src-tauri/Cargo.toml.

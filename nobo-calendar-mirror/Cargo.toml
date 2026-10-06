@@ -1,6 +1,6 @@
 [package]
 name = "nobo-calendar-mirror"
-version = "0.1.0"
+version.workspace = true
 description = "What a calendar looks like inside the vault: the file kind, where it lives, what an entry is, and how it is written as org."
 edition = "2021"
 license = "GPL-3.0-or-later"

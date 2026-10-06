@@ -1,6 +1,6 @@
 [package]
 name = "nobo-ical"
-version = "0.1.0"
+version.workspace = true
 description = "The RFC 5545 chores two features share: properties, parameters, escaping, folding, and what a date-time means locally."
 edition = "2021"
 license = "GPL-3.0-or-later"

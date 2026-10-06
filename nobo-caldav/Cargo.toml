@@ -1,6 +1,6 @@
 [package]
 name = "nobo-caldav"
-version = "0.1.0"
+version.workspace = true
 description = "Two-way CalDAV sync for task lists and calendars from a server."
 edition = "2021"
 license = "GPL-3.0-or-later"

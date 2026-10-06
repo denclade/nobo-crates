@@ -1,6 +1,6 @@
 [package]
 name = "nobo-webdav"
-version = "0.1.0"
+version.workspace = true
 description = "WebDAV plumbing: the methods HTTP does not define, and the 207 Multi-Status body."
 edition = "2021"
 license = "GPL-3.0-or-later"

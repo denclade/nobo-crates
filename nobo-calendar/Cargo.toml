@@ -1,6 +1,6 @@
 [package]
 name = "nobo-calendar"
-version = "0.1.0"
+version.workspace = true
 description = "Subscribing to ICS calendars and mirroring their events into the vault."
 edition = "2021"
 license = "GPL-3.0-or-later"

@@ -1,6 +1,6 @@
 [package]
 name = "nobo-babel"
-version = "0.1.0"
+version.workspace = true
 description = "Running org-babel SRC blocks in nobo notes, as a Tauri plugin."
 edition = "2021"
 license = "GPL-3.0-or-later"
