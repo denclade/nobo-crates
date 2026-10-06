@@ -213,6 +213,24 @@ pub fn install(store: impl SecretStore + 'static) {
     }
 }
 
+/// Drops what background reads have been answered from, so the next one
+/// asks the store again.
+///
+/// The remembered answers (see `known_answers`) only see writes made
+/// through this module. A password changed or removed in the system's
+/// own keychain tool stayed invisible to background reads until the app
+/// restarted. A host calls this when that may have happened -- the
+/// desktop app when its window gets the focus back, which is when
+/// someone returns from that tool. A host whose every read is a prompt
+/// (Sailfish) simply does not, and keeps the quiet it was built for.
+///
+/// What is known about legacy names stays: only this app writes them.
+pub fn forget_remembered_answers() {
+    if let Ok(mut answers) = known_answers().lock() {
+        answers.clear();
+    }
+}
+
 /// An owning handle, so no call holds the lock while it waits on a
 /// keychain -- a locked keyring would otherwise block every other
 /// feature's read for the duration of its timeout.
@@ -298,10 +316,14 @@ fn legacy_name_is_known_empty(legacy_key: &str) -> bool {
         .is_ok_and(|known| known.contains(legacy_key))
 }
 
+/// Also the answer for that key: a value moved off the old name was
+/// still remembered under it, so a background read of the old scope kept
+/// answering with a secret the store no longer held there.
 fn remember_legacy_name_is_empty(legacy_key: &str) {
     if let Ok(mut known) = legacy_names_known_empty().lock() {
         known.insert(legacy_key.to_string());
     }
+    remember_answer(legacy_key, None);
 }
 
 /// Either "you are doing this read" or "somebody else already is".
