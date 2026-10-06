@@ -110,7 +110,7 @@ pub fn parse_page(url: &str, html: &str) -> Result<ImportedRecipe, String> {
     if recipe.image_url.is_none() {
         // The picture a page shows when it is shared: nearly always the
         // dish, and there even where the recipe data has none.
-        recipe.image_url = html::meta_content(html, "og:image").filter(|u| u.starts_with("http"));
+        recipe.image_url = html::meta_content(html, "og:image").and_then(|src| html::absolute_url(url, &src));
     }
     for refiner in sites::REFINERS.iter().filter(|refiner| refiner.recognises(&page)) {
         log::info!("[import] {} refines {}", refiner.name(), page.url);
@@ -209,7 +209,15 @@ fn prose(text: &str) -> String {
 /// the caller can open it.
 pub fn insert(text: &str, category: &[String], entry: impl Fn(usize) -> String) -> (String, usize) {
     let nodes = outline::read(text);
-    let mut lines: Vec<&str> = text.lines().collect();
+    // Each line with its own ending, and new ones in the file's: a file
+    // written with CRLF (Emacs on Windows, Orgzly via some sync clients)
+    // came back entirely LF after an import -- every line changed, as far
+    // as a diff or the other device's sync is concerned.
+    let eol = if text.contains("\r\n") { "\r\n" } else { "\n" };
+    let mut lines: Vec<String> = text.split_inclusive('\n').map(str::to_string).collect();
+    if let Some(last) = lines.last_mut().filter(|last| !last.ends_with('\n')) {
+        last.push_str(eol);
+    }
 
     let target = category_heading(&nodes, category);
     let (at, level) = match target {
@@ -234,18 +242,15 @@ pub fn insert(text: &str, category: &[String], entry: impl Fn(usize) -> String) 
         at -= 1;
     }
     let block = entry(level);
-    let block_lines: Vec<&str> = block.lines().collect();
-    let mut spaced: Vec<&str> = Vec::new();
+    let mut spaced: Vec<String> = Vec::new();
     if at > 0 {
-        spaced.push("");
+        spaced.push(eol.to_string());
     }
-    spaced.extend(block_lines);
+    spaced.extend(block.lines().map(|line| format!("{line}{eol}")));
     let first_line = at + 1 + usize::from(at > 0);
     lines.splice(at..at, spaced);
 
-    let mut out = lines.join("\n");
-    out.push('\n');
-    (out, first_line)
+    (lines.concat(), first_line)
 }
 
 fn category_heading(nodes: &[outline::Node], category: &[String]) -> Option<usize> {

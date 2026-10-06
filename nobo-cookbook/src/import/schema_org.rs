@@ -15,7 +15,7 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
-use super::html::{collapse_whitespace, decode_entities, text_of};
+use super::html::{absolute_url, collapse_whitespace, decode_entities, text_of};
 use super::{Group, ImportedRecipe};
 
 /// The first `Recipe` in any of the page's JSON-LD blocks, read into the
@@ -31,9 +31,9 @@ pub fn read(url: &str, blocks: &[&str]) -> Option<ImportedRecipe> {
     let title = text(recipe.get("name"))?;
     Some(ImportedRecipe {
         title,
-        source_url: text(recipe.get("url")).filter(|u| u.starts_with("http")).unwrap_or_else(|| url.to_string()),
+        source_url: text(recipe.get("url")).and_then(|u| absolute_url(url, &u)).unwrap_or_else(|| url.to_string()),
         description: text(recipe.get("description")),
-        image_url: image(recipe.get("image"), &graph),
+        image_url: image(url, recipe.get("image"), &graph),
         servings: servings(recipe.get("recipeYield")),
         prep_time: minutes(recipe.get("prepTime")),
         cook_time: minutes(recipe.get("cookTime")),
@@ -103,17 +103,20 @@ fn clean(raw: &str) -> String {
 
 /// The first image the page offers. Sites list the same picture in
 /// several crops, largest first by convention, and the first is the one
-/// they chose to lead with.
-fn image(value: Option<&Value>, graph: &HashMap<&str, &Value>) -> Option<String> {
+/// they chose to lead with. A path is read against the page (PAGE_URL).
+fn image(page_url: &str, value: Option<&Value>, graph: &HashMap<&str, &Value>) -> Option<String> {
     match value? {
-        Value::String(url) => Some(url.trim().to_string()).filter(|u| u.starts_with("http")),
-        Value::Array(items) => items.iter().find_map(|item| image(Some(item), graph)),
+        Value::String(src) => absolute_url(page_url, src),
+        Value::Array(items) => items.iter().find_map(|item| image(page_url, Some(item), graph)),
         Value::Object(map) => match (map.get("url").or_else(|| map.get("contentUrl")), map.get("@id")) {
-            (Some(url), _) => image(Some(url), graph),
+            (Some(url), _) => image(page_url, Some(url), graph),
             // A reference: the object itself sits elsewhere in the graph.
             (None, Some(Value::String(id))) => graph.get(id.as_str()).and_then(|object| {
                 // Only a full object -- a reference to itself would loop.
-                object.get("url").or_else(|| object.get("contentUrl")).and_then(|url| image(Some(url), graph))
+                object
+                    .get("url")
+                    .or_else(|| object.get("contentUrl"))
+                    .and_then(|url| image(page_url, Some(url), graph))
             }),
             _ => None,
         },
@@ -321,6 +324,13 @@ mod tests {
             {"@type":"HowToSection","name":"Zubereitung","itemListElement":[{"@type":"HowToStep","text":"A"}]},
             {"@type":"HowToSection","name":"Sauce","itemListElement":[{"@type":"HowToStep","text":"B"}]}])));
         assert_eq!(two[0].title.as_deref(), Some("Zubereitung"));
+    }
+
+    #[test]
+    fn a_picture_given_as_a_path_is_kept() {
+        let block = r#"{"@type":"Recipe","name":"Suppe","image":{"@type":"ImageObject","url":"/media/suppe.jpg"}}"#;
+        let recipe = read("https://example.org/rezepte/suppe", &[block]).expect("a recipe");
+        assert_eq!(recipe.image_url.as_deref(), Some("https://example.org/media/suppe.jpg"));
     }
 
     #[test]

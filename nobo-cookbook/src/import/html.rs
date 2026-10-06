@@ -69,6 +69,81 @@ pub fn meta_content(html: &str, name: &str) -> Option<String> {
     None
 }
 
+/// HREF as an absolute web address, read relative to the page at BASE --
+/// the way a browser reads `src="/bilder/suppe.jpg"`.
+///
+/// Pages give their picture as a path more often than one would think,
+/// in the recipe data and in `og:image` alike; dropping those lost the
+/// picture of a recipe that plainly had one. `None` for anything that is
+/// not a web address once resolved (`data:`, `javascript:`), and for a
+/// BASE that is not one either.
+pub fn absolute_url(base: &str, href: &str) -> Option<String> {
+    let href = href.trim();
+    let (scheme, rest) = base.split_once("://")?;
+    if !(scheme.eq_ignore_ascii_case("http") || scheme.eq_ignore_ascii_case("https")) || href.is_empty() {
+        return None;
+    }
+    let lower = href.to_ascii_lowercase();
+    if lower.starts_with("http://") || lower.starts_with("https://") {
+        return Some(href.to_string());
+    }
+    if let Some(after) = href.strip_prefix("//") {
+        return Some(format!("{scheme}://{after}"));
+    }
+    // Any other scheme: not something to download.
+    let has_scheme = href.find(':').is_some_and(|colon| {
+        let candidate = &href[..colon];
+        candidate.chars().next().is_some_and(|c| c.is_ascii_alphabetic())
+            && candidate.chars().all(|c| c.is_ascii_alphanumeric() || "+.-".contains(c))
+    });
+    if has_scheme {
+        return None;
+    }
+
+    let host_end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
+    let origin = format!("{scheme}://{}", &rest[..host_end]);
+    let full_path = &rest[host_end..];
+    let path = &full_path[..full_path.find(['?', '#']).unwrap_or(full_path.len())];
+
+    if href.starts_with('?') || href.starts_with('#') {
+        return Some(format!("{origin}{path}{href}"));
+    }
+    let joined = if href.starts_with('/') {
+        href.to_string()
+    } else {
+        let directory = &path[..path.rfind('/').map(|slash| slash + 1).unwrap_or(0)];
+        let directory = if directory.is_empty() { "/" } else { directory };
+        format!("{directory}{href}")
+    };
+    Some(format!("{origin}{}", without_dot_segments(&joined)))
+}
+
+/// `/a/b/../c/./d` as `/a/c/d`, query and fragment left alone.
+fn without_dot_segments(path: &str) -> String {
+    let split = path.find(['?', '#']).unwrap_or(path.len());
+    let (path, tail) = path.split_at(split);
+    let mut segments: Vec<&str> = Vec::new();
+    let parts: Vec<&str> = path.split('/').skip(1).collect();
+    for (index, part) in parts.iter().enumerate() {
+        let last = index + 1 == parts.len();
+        match *part {
+            "." => {
+                if last {
+                    segments.push("");
+                }
+            }
+            ".." => {
+                segments.pop();
+                if last {
+                    segments.push("");
+                }
+            }
+            other => segments.push(other),
+        }
+    }
+    format!("/{}{tail}", segments.join("/"))
+}
+
 fn attribute(tag: &str, name: &str) -> Option<String> {
     let at = tag.find(&format!("{name}="))? + name.len() + 1;
     let value = &tag[at..];
@@ -337,6 +412,25 @@ mod tests {
         let found = elements(html, "group");
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].text(), "inner tail");
+    }
+
+    #[test]
+    fn a_relative_address_is_read_against_the_page() {
+        let page = "https://example.org/rezepte/suppe/?ref=x#top";
+        assert_eq!(absolute_url(page, "/bilder/a.jpg").as_deref(), Some("https://example.org/bilder/a.jpg"));
+        assert_eq!(absolute_url(page, "a.jpg").as_deref(), Some("https://example.org/rezepte/suppe/a.jpg"));
+        assert_eq!(absolute_url(page, "../../a.jpg?w=800").as_deref(), Some("https://example.org/a.jpg?w=800"));
+        assert_eq!(absolute_url(page, "//cdn.example.org/a.jpg").as_deref(), Some("https://cdn.example.org/a.jpg"));
+        assert_eq!(absolute_url("https://example.org", "a.jpg").as_deref(), Some("https://example.org/a.jpg"));
+        assert_eq!(absolute_url(page, "https://cdn.example/b.png").as_deref(), Some("https://cdn.example/b.png"));
+    }
+
+    #[test]
+    fn what_is_not_a_web_address_stays_out() {
+        assert_eq!(absolute_url("https://example.org/", "data:image/png;base64,AAAA"), None);
+        assert_eq!(absolute_url("https://example.org/", "javascript:void(0)"), None);
+        assert_eq!(absolute_url("https://example.org/", "  "), None);
+        assert_eq!(absolute_url("file:///tmp/x.html", "a.jpg"), None);
     }
 
     #[test]

@@ -193,3 +193,23 @@ fn an_import_never_lands_inside_a_code_block() {
     assert!(line - 1 > block_end, "after the code block, under the real category:\n{out}");
     assert!(out.contains("#+BEGIN_SRC org\n* Hauptgerichte\n* Suppen\n#+END_SRC"), "the quote is untouched:\n{out}");
 }
+
+/// A CRLF file stays CRLF: the import adds lines, it does not rewrite
+/// every other one.
+#[test]
+fn an_import_keeps_the_files_line_endings() {
+    let text = "#+NOBO_TYPE: cookbook\r\n* Suppen\r\n** Linsen\r\nText\r\n";
+
+    let (out, line) = super::insert(text, &["Suppen".to_string()], |level| format!("{} Neu\nZeile\n", "*".repeat(level)));
+
+    assert!(!out.replace("\r\n", "").contains('\n'), "no bare LF anywhere:\n{out:?}");
+    assert!(out.starts_with(text.trim_end_matches("\r\n")), "{out:?}");
+    assert_eq!(out.lines().nth(line - 1), Some("** Neu"));
+    assert!(out.ends_with("Zeile\r\n"), "{out:?}");
+}
+
+#[test]
+fn an_lf_file_without_a_final_newline_gets_one_before_the_entry() {
+    let (out, _) = super::insert("* A\ntext", &[], |level| format!("{} Neu\n", "*".repeat(level)));
+    assert_eq!(out, "* A\ntext\n\n* Neu\n");
+}
