@@ -23,7 +23,7 @@ resolver = "2"
 # tag of this repository (see scripts/release.mjs in the app, and
 # CHANGELOG.md). A crate does not get a version of its own.
 [workspace.package]
-version = "0.1.0"
+version = "0.9.0"
 
 # Only for building these crates on their own -- `cargo test` in here.
 # The app's own profile governs the app's build, because a dependency's

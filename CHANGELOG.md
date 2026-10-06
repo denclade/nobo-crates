@@ -13,6 +13,8 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+## [0.9.0] – 2026-10-06
+
 ### Neu
 
 - Erste versionierte Fassung. Alles davor steht in der Git-Historie, nicht hier.
@@ -20,3 +22,4 @@ die dritte bleibt für Korrekturen.
 - `nobo-app`: die Befehle der App, ohne Host.
 - Feature-Kisten `nobo-babel`, `nobo-calendar`, `nobo-caldav`, `nobo-cookbook`, `nobo-review`, `nobo-sync`, jeweils mit optionalem Tauri-Teil.
 - Geteilte Bibliotheken `nobo-http`, `nobo-webdav`, `nobo-ical`, `nobo-calendar-mirror`.
+
