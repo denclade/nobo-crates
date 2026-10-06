@@ -47,6 +47,18 @@ pub async fn set_cookbook(
     commands::set_cookbook(path, cookbook, index_manager.inner())
 }
 
+/// A new, empty cookbook at the top of the vault -- for a vault without
+/// one, so the first recipe has somewhere to go. Never written over an
+/// existing file; recorded as created.
+#[tauri::command]
+#[specta::specta]
+pub async fn cookbook_create(
+    index_manager: State<'_, Arc<IndexManager>>,
+    db: State<'_, Arc<Mutex<Connection>>>,
+) -> Result<CookbookFile, String> {
+    commands::create_cookbook(index_manager.inner(), db.inner())
+}
+
 /// Every recipe in every file that declares itself a cookbook, sorted by
 /// title within each file, files in path order -- one stable list the
 /// sidebar can group and filter however it likes.

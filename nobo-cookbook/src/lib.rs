@@ -233,6 +233,7 @@ fn command_list() -> tauri_specta::Commands<tauri::Wry> {
         tauri_commands::cookbook_recipes,
         tauri_commands::cookbook_files,
         tauri_commands::set_cookbook,
+        tauri_commands::cookbook_create,
         tauri_commands::cookbook_collapsed_properties,
         tauri_commands::cookbook_repair_collapsed_properties,
         tauri_commands::cookbook_import_preview,
@@ -247,6 +248,7 @@ fn command_list() -> tauri_specta::Commands<tauri::Wry> {
         tauri_commands::cookbook_recipes,
         tauri_commands::cookbook_files,
         tauri_commands::set_cookbook,
+        tauri_commands::cookbook_create,
         tauri_commands::cookbook_collapsed_properties,
         tauri_commands::cookbook_repair_collapsed_properties,
     ]

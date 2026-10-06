@@ -137,7 +137,48 @@ fn format_identifier(now: chrono::DateTime<Local>) -> String {
 pub fn generate_note_file(dir: &str, title: &str, tags: &[String], author: &str) -> io::Result<String> {
     let now = Local::now();
     let id = format_identifier(now);
+    let filename = build_denote_filename(&id, title, tags, "org");
+    let content = note_content(now, &id, title, tags, author, &[], "* \n");
+    crate::utils::fs_utils::write_atomic(&Path::new(dir).join(&filename), &content)?;
+    Ok(filename)
+}
 
+/// A new note with KEYWORDS (whole lines, `#+NOBO_TYPE: cookbook`) after
+/// the usual header and BODY after it -- for a note that is something
+/// from the start, a cookbook say, rather than a note declared one later.
+///
+/// Never replaces a file: one already at that name -- the same title in
+/// the same second -- is an error, not something to write over.
+pub fn create_note_file(
+    dir: &str,
+    title: &str,
+    tags: &[String],
+    author: &str,
+    keywords: &[String],
+    body: &str,
+) -> io::Result<String> {
+    use std::io::Write;
+    let now = Local::now();
+    let id = format_identifier(now);
+    let filename = build_denote_filename(&id, title, tags, "org");
+    let content = note_content(now, &id, title, tags, author, keywords, body);
+    let mut file = std::fs::OpenOptions::new().write(true).create_new(true).open(Path::new(dir).join(&filename))?;
+    file.write_all(content.as_bytes())?;
+    file.sync_all()?;
+    Ok(filename)
+}
+
+/// The header every new note starts with, then KEYWORDS, a blank line
+/// and BODY.
+fn note_content(
+    now: chrono::DateTime<Local>,
+    id: &str,
+    title: &str,
+    tags: &[String],
+    author: &str,
+    keywords: &[String],
+    body: &str,
+) -> String {
     let weekday_de = match now.weekday() {
         Weekday::Mon => "Mo", Weekday::Tue => "Di", Weekday::Wed => "Mi",
         Weekday::Thu => "Do", Weekday::Fri => "Fr", Weekday::Sat => "Sa",
@@ -145,11 +186,6 @@ pub fn generate_note_file(dir: &str, title: &str, tags: &[String], author: &str)
     };
     let date_str = format!("[{} {} {:02}:{:02}]", now.format("%Y-%m-%d"), weekday_de, now.hour(), now.minute());
 
-    let filename = build_denote_filename(&id, title, tags, "org");
-    let mut path = PathBuf::from(dir);
-    path.push(&filename);
-
-    // Create initial header
     let mut content = format!("#+TITLE:      {}\n#+DATE:       {}\n", title, date_str);
     if !author.trim().is_empty() {
         content.push_str(&format!("#+AUTHOR:     {}\n", author.trim()));
@@ -157,10 +193,14 @@ pub fn generate_note_file(dir: &str, title: &str, tags: &[String], author: &str)
     if !tags.is_empty() {
         content.push_str(&format!("#+FILETAGS:   :{}:\n", tags.join(":")));
     }
-    content.push_str(&format!("#+IDENTIFIER: {}\n\n* \n", id));
-
-    crate::utils::fs_utils::write_atomic(&path, &content)?;
-    Ok(filename)
+    content.push_str(&format!("#+IDENTIFIER: {}\n", id));
+    for keyword in keywords {
+        content.push_str(keyword);
+        content.push('\n');
+    }
+    content.push('\n');
+    content.push_str(body);
+    content
 }
 
 /// Denote note fields the "duplicate" flow lets the user confirm/override
@@ -710,6 +750,49 @@ pub fn find_empty_properties_drawers(headings_by_file: &HashMap<String, Vec<Head
 
 #[cfg(test)]
 mod tests {
+
+    /* --- a new note --- */
+
+    #[test]
+    fn a_new_note_with_keywords_carries_them_after_its_header() {
+        let dir = tempfile::tempdir().unwrap();
+        let name = super::create_note_file(
+            dir.path().to_str().unwrap(), "Kochbuch", &[], "Dennis",
+            &["#+NOBO_TYPE: cookbook".to_string()], "",
+        ).unwrap();
+
+        assert!(name.ends_with("--kochbuch.org"), "{name}");
+        let text = std::fs::read_to_string(dir.path().join(&name)).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines[0], "#+TITLE:      Kochbuch");
+        assert_eq!(lines[2], "#+AUTHOR:     Dennis");
+        assert!(lines[3].starts_with("#+IDENTIFIER: "));
+        assert_eq!(lines[4], "#+NOBO_TYPE: cookbook");
+        assert!(text.ends_with("cookbook\n\n"), "no empty heading in it: {text:?}");
+    }
+
+    /// The same title in the same second is the same file name: the
+    /// second one must fail, not write over the first.
+    #[test]
+    fn a_new_note_never_replaces_one_that_is_there() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().to_str().unwrap();
+        let first = super::create_note_file(path, "Kochbuch", &[], "", &[], "* Lasagne\n").unwrap();
+        std::fs::write(dir.path().join(&first), "meins\n").unwrap();
+
+        // Retried until it lands in the same second as `first` was named
+        // for, or the second is over and there is nothing to collide with.
+        for _ in 0..3 {
+            match super::create_note_file(path, "Kochbuch", &[], "", &[], "") {
+                Err(e) => {
+                    assert_eq!(e.kind(), std::io::ErrorKind::AlreadyExists);
+                    break;
+                }
+                Ok(other) => assert_ne!(other, first),
+            }
+        }
+        assert_eq!(std::fs::read_to_string(dir.path().join(&first)).unwrap(), "meins\n");
+    }
 
     /* --- the filename slug --- */
 

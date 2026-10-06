@@ -18,6 +18,7 @@ use nobo_core::config::settings::Config;
 use nobo_core::core::indexer::IndexManager;
 use nobo_core::core::vault::Vault;
 use nobo_core::utils::fs_utils;
+use nobo_core::utils::note_utils;
 
 /// One org file the user could turn into a cookbook, and whether it
 /// already is one.
@@ -84,6 +85,47 @@ let value = cookbook.then(|| crate::KIND.keyword().to_string());
 file_kind::set_leading_keyword(&path, file_kind::KIND_KEYWORD, value.as_deref())?;
 index_manager.update_file(&path);
 Ok(())
+}
+
+/// A new, empty cookbook at the top of the vault, for a vault that has
+/// none yet -- so the first recipe has somewhere to go.
+///
+/// A note like any other (Denote name, the usual header, the author from
+/// the settings), declared a cookbook in that header and nothing else in
+/// it: a recipe is a heading, and an empty one would be an empty recipe.
+/// Never written over an existing file (see note_utils::create_note_file).
+/// Recorded as created, so it is one undo away.
+pub fn create_cookbook(index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<CookbookFile, String> {
+    let vault_root = Config::require_vault_root()?;
+    let title = nobo_core::t!("Kochbuch", "Cookbook");
+    let author = Config::load().and_then(|config| config.default_author).unwrap_or_default();
+    let declaration = format!("{} {}", file_kind::KIND_KEYWORD, crate::KIND.keyword());
+    let filename = note_utils::create_note_file(
+        &vault_root.to_string_lossy(),
+        &title,
+        &[],
+        &author,
+        &[declaration],
+        "",
+    )
+    .map_err(|e| e.to_string())?;
+
+    let path = vault_root.join(&filename);
+    let path_string = path.to_string_lossy().into_owned();
+    match std::fs::read_to_string(&path) {
+        Ok(content) => {
+            index_manager.update_file_with(&path, &content);
+            record_best_effort(
+                db,
+                HistoryEntryKind::FileCreated { filename: filename.clone() },
+                false,
+                vec![FileSnapshot { path: path_string.clone(), before: None, after: Some(content) }],
+            );
+        }
+        // Written, only not read back: the index does its own read.
+        Err(_) => index_manager.update_file(&path),
+    }
+    Ok(CookbookFile { path: path_string, title, is_cookbook: true })
 }
 
 /// Every recipe in every file that declares itself a cookbook, sorted by
