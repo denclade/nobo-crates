@@ -13,6 +13,8 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+## [0.10.0] – 2026-10-07
+
 ### Neu
 
 - `core::org_sort`: sortiert, worin der Cursor steht, wie `org-sort` – die Zeilen einer Tabelle nach einer Spalte (zwischen zwei Trennlinien, nie die Kopfzeile), die Punkte einer Liste samt Unterpunkten (Nummern werden neu vergeben), die Unterüberschriften eines Eintrags samt Teilbäumen. `target` sagt, was sortiert würde und welche Sortierarten passen (alphabetisch, Zahl, Datum, Checkbox, Status, Priorität); `sort` führt es aus.
