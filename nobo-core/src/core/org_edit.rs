@@ -17,7 +17,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::core::org_ast::{self, aggregate_checkboxes, heading_level, indent_of, list_of};
 use crate::core::models::TODO_STATES;
-use crate::core::org_table::{self, Position, Row};
+use crate::core::org_sort::{self, SortKey};
+use crate::core::org_table::{self, Position, Row, Table};
 
 /// One replacement, plus where the caret goes afterwards.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -546,6 +547,53 @@ pub fn table_delete_column(text: &str, cursor: u32) -> Option<Edit> {
         org_table::delete_column(table, column);
         true
     })
+}
+
+/// The table under the caret as a grid, for an editor that shows it as
+/// one (see `replace_table`), with where the caret is in it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TableAt {
+    pub table: Table,
+    /// Index into `table.rows`.
+    pub row: usize,
+    pub column: usize,
+}
+
+pub fn table_at(text: &str, cursor: u32) -> Option<TableAt> {
+    let doc = Doc::new(text);
+    let line = doc.line_at(cursor);
+    let lines: Vec<&str> = text.split('\n').collect();
+    let table = org_table::find_at(&lines, line)?;
+    Some(TableAt {
+        row: line - table.start,
+        column: org_table::column_at(&doc.lines[line], cursor - doc.start(line)),
+        table,
+    })
+}
+
+/// The table under the caret replaced by ROWS, as a table editor hands
+/// them back -- one edit for everything done there, so one undo.
+pub fn replace_table(text: &str, cursor: u32, rows: Vec<Row>) -> Option<Edit> {
+    if rows.is_empty() {
+        return None;
+    }
+    with_table(text, cursor, move |table, _| {
+        table.rows = rows;
+        true
+    })
+}
+
+/// Sorts what the caret is in -- a table column, a list, a heading's
+/// children -- by KEY (see `org_sort`). The caret goes to the start of
+/// what was sorted.
+pub fn sort(text: &str, cursor: u32, key: SortKey, descending: bool) -> Option<Edit> {
+    let sorted = org_sort::sort(text, cursor, key, descending)?;
+    let doc = Doc::new(text);
+    let from = doc.start(sorted.first);
+    // Also when nothing moved: "already in that order" is an answer, and
+    // `None` means "nothing to sort here".
+    Some(Edit::at(from, doc.end(sorted.last), sorted.lines.join("\n"), from))
 }
 
 /// Re-aligns the table under the caret without changing a cell.

@@ -21,6 +21,7 @@ pub mod links;
 pub mod org_edit;
 pub mod org_highlight;
 pub mod org_table;
+pub mod org_sort;
 pub mod expansions;
 pub mod completion;
 pub mod org_convert;

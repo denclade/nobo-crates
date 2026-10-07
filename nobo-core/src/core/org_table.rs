@@ -180,6 +180,20 @@ pub fn delete_column(table: &mut Table, at: usize) {
     }
 }
 
+/// Sets one cell, growing a short row to reach it. A rule row has no
+/// cells and is left alone.
+///
+/// The value is made to fit a cell: a line break would end the row and a
+/// `|` would split the cell, so a break becomes a space and a pipe becomes
+/// `\vert{}` -- org's own spelling of a literal one inside a table.
+pub fn set_cell(table: &mut Table, at: usize, column: usize, value: &str) {
+    let Some(Row::Cells(cells)) = table.rows.get_mut(at) else { return };
+    if cells.len() <= column {
+        cells.resize(column + 1, String::new());
+    }
+    cells[column] = value.split(['\n', '\r']).collect::<Vec<_>>().join(" ").replace('|', "\\vert{}").trim().to_string();
+}
+
 /// A fresh table: a header row, a rule, and `rows` empty rows.
 pub fn new_table(rows: usize, columns: usize) -> String {
     let columns = columns.max(1);
@@ -246,6 +260,15 @@ mod tests {
     fn a_header_needs_the_rule_under_it() {
         assert_eq!(table("| a | b |\n|---+---|\n| 1 | 2 |").header(), Some(&vec!["a".to_string(), "b".to_string()]));
         assert!(table("| a | b |\n| 1 | 2 |").header().is_none());
+    }
+
+    #[test]
+    fn a_cell_is_set_and_made_to_fit() {
+        let mut grid = table("| a | b |\n|---+---|\n| 1 |");
+        set_cell(&mut grid, 2, 1, "x|y\nz");
+        assert_eq!(render(&grid)[2], "| 1 | x\\vert{}y z |");
+        set_cell(&mut grid, 1, 0, "ignored");
+        assert_eq!(render(&grid)[1], "|---+-------------|");
     }
 
     #[test]
