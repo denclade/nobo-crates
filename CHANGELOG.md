@@ -13,6 +13,12 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+### Neu
+
+- `core::org_sort`: sortiert, worin der Cursor steht, wie `org-sort` – die Zeilen einer Tabelle nach einer Spalte (zwischen zwei Trennlinien, nie die Kopfzeile), die Punkte einer Liste samt Unterpunkten (Nummern werden neu vergeben), die Unterüberschriften eines Eintrags samt Teilbäumen. `target` sagt, was sortiert würde und welche Sortierarten passen (alphabetisch, Zahl, Datum, Checkbox, Status, Priorität); `sort` führt es aus.
+- `org_edit::sort`, `table_at`, `replace_table`; `org_table::set_cell`.
+- `nobo-app::commands_org::sort_target` und `sort_text` für Editoren; die Typen dafür sind für Tauri-Bindings exportierbar.
+
 ## [0.9.0] – 2026-10-06
 
 ### Neu
