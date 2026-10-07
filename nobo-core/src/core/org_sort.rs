@@ -19,7 +19,8 @@
 //!   rules is one group.
 //! - **List:** an item with everything under it -- continuation lines,
 //!   sub-items -- among the items at its own indent. Numbered bullets are
-//!   renumbered afterwards, so "1. 2. 3." stays "1. 2. 3.".
+//!   renumbered afterwards, so "1. 2. 3." stays "1. 2. 3." (and "1)" stays
+//!   "1)").
 //! - **Headings:** a heading's direct children with their whole subtrees.
 //!   On a line above the first heading, the top-level headings.
 //!
@@ -308,10 +309,12 @@ struct Unit {
     value: Value,
 }
 
+/// Where the numbering starts, and the terminator it is written with
+/// (`1.` or `1)`).
 #[derive(Clone, Copy)]
 enum Renumber {
-    Number(usize),
-    Letter(u8),
+    Number(usize, char),
+    Letter(u8, char),
 }
 
 impl Blocks {
@@ -471,11 +474,11 @@ fn list(lines: &[&str], item: usize) -> Option<Blocks> {
     }
 
     let renumber = list_of(lines[first]).and_then(|(bullet, _)| {
-        let mark = bullet.strip_suffix('.')?;
+        let (mark, terminator) = crate::core::org_edit::ordered_bullet(&bullet)?;
         if let Ok(number) = mark.parse::<usize>() {
-            Some(Renumber::Number(number))
+            Some(Renumber::Number(number, terminator))
         } else {
-            mark.bytes().next().filter(u8::is_ascii_alphabetic).map(Renumber::Letter)
+            mark.bytes().next().filter(u8::is_ascii_alphabetic).map(|letter| Renumber::Letter(letter, terminator))
         }
     });
     let (units, gaps) = split_units(lines, &starts, end, |body| {
@@ -499,11 +502,11 @@ fn item_text(line: &str) -> String {
 
 fn bullet_at(renumber: Renumber, position: usize) -> String {
     match renumber {
-        Renumber::Number(start) => format!("{}.", start + position),
+        Renumber::Number(start, terminator) => format!("{}{terminator}", start + position),
         // Past "z" stays "z" rather than rolling over (as org_edit does).
-        Renumber::Letter(start) => {
+        Renumber::Letter(start, terminator) => {
             let last = if start.is_ascii_uppercase() { b'Z' } else { b'z' };
-            format!("{}.", (start as usize + position).min(last as usize) as u8 as char)
+            format!("{}{terminator}", (start as usize + position).min(last as usize) as u8 as char)
         }
     }
 }

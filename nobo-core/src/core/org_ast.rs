@@ -555,24 +555,27 @@ pub fn keyword_of(trimmed: &str) -> Option<(String, String)> {
     Some((key, value.trim().to_string()))
 }
 
-/// The bullet and checkbox of a list line: `- `, `+ `, `12. `, `a. `,
-/// optionally followed by `[ ]`, `[X]` or `[-]`.
+/// The bullet and checkbox of a list line: `- `, `+ `, `12. `, `12) `,
+/// `a. `, `a) `, optionally followed by `[ ]`, `[X]` or `[-]`.
+///
+/// Both delimiters org knows for an ordered list (`org-plain-list-ordered-
+/// item-terminator`): a file written with `1)` is as much a list as one
+/// with `1.`, and reading it as text left it without continuation,
+/// renumbering or sorting.
 pub fn list_of(text: &str) -> Option<(String, Option<String>)> {
     let indent = indent_of(text);
     let rest: String = text.chars().skip(indent).collect();
     let mut chars = rest.chars();
     let first = chars.next()?;
+    let terminator = |at: usize| rest.chars().nth(at).filter(|c| *c == '.' || *c == ')');
 
     let bullet: String = if first == '-' || first == '+' {
         first.to_string()
     } else if first.is_ascii_digit() {
         let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-        if rest.chars().nth(digits.len()) != Some('.') {
-            return None;
-        }
-        format!("{digits}.")
-    } else if first.is_ascii_alphabetic() && rest.chars().nth(1) == Some('.') {
-        format!("{first}.")
+        format!("{digits}{}", terminator(digits.len())?)
+    } else if first.is_ascii_alphabetic() {
+        format!("{first}{}", terminator(1)?)
     } else {
         return None;
     };
@@ -1573,6 +1576,17 @@ mod tests {
         assert_eq!(blocks.iter().filter(|b| b.kind == BlockKind::ListItem).count(), 3);
         assert_eq!(blocks[0].bullet, "1.");
         assert_eq!(blocks[2].bullet, "a.");
+    }
+
+    #[test]
+    fn a_parenthesis_ends_a_bullet_as_well_as_a_dot() {
+        assert_eq!(list_of("1) first"), Some(("1)".to_string(), None)));
+        assert_eq!(list_of("  12) [X] done"), Some(("12)".to_string(), Some("X".to_string()))));
+        assert_eq!(list_of("b) letter"), Some(("b)".to_string(), None)));
+        // Not a bullet: no space after it, or nothing ordered about it.
+        assert_eq!(list_of("1)x"), None);
+        assert_eq!(list_of("(1) x"), None);
+        assert_eq!(list_of("ab) x"), None);
     }
 
     #[test]

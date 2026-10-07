@@ -99,6 +99,9 @@ pub enum BulletKind {
     Dash,
     Plus,
     Numbered,
+    /// `1)` rather than `1.` -- the other terminator org knows.
+    #[serde(rename = "numbered-paren")]
+    NumberedParen,
     Lettered,
 }
 
@@ -107,24 +110,33 @@ fn bullet_for(kind: BulletKind, index: usize) -> String {
         BulletKind::Dash => "-".to_string(),
         BulletKind::Plus => "+".to_string(),
         BulletKind::Numbered => format!("{}.", index + 1),
+        BulletKind::NumberedParen => format!("{})", index + 1),
         // Letters stop at "z" rather than rolling over: a list that runs
         // out of letters reads better than one that starts again at "a".
         BulletKind::Lettered => format!("{}.", (b'a' + (index.min(25)) as u8) as char),
     }
 }
 
-/// The next bullet after BULLET, for a list that is being continued.
+/// An ordered bullet split into its mark and terminator: `12)` is
+/// ("12", ')'). `None` for `-` and `+`.
+pub(crate) fn ordered_bullet(bullet: &str) -> Option<(&str, char)> {
+    let terminator = bullet.chars().last().filter(|c| *c == '.' || *c == ')')?;
+    Some((&bullet[..bullet.len() - 1], terminator))
+}
+
+/// The next bullet after BULLET, for a list that is being continued --
+/// with the terminator it was written with.
 fn next_bullet(bullet: &str) -> String {
-    if let Some(digits) = bullet.strip_suffix('.') {
-        if let Ok(number) = digits.parse::<usize>() {
-            return format!("{}.", number + 1);
+    if let Some((mark, terminator)) = ordered_bullet(bullet) {
+        if let Ok(number) = mark.parse::<usize>() {
+            return format!("{}{terminator}", number + 1);
         }
-        if digits.len() == 1 {
-            let ch = digits.chars().next().expect("one character");
+        if mark.len() == 1 {
+            let ch = mark.chars().next().expect("one character");
             if ch.is_ascii_alphabetic() && ch != 'z' && ch != 'Z' {
-                return format!("{}.", (ch as u8 + 1) as char);
+                return format!("{}{terminator}", (ch as u8 + 1) as char);
             }
-            return format!("{ch}.");
+            return format!("{ch}{terminator}");
         }
     }
     bullet.to_string()
@@ -690,6 +702,23 @@ mod tests {
         let edit = continue_list_on_enter(text, 8).expect("a list line");
         assert_eq!(apply(text, &edit), "1. first\n2. ");
         assert_eq!(edit.cursor, 12);
+    }
+
+    #[test]
+    fn enter_continues_a_parenthesis_list_in_kind() {
+        let text = "9) neun";
+        let edit = continue_list_on_enter(text, 7).expect("a list line");
+        assert_eq!(apply(text, &edit), "9) neun\n10) ");
+        let letters = "a) eins";
+        let edit = continue_list_on_enter(letters, 7).expect("a list line");
+        assert_eq!(apply(letters, &edit), "a) eins\nb) ");
+    }
+
+    #[test]
+    fn a_list_can_be_numbered_with_parentheses() {
+        let text = "- one\n- two";
+        let edit = change_list_type(text, 0, BulletKind::NumberedParen).expect("a list line");
+        assert_eq!(apply(text, &edit), "1) one\n2) two");
     }
 
     #[test]

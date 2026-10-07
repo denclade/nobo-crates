@@ -139,6 +139,15 @@ fn numbered_items_are_renumbered() {
 }
 
 #[test]
+fn numbered_items_keep_their_parenthesis() {
+    let text = "1) Drei\n2) Eins\n3) Zwei";
+    assert_eq!(sorted(text, "Eins", SortKey::Alpha, false), "1) Drei\n2) Eins\n3) Zwei");
+    assert_eq!(sorted(text, "Eins", SortKey::Alpha, true), "1) Zwei\n2) Eins\n3) Drei");
+    let letters = "a) b\nb) a";
+    assert_eq!(sorted(letters, "a) b", SortKey::Alpha, false), "a) a\nb) b");
+}
+
+#[test]
 fn checkboxes_open_first() {
     let text = "- [X] erledigt\n- [ ] offen\n- [-] halb";
     let target = target(text, 0).unwrap();
