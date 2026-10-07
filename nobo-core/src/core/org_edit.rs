@@ -21,7 +21,7 @@ use crate::core::org_sort::{self, SortKey};
 use crate::core::org_table::{self, Position, Row, Table};
 
 /// One replacement, plus where the caret goes afterwards.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Edit {
     pub from: u32,

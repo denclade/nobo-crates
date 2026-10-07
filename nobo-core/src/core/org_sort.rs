@@ -36,7 +36,7 @@ use crate::core::org_parser::{closed_block_lines, parse_heading_line};
 use crate::core::org_table::{self, Row, Table};
 
 /// By what.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum SortKey {
     /// Letters, case and accents ignored, numbers inside compared as
@@ -56,7 +56,7 @@ pub enum SortKey {
 }
 
 /// What kind of thing is being sorted.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum SortScope {
     Table,
@@ -65,7 +65,7 @@ pub enum SortScope {
 }
 
 /// What would be sorted at the caret, for a host to offer.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SortTarget {
     pub scope: SortScope,
@@ -75,8 +75,10 @@ pub struct SortTarget {
     pub label: Option<String>,
     /// 0-based, tables only.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[specta(type = Option<specta_typescript::Number>)]
     pub column: Option<usize>,
     /// How many things would change places.
+    #[specta(type = specta_typescript::Number)]
     pub count: usize,
     /// The orders that make sense here, `Alpha` always first.
     pub keys: Vec<SortKey>,
@@ -177,8 +179,40 @@ fn locate(text: &str, cursor: u32) -> Option<Found> {
         // Above the first heading -- the title, the keywords, a blank
         // line: the top-level headings.
         _ if first_heading(&lines).is_some_and(|first| line < first) => headings(&lines, None).map(Found::Blocks),
+        // In an entry's own text: that entry's children, as org-sort does
+        // with point in the body. Not from inside a code block, where the
+        // caret is in code, not in the entry.
+        _ if !closed_block_lines(&lines)[line] => {
+            enclosing_heading(&lines, line).and_then(|parent| headings(&lines, Some(parent))).map(Found::Blocks)
+        }
         _ => None,
     }
+}
+
+/// The heading whose entry LINE is in -- the nearest heading above it
+/// that is not a star line in a code block.
+fn enclosing_heading(lines: &[&str], line: usize) -> Option<usize> {
+    let in_block = closed_block_lines(lines);
+    (0..line).rev().find(|&at| !in_block[at] && heading_level(lines[at]).is_some())
+}
+
+/// For each line inside a closed block, the indentation of the line that
+/// opens it (`None` outside blocks) -- which item of a list the block,
+/// and everything in it, belongs to.
+fn block_indents(lines: &[&str]) -> Vec<Option<usize>> {
+    let in_block = closed_block_lines(lines);
+    let mut indents = vec![None; lines.len()];
+    let mut opener = 0;
+    for at in 0..lines.len() {
+        if !in_block[at] {
+            continue;
+        }
+        if at == 0 || !in_block[at - 1] {
+            opener = indent_of(lines[at]);
+        }
+        indents[at] = Some(opener);
+    }
+    indents
 }
 
 // ---------------------------------------------------------------------
@@ -360,6 +394,11 @@ fn split_units(lines: &[&str], starts: &[usize], end: usize, value_of: impl Fn(&
 /// The list item LINE belongs to: the line itself, or the nearest item
 /// above that it is indented under.
 fn list_item_at(lines: &[&str], line: usize) -> Option<usize> {
+    let blocks = block_indents(lines);
+    // A `- x` in a code block is code, not an item.
+    if blocks[line].is_some() {
+        return None;
+    }
     if list_of(lines[line]).is_some() {
         return Some(line);
     }
@@ -368,16 +407,24 @@ fn list_item_at(lines: &[&str], line: usize) -> Option<usize> {
         return None;
     }
     (0..line).rev().take_while(|&at| !lines[at].trim().is_empty() && heading_level(lines[at]).is_none()).find(|&at| {
-        list_of(lines[at]).is_some() && indent_of(lines[at]) < indent
+        blocks[at].is_none() && list_of(lines[at]).is_some() && indent_of(lines[at]) < indent
     })
 }
 
 fn list(lines: &[&str], item: usize) -> Option<Blocks> {
     let indent = indent_of(lines[item]);
-    let is_sibling = |at: usize| list_of(lines[at]).is_some() && indent_of(lines[at]) == indent;
+    let blocks = block_indents(lines);
+    // A line in a code block is never an item of its own -- a `- x` in
+    // there is code, and taking it for a sibling tore the block apart,
+    // its #+BEGIN under one item and its #+END under another.
+    let is_sibling = |at: usize| blocks[at].is_none() && list_of(lines[at]).is_some() && indent_of(lines[at]) == indent;
     // Belongs to the item above: deeper than the bullet, or blank between
-    // two parts of the list.
+    // two parts of the list. A block belongs as a whole, by where its
+    // #+BEGIN sits, whatever its contents are indented to.
     let continues = |at: usize| {
+        if let Some(opener) = blocks[at] {
+            return opener > indent;
+        }
         let line = lines[at];
         if line.trim().is_empty() {
             return false;

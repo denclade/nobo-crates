@@ -200,3 +200,30 @@ fn a_star_line_in_a_code_block_is_no_child() {
     let out = sorted(text, "* P", SortKey::Alpha, false);
     assert_eq!(out, "* P\n** a\n** b\n#+BEGIN_SRC org\n** z\n#+END_SRC");
 }
+
+
+/// A `- x` inside an item's code block is code. Taken for an item, it
+/// tore the block apart: #+BEGIN_SRC under one item, #+END_SRC under
+/// another.
+#[test]
+fn a_code_block_in_an_item_moves_with_it_whole() {
+    let text = "- m\n  #+BEGIN_SRC sh\n- a in the block\n  #+END_SRC\n- z\n- b";
+    let out = sorted(text, "- z", SortKey::Alpha, false);
+    assert_eq!(out, "- b\n- m\n  #+BEGIN_SRC sh\n- a in the block\n  #+END_SRC\n- z");
+}
+
+#[test]
+fn inside_a_code_block_there_is_no_list() {
+    let text = "#+BEGIN_SRC org\n- b\n- a\n#+END_SRC";
+    assert!(target(text, at(text, "- b")).is_none());
+}
+
+/// org-sort with point in an entry's text sorts that entry's children.
+#[test]
+fn in_an_entrys_text_its_children_are_sorted() {
+    let text = "* P\nText\n** b\n** a";
+    let target = target(text, at(text, "Text")).expect("the children of P");
+    assert_eq!(target.scope, SortScope::Headings);
+    assert_eq!(target.label.as_deref(), Some("P"));
+    assert_eq!(sorted(text, "Text", SortKey::Alpha, false), "* P\nText\n** a\n** b");
+}
