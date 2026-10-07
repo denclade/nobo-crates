@@ -13,6 +13,10 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+### Neu
+
+- Nummerierte Listen mit Klammer (`1)`, `a)`) sind Listen wie `1.` und `a.`: `org_ast::list_of` erkennt sie, Fortsetzen und Sortieren behalten die Klammer bei, `BulletKind::NumberedParen` stellt eine Liste darauf um.
+
 ## [0.10.0] – 2026-10-07
 
 ### Neu
