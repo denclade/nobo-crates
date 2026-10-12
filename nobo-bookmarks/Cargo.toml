@@ -1,0 +1,34 @@
+[package]
+name = "nobo-bookmarks"
+version.workspace = true
+description = "Bookmarks kept as org headings: a link, a note, tags, read later."
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+# Like the cookbook (see ../nobo-cookbook/Cargo.toml): the Tauri half is
+# optional, and so is the network. Without `fetch` a build still reads,
+# files, edits and searches bookmarks -- it just cannot look a page up.
+[features]
+default = ["tauri", "fetch"]
+tauri = ["dep:tauri", "dep:tauri-specta", "dep:specta", "dep:specta-typescript"]
+fetch = ["dep:nobo-http"]
+
+[dependencies]
+nobo-core = { path = "../nobo-core" }
+tauri = { workspace = true, optional = true }
+tauri-specta = { workspace = true, optional = true }
+specta = { workspace = true, optional = true }
+specta-typescript = { workspace = true, optional = true }
+
+# Every write is recorded in the history, so it is one undo away.
+rusqlite = { workspace = true }
+# A page's title and description, over the shared HTTP door.
+nobo-http = { path = "../nobo-http", optional = true }
+
+serde = { workspace = true }
+chrono = { workspace = true }
+log = { workspace = true }
+inventory = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

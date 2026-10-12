@@ -116,6 +116,14 @@ pub fn parse_headings(path: &Path, text: &str) -> Vec<Heading> {
 /// nothing could catch that.
 pub use crate::core::org_parser::ParsedHeadingLine as HeadingLine;
 
+/// A heading line as the app writes one: stars, title, and the tags
+/// pushed out to org's tag column -- for a feature that writes headings
+/// of its own (a bookmark) and should not look different from one the
+/// app's own editor writes.
+pub fn format_heading_line(level: usize, title: &str, tags: &[String]) -> String {
+    crate::core::heading_utils::format_new_heading_line(level, &None, None, title, tags, None)
+}
+
 /// One org heading line.
 ///
 /// For a feature that scans a file its own way (see

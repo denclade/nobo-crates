@@ -2832,6 +2832,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "nobo-bookmarks"
+version = "0.11.0"
+dependencies = [
+ "chrono",
+ "inventory",
+ "log",
+ "nobo-core",
+ "nobo-http",
+ "rusqlite",
+ "serde",
+ "specta",
+ "specta-typescript",
+ "tauri",
+ "tauri-specta",
+ "tempfile",
+]
+
+[[package]]
 name = "nobo-caldav"
 version = "0.11.0"
 dependencies = [
