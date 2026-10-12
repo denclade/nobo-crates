@@ -142,6 +142,8 @@ pub fn outline(path: &str, category: &str, text: &str) -> Outline {
         .collect();
 
     let mut out = Outline::default();
+    // `#+FILETAGS:` -- inherited by every entry of the file, as in org.
+    let file_tags = file_tags(&lines);
     // The headings above the current one: (level, title, tags, is a bookmark).
     let mut stack: Vec<(usize, String, Vec<String>, bool)> = Vec::new();
     // How often each address has come up so far -- a second bookmark to
@@ -169,11 +171,12 @@ pub fn outline(path: &str, category: &str, text: &str) -> Outline {
                 let quote = description_block(&lines, body_start, own_end);
                 let note_end = quote.map_or(own_end, |(start, _)| start);
                 let own_tags: Vec<String> = heading.tags.iter().filter(|tag| *tag != READ_LATER).cloned().collect();
-                let inherited_tags: Vec<String> = stack
-                    .iter()
-                    .flat_map(|(_, _, tags, _)| tags.iter().cloned())
-                    .filter(|tag| tag != READ_LATER && !own_tags.contains(tag))
-                    .collect();
+                let mut inherited_tags: Vec<String> = Vec::new();
+                for tag in file_tags.iter().chain(stack.iter().flat_map(|(_, _, tags, _)| tags.iter())) {
+                    if tag != READ_LATER && !own_tags.contains(tag) && !inherited_tags.contains(tag) {
+                        inherited_tags.push(tag.clone());
+                    }
+                }
                 let occurrence = seen.iter().filter(|earlier| **earlier == url_value).count();
                 seen.push(url_value.clone());
                 let key = match occurrence {
@@ -225,6 +228,15 @@ pub fn outline(path: &str, category: &str, text: &str) -> Outline {
     out
 }
 
+/// The file's `#+FILETAGS:` (`:a:b:`, as org writes them), from above
+/// its first heading.
+fn file_tags(lines: &[&str]) -> Vec<String> {
+    let header: Vec<&str> = lines.iter().take_while(|line| parse_heading_line(line).is_none()).copied().collect();
+    nobo_core::core::file_kind::leading_keyword(&header, "#+FILETAGS:")
+        .map(|value| value.split([':', ' ', '\t']).filter(|tag| !tag.is_empty()).map(str::to_string).collect())
+        .unwrap_or_default()
+}
+
 /// The quote block that ends the body FROM..UNTIL, if one does: that is
 /// where a saved page's description goes. A quote the user wrote further
 /// up, with their own words after it, is part of the note.
@@ -262,7 +274,7 @@ fn revision(lines: &[&str]) -> String {
 mod tests {
     use super::*;
 
-    const FILE: &str = "#+TITLE: Arbeit\n#+NOBO_TYPE: bookmarks\n\n* Rust :dev:\n** reqwest – Rust :http:\n:PROPERTIES:\n:URL:      https://docs.rs/reqwest\n:CREATED:  [2026-09-30 Mi 20:55]\n:END:\nFür das Web-Scraping-Modul.\n\n#+begin_quote\nAn ergonomic HTTP Client.\n#+end_quote\n** Async in der Praxis :readlater:\n:PROPERTIES:\n:URL: https://blog.example.org/async\n:END:\n* Notizen\nKein Lesezeichen hier.\n#+begin_src org\n** Kein Lesezeichen\n:PROPERTIES:\n:URL: https://nope.example\n:END:\n#+end_src\n";
+    const FILE: &str = "#+TITLE: Arbeit\n#+NOBO_TYPE: bookmarks\n\n* Rust :dev:\n** reqwest – Rust :http:\n:PROPERTIES:\n:URL:      https://docs.rs/reqwest\n:CREATED:  [2026-09-30 Mi 20:55]\n:END:\nFür das Web-Scraping-Modul.\n\n#+begin_quote\nAn ergonomic HTTP Client.\n#+end_quote\n** Async in der Praxis :readlater:\n:PROPERTIES:\n:URL: https://blog.example.org/async\n:END:\n* Notizen\nKein Lesezeichen hier.\n#+begin_src org\n,** Kein Lesezeichen\n,:PROPERTIES:\n:URL: https://nope.example\n:END:\n#+end_src\n";
 
     #[test]
     fn a_heading_with_a_url_is_a_bookmark_and_the_rest_is_not() {
@@ -341,6 +353,12 @@ mod tests {
         let bookmark = &bookmarks_of("/v/a.org", "A", text)[0];
         assert_eq!(bookmark.note, "Vorher.\n#+begin_quote\nZitat.\n#+end_quote\nNachher.");
         assert_eq!(bookmark.description, None);
+    }
+
+    #[test]
+    fn filetags_are_inherited_as_in_org() {
+        let text = "#+FILETAGS: :arbeit:web:\n* Rust :dev:\n** x :web:\n:PROPERTIES:\n:URL: https://x\n:END:\n";
+        assert_eq!(bookmarks_of("/v/a.org", "A", text)[0].inherited_tags, ["arbeit", "dev"]);
     }
 
     #[test]

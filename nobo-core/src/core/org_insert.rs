@@ -156,9 +156,9 @@ mod tests {
 
     #[test]
     fn a_star_line_in_a_code_block_is_no_heading_to_file_under() {
-        let text = "#+begin_src org\n* Rust\n#+end_src\n* Rust\n";
+        let text = "#+begin_src org\n,* Rust\n#+end_src\n* Rust\n";
         let (out, _) = insert_under(text, &["Rust".to_string()], entry);
         assert!(out.ends_with("* Rust\n\n** Neu\n"), "{out}");
-        assert!(out.starts_with("#+begin_src org\n* Rust\n#+end_src"), "{out}");
+        assert!(out.starts_with("#+begin_src org\n,* Rust\n#+end_src"), "{out}");
     }
 }

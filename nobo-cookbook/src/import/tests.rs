@@ -177,13 +177,13 @@ fn image_names_are_safe_and_readable() {
     assert_eq!(image_filename("??", "png"), "recipe.png");
 }
 
-/// A cookbook quoting org in a code block: a `*`-line in there is text.
-/// The outline used to read it as a heading, so an import into
-/// "Hauptgerichte" was written INTO the code block, under the quoted
-/// heading, and the real category never got it.
+/// A cookbook quoting org in a code block, escaped as org writes it
+/// (`,* `): a `*`-line in there is text. The outline used to read it as a
+/// heading, so an import into "Hauptgerichte" was written INTO the code
+/// block, under the quoted heading, and the real category never got it.
 #[test]
 fn an_import_never_lands_inside_a_code_block() {
-    let text = "#+NOBO_TYPE: cookbook\n* Desserts\n** Tiramisu\nVorlage:\n#+BEGIN_SRC org\n* Hauptgerichte\n* Suppen\n#+END_SRC\n* Hauptgerichte\n** Linsencurry\n";
+    let text = "#+NOBO_TYPE: cookbook\n* Desserts\n** Tiramisu\nVorlage:\n#+BEGIN_SRC org\n,* Hauptgerichte\n,* Suppen\n#+END_SRC\n* Hauptgerichte\n** Linsencurry\n";
 
     let (out, line) = super::insert(text, &["Hauptgerichte".to_string()], |level| format!("{} Neues Rezept\n", "*".repeat(level)));
 
@@ -191,7 +191,7 @@ fn an_import_never_lands_inside_a_code_block() {
     assert_eq!(lines[line - 1], "** Neues Rezept", "{out}");
     let block_end = lines.iter().position(|l| *l == "#+END_SRC").unwrap();
     assert!(line - 1 > block_end, "after the code block, under the real category:\n{out}");
-    assert!(out.contains("#+BEGIN_SRC org\n* Hauptgerichte\n* Suppen\n#+END_SRC"), "the quote is untouched:\n{out}");
+    assert!(out.contains("#+BEGIN_SRC org\n,* Hauptgerichte\n,* Suppen\n#+END_SRC"), "the quote is untouched:\n{out}");
 }
 
 /// A CRLF file stays CRLF: the import adds lines, it does not rewrite

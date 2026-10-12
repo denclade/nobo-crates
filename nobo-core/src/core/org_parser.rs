@@ -12,21 +12,27 @@ use crate::utils::{effort_utils, timestamp_utils};
 use std::fs;
 use std::path::Path;
 
-/*
-LINE e.g.:
-:CREATED:  [2025-07-25 Fr 14:22]
-Searches for second colon in lines starting with :
-Gets string between colons as KEY.
-Extracts VALUE as everything after end colon, spaces before value are trimmed.
- */
+/// One node property line, read as org reads it (`org-property-re`):
+/// `:KEY: value`, `:KEY:` or `:KEY+: value`, indented or not. KEY holds
+/// no whitespace and ends at the first colon that is followed by a blank
+/// or the end of the line -- so `:URL: https://a:b` is the key URL, and
+/// `:URL:https://x` (no blank after the colon) is no property at all.
+/// A `KEY+` comes back as such: org appends its value to KEY, and the
+/// properties here are written back as they were read.
 pub fn parse_property(line: &str) -> Option<(String, String)> {
-    if !line.starts_with(':') {
-        return None;
+    let rest = line.trim_start().strip_prefix(':')?;
+    for (at, c) in rest.char_indices() {
+        if c.is_whitespace() {
+            return None;
+        }
+        if c == ':' && at > 0 {
+            let after = &rest[at + 1..];
+            if after.is_empty() || after.starts_with([' ', '\t']) {
+                return Some((rest[..at].to_string(), after.trim().to_string()));
+            }
+        }
     }
-    let end_colon = line[1..].find(':')?;
-    let key = line[1..=end_colon].to_string();
-    let value = line[end_colon + 2..].trim().to_string();
-    Some((key, value))
+    None
 }
 
 /*
@@ -66,10 +72,12 @@ pub fn parse_heading_line(line: &str) -> Option<ParsedHeadingLine> {
     }
 
     let level = count_leading_stars(line);
-    // Org's rule: the stars, then a space (or nothing). `*bold* text` at
-    // the start of a body line is emphasis -- read as a heading, it ended
-    // the entry above it and invented one out of the user's note.
-    if !line[level..].is_empty() && !line[level..].starts_with([' ', '\t']) {
+    // Org's rule (`org-outline-regexp-bol`, `^\*+ `): the stars, then a
+    // space. `*bold* text` at the start of a body line is emphasis -- read
+    // as a heading, it ended the entry above it and invented one out of
+    // the user's note. A tab or nothing after the stars is no heading to
+    // org either.
+    if !line[level..].starts_with(' ') {
         return None;
     }
     let remainder = line[level..].trim();
@@ -80,7 +88,14 @@ pub fn parse_heading_line(line: &str) -> Option<ParsedHeadingLine> {
     // Check for tags seperated through tab / whitespaces
     if let Some(last_ws_pos) = title_part.rfind(|c: char| c.is_whitespace()) {
         let tail = title_part[last_ws_pos..].trim();
-        if tail.len() > 1 && tail.starts_with(':') && tail.ends_with(':') {
+        // `org-tag-group-re`: colons around letters, digits and `_@#%`
+        // only -- `Treffen um 10:30:` or `:-):` is title text.
+        let is_tag_group = tail.len() > 2
+            && tail.starts_with(':')
+            && tail.ends_with(':')
+            && tail.chars().all(|c| c == ':' || c.is_alphanumeric() || "_@#%".contains(c))
+            && tail[1..tail.len() - 1].split(':').any(|tag| !tag.is_empty());
+        if is_tag_group {
             tags = tail[1..tail.len() - 1]
                 .split(':')
                 .filter(|s| !s.is_empty())
@@ -146,7 +161,8 @@ fn split_priority(title: &str) -> (Option<String>, String) {
     let Some(rest) = title.strip_prefix("[#") else { return (None, title.to_string()) };
     let Some(end) = rest.find(']') else { return (None, title.to_string()) };
     let cookie = &rest[..end];
-    if cookie.is_empty() || cookie.chars().any(char::is_whitespace) {
+    // `org-priority-regexp`: capital letters or digits (A-Z, 0-64).
+    if cookie.is_empty() || !cookie.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()) {
         return (None, title.to_string());
     }
     (Some(cookie.to_string()), rest[end + 1..].trim_start().to_string())
@@ -183,33 +199,42 @@ pub(crate) fn block_end_name(line: &str) -> Option<&str> {
     if name.is_empty() { None } else { Some(name) }
 }
 
-/// Which of LINES sit inside a closed literal block -- `#+BEGIN_SRC` ...
-/// `#+END_SRC` and every other `#+BEGIN_<name>`, its own two marker lines
-/// included. What is inside is text: no line there is a heading, and
-/// nothing that rewrites headings may touch it.
+/// The blocks of a FILE's lines, as org reads them: each `#+BEGIN_<name>`
+/// with the first `#+END_<name>` after it, as (begin, end) line indexes.
 ///
-/// The one place that decides it. The reader, the writer that demotes
-/// `*`-lines in a description, and the refile that shifts levels all ask
-/// here, because any two of them disagreeing about a line is a file
-/// written wrong: the writer added stars inside a code block that the
-/// reader then never took off again, and every save made it deeper.
+/// Org's rules, exactly (org-element's block parsers, and the manual on
+/// literal examples):
 ///
-/// Two rules beyond "begin to end":
-///
+/// - **The first matching end closes the block.** Blocks of one name do
+///   not nest; org asks for the inner markers to be escaped with a comma
+///   (`,#+END_SRC`), and the writers here do that (see
+///   org_syntax::escape_code_line).
+/// - **A heading ends the search.** A `* ` line inside a block is a
+///   heading to org -- sections are cut at headings before blocks are
+///   looked for -- which is why org escapes it as `,* `. A block whose
+///   end lies past a heading is therefore not closed.
 /// - **A block that is never closed is no block.** Its `#+BEGIN_` line is
-///   ordinary text and everything after it is read as usual -- org's own
-///   behaviour. Treating it as open until the end of the file hid every
-///   heading below it inside one task's description, where deleting
-///   that task deleted all of them.
-/// - **Blocks of one name nest.** A `#+BEGIN_SRC org` quoting a file that
-///   holds a src block of its own is the common case of wanting to show
-///   org code, and the inner `#+END_SRC` must not end the outer block.
-///   Only markers of the SAME name count: a `#+begin_quote` inside a src
-///   block is text. (Org itself does not nest these; it asks for the inner
-///   lines to be escaped with a comma. Nesting is what people type, and it
-///   costs nothing on a well-formed file.)
-pub fn closed_block_lines<S: AsRef<str>>(lines: &[S]) -> Vec<bool> {
-    let mut inside = vec![false; lines.len()];
+///   ordinary text and reading carries on with the very next line.
+///
+/// The one place that decides it for a file: the reader, the writers and
+/// the refile that shifts levels all ask here, because any two of them
+/// disagreeing about a line is a file written wrong.
+pub fn block_regions<S: AsRef<str>>(lines: &[S]) -> Vec<(usize, usize)> {
+    regions(lines, true)
+}
+
+/// The blocks of TYPED content -- a description as its editor shows it,
+/// unescaped, the way org's own `org-edit-src` buffer shows a block: a
+/// `*`-line in there is code, and an inner block of the same name nests.
+/// What the editor gives is escaped on its way into the file (see
+/// heading_utils::serialize), after which `block_regions` reads it back
+/// to the same blocks.
+pub fn content_block_regions<S: AsRef<str>>(lines: &[S]) -> Vec<(usize, usize)> {
+    regions(lines, false)
+}
+
+fn regions<S: AsRef<str>>(lines: &[S], file: bool) -> Vec<(usize, usize)> {
+    let mut out = Vec::new();
     let mut i = 0;
     while i < lines.len() {
         let Some(name) = block_begin_name(lines[i].as_ref().trim_start()) else {
@@ -219,8 +244,12 @@ pub fn closed_block_lines<S: AsRef<str>>(lines: &[S]) -> Vec<bool> {
         let mut depth = 1usize;
         let mut end = None;
         for (j, line) in lines.iter().enumerate().skip(i + 1) {
-            let trimmed = line.as_ref().trim_start();
-            if block_begin_name(trimmed).is_some_and(|n| n.eq_ignore_ascii_case(name)) {
+            let line = line.as_ref();
+            if file && parse_heading_line(line).is_some() {
+                break;
+            }
+            let trimmed = line.trim_start();
+            if !file && block_begin_name(trimmed).is_some_and(|n| n.eq_ignore_ascii_case(name)) {
                 depth += 1;
             } else if block_end_name(trimmed).is_some_and(|n| n.eq_ignore_ascii_case(name)) {
                 depth -= 1;
@@ -232,15 +261,33 @@ pub fn closed_block_lines<S: AsRef<str>>(lines: &[S]) -> Vec<bool> {
         }
         match end {
             Some(end) => {
-                inside[i..=end].iter_mut().for_each(|x| *x = true);
+                out.push((i, end));
                 i = end + 1;
             }
-            // Never closed: the begin line is text, and reading carries on
-            // with the very next line as if it were not there.
             None => i += 1,
         }
     }
+    out
+}
+
+fn mark(len: usize, regions: &[(usize, usize)]) -> Vec<bool> {
+    let mut inside = vec![false; len];
+    for &(begin, end) in regions {
+        inside[begin..=end].iter_mut().for_each(|x| *x = true);
+    }
     inside
+}
+
+/// Which of a file's LINES belong to a block, its two marker lines
+/// included (see block_regions). What is inside is text: no line there is
+/// a heading, and nothing that rewrites headings may touch it.
+pub fn closed_block_lines<S: AsRef<str>>(lines: &[S]) -> Vec<bool> {
+    mark(lines.len(), &block_regions(lines))
+}
+
+/// The same for typed content (see content_block_regions).
+pub fn content_block_lines<S: AsRef<str>>(lines: &[S]) -> Vec<bool> {
+    mark(lines.len(), &content_block_regions(lines))
 }
 
 /// Inverts `apply_content_heading_offset`: a `*`-line absorbed as content
@@ -442,7 +489,12 @@ where
     let lines: Vec<S> = lines.into_iter().collect();
     // Which lines are the inside of a closed block -- decided once, up
     // front, by the same rule every writer uses (see closed_block_lines).
-    let in_block = closed_block_lines(&lines);
+    let regions = block_regions(&lines);
+    let in_block = mark(lines.len(), &regions);
+    let mut block_inside = vec![false; lines.len()];
+    for &(begin, end) in &regions {
+        block_inside[begin + 1..end].iter_mut().for_each(|x| *x = true);
+    }
 
     for (i, raw_line) in lines.iter().enumerate() {
         let line = raw_line.as_ref();
@@ -457,7 +509,14 @@ where
         // too, so there is no offset to take off.
         if in_block[i] {
             if let Some(ref mut heading) = current_heading {
-                heading.content.push_str(line);
+                // The inside of a block as its editor shows it: org's comma
+                // escape taken off again (org-unescape-code-in-string), the
+                // marker lines as they are.
+                if block_inside[i] {
+                    heading.content.push_str(&crate::core::org_syntax::unescape_code_line(line));
+                } else {
+                    heading.content.push_str(line);
+                }
                 heading.content.push('\n');
                 heading.raw_content.push_str(line);
                 heading.raw_content.push('\n');
@@ -716,8 +775,43 @@ mod tests {
         assert!(super::parse_heading_line("*wichtig* lesen").is_none());
         assert!(super::parse_heading_line("**fett**").is_none());
         assert_eq!(super::parse_heading_line("** Titel").map(|h| h.level), Some(2));
-        assert_eq!(super::parse_heading_line("*\tTab").map(|h| h.title), Some("Tab".to_string()));
-        assert_eq!(super::parse_heading_line("**").map(|h| h.level), Some(2));
+        assert!(super::parse_heading_line("*\tTab").is_none(), "org wants a space");
+        assert!(super::parse_heading_line("**").is_none());
+        assert_eq!(super::parse_heading_line("* ").map(|h| h.title), Some(String::new()), "an empty heading");
+    }
+
+    /// `org-tag-group-re`: only letters, digits and `_@#%` between colons.
+    #[test]
+    fn only_valid_tag_groups_are_tags() {
+        let tagged = super::parse_heading_line("* Treffen :arbeit:büro_2@x:").unwrap();
+        assert_eq!(tagged.tags, ["arbeit", "büro_2@x"]);
+        for title in ["* Treffen um 10:30:", "* Smiley :-):", "* Pfad :a/b:", "* Leer ::"] {
+            let heading = super::parse_heading_line(title).unwrap();
+            assert!(heading.tags.is_empty(), "{title}");
+            assert_eq!(heading.title, title[2..], "{title}");
+        }
+    }
+
+    #[test]
+    fn a_priority_is_a_capital_letter_or_a_number() {
+        assert_eq!(super::parse_heading_line("* TODO [#A] x").unwrap().priority.as_deref(), Some("A"));
+        assert_eq!(super::parse_heading_line("* [#10] x").unwrap().priority.as_deref(), Some("10"));
+        assert_eq!(super::parse_heading_line("* [#a] x").unwrap().priority, None);
+        assert_eq!(super::parse_heading_line("* [#x-y] x").unwrap().title, "[#x-y] x");
+    }
+
+    /// `org-property-re`.
+    #[test]
+    fn a_property_line_is_read_as_org_reads_it() {
+        use super::parse_property;
+        assert_eq!(parse_property(":URL: https://a:b"), Some(("URL".into(), "https://a:b".into())));
+        assert_eq!(parse_property("   :Created:  [2026-10-12]"), Some(("Created".into(), "[2026-10-12]".into())));
+        assert_eq!(parse_property(":EMPTY:"), Some(("EMPTY".into(), String::new())));
+        assert_eq!(parse_property(":TAGS+: b"), Some(("TAGS+".into(), "b".into())));
+        assert_eq!(parse_property(":a:b: c"), Some(("a:b".into(), "c".into())));
+        assert_eq!(parse_property(":URL:https://x"), None, "no blank after the key");
+        assert_eq!(parse_property(":zwei worte: x"), None);
+        assert_eq!(parse_property("::"), None);
     }
 
     use super::*;
@@ -744,20 +838,20 @@ mod tests {
     }
 
     /// The reported case: org code quoted in a task's description, with a
-    /// src block of its own inside. The inner `#+END_SRC` used to close the
-    /// OUTER block, and the rest of the quote became real tasks -- two
-    /// levels below their parent, undeletable, duplicated on every save.
+    /// src block of its own inside -- as org writes it, every inner `*`
+    /// and `#+` line escaped with a comma. It stays one block, and the
+    /// description shows it unescaped, as org's src editor does.
     #[test]
     fn a_src_block_inside_a_src_block_stays_inside() {
         let text = "\
 * TODO Projekt :project:
 ** TODO Bug melden
 #+BEGIN_SRC org
-**** TODO zitiert
-#+BEGIN_SRC org
-***** TODO noch tiefer zitiert
-#+END_SRC
-***** TODO nach dem inneren Block
+,**** TODO zitiert
+,#+BEGIN_SRC org
+,***** TODO noch tiefer zitiert
+,#+END_SRC
+,***** TODO nach dem inneren Block
 #+END_SRC
 ** TODO Nächste Aufgabe
 ";
@@ -794,18 +888,34 @@ mod tests {
 * TODO A
 #+BEGIN_SRC org
 #+begin_quote
-** TODO zitiert
+,** TODO zitiert
 #+END_SRC
 * TODO B
 ";
         assert_eq!(titles(text), vec!["1 A", "1 B"]);
     }
 
+    /// Org's rules: blocks do not nest -- the first matching end closes --
+    /// and a block that is never closed is none.
     #[test]
     fn the_block_rule_marks_exactly_the_closed_blocks() {
         let lines = ["a", "#+BEGIN_SRC org", "#+BEGIN_SRC org", "x", "#+END_SRC", "y", "#+END_SRC", "b", "#+begin_example", "z"];
         let inside = closed_block_lines(&lines);
-        assert_eq!(inside, vec![false, true, true, true, true, true, true, false, false, false]);
+        assert_eq!(inside, vec![false, true, true, true, true, false, false, false, false, false]);
+    }
+
+    /// An unescaped `* ` line inside a block is a heading to org -- the
+    /// section ends there, and with it the block's chance to close.
+    #[test]
+    fn an_unescaped_heading_in_a_block_is_a_heading_as_in_org() {
+        let text = "\
+* TODO A
+#+BEGIN_SRC org
+* TODO B
+#+END_SRC
+";
+        assert_eq!(titles(text), vec!["1 A", "1 B"]);
+        assert_eq!(closed_block_lines(&text.lines().collect::<Vec<_>>()), vec![false; 4]);
     }
 
     #[test]
@@ -1005,8 +1115,8 @@ mod tests {
         let file = write_temp_org(concat!(
             "* TODO Real task\n",
             "#+BEGIN_EXAMPLE\n",
-            "* Unterschrift\n",
-            "** Nested-looking line\n",
+            ",* Unterschrift\n",
+            ",** Nested-looking line\n",
             "#+END_EXAMPLE\n",
             "Real description continues.\n",
         ));

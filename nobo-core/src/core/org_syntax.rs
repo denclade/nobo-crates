@@ -127,6 +127,35 @@ pub fn sanitize_title(title: &str) -> String {
     title.replace(['\n', '\r'], " ").trim().to_string()
 }
 
+/// A line of a block's contents as it is written into the file: org's
+/// `org-escape-code-in-string` -- a line starting (after its indentation)
+/// with `*` or `#+`, or with commas before those, gets one more comma, so
+/// org reads it as code rather than as a heading or a block marker.
+pub fn escape_code_line(line: &str) -> String {
+    let indent = line.len() - line.trim_start_matches([' ', '\t']).len();
+    let rest = &line[indent..];
+    let bare = rest.trim_start_matches(',');
+    if bare.starts_with('*') || bare.starts_with("#+") {
+        format!("{},{rest}", &line[..indent])
+    } else {
+        line.to_string()
+    }
+}
+
+/// The inverse, org's `org-unescape-code-in-string`: one comma off a line
+/// that `escape_code_line` would have produced.
+pub fn unescape_code_line(line: &str) -> String {
+    let indent = line.len() - line.trim_start_matches([' ', '\t']).len();
+    let rest = &line[indent..];
+    if let Some(unescaped) = rest.strip_prefix(',') {
+        let bare = unescaped.trim_start_matches(',');
+        if bare.starts_with('*') || bare.starts_with("#+") {
+            return format!("{}{unescaped}", &line[..indent]);
+        }
+    }
+    line.to_string()
+}
+
 /// TEXT on one line, its runs of whitespace one space: a title, a
 /// property value -- anything a line break would end.
 pub fn one_line(text: &str) -> String {
@@ -188,13 +217,15 @@ impl PropertyDrawer {
 }
 
 /// The drawer of the heading on line HEADING (0-based) of LINES, if it has
-/// one: right under it, or under its planning line. Indented drawers
+/// one: right under it, or under its ONE planning line -- org reads the
+/// planning only on the line right after the heading
+/// (`org-element-headline-parser`), and the drawer right after that. Indented drawers
 /// (`org-adapt-indentation`) and any case of the markers are read too. A
 /// drawer runs to its `:END:`; one that reaches the next heading first
 /// is none.
 pub fn property_drawer<S: AsRef<str>>(lines: &[S], heading: usize) -> Option<PropertyDrawer> {
     let mut start = heading + 1;
-    while start < lines.len() && is_planning_line(lines[start].as_ref()) {
+    if start < lines.len() && is_planning_line(lines[start].as_ref()) {
         start += 1;
     }
     if start >= lines.len() || !lines[start].as_ref().trim().eq_ignore_ascii_case(ORG_PROPERTIES_START) {
@@ -211,7 +242,7 @@ pub fn property_drawer<S: AsRef<str>>(lines: &[S], heading: usize) -> Option<Pro
         if crate::core::org_parser::parse_heading_line(text).is_some() {
             return None;
         }
-        match crate::core::org_parser::parse_property(trimmed) {
+        match crate::core::org_parser::parse_property(text) {
             Some((key, value)) => properties.push(Property { key, value, line }),
             None => clean = false,
         }
@@ -288,6 +319,24 @@ mod tests {
 }
 
 #[cfg(test)]
+mod code_escape_tests {
+    use super::*;
+
+    /// org-escape-code-in-string / org-unescape-code-in-string.
+    #[test]
+    fn code_lines_are_escaped_as_org_escapes_them() {
+        assert_eq!(escape_code_line("* Überschrift"), ",* Überschrift");
+        assert_eq!(escape_code_line("  #+END_SRC"), "  ,#+END_SRC");
+        assert_eq!(escape_code_line(",* schon"), ",,* schon");
+        assert_eq!(escape_code_line("print(1)"), "print(1)");
+        for line in ["* a", "  #+begin_src", ",* b", ",,#+x", "plain", "  , kein"] {
+            assert_eq!(unescape_code_line(&escape_code_line(line)), line, "{line:?}");
+        }
+        assert_eq!(unescape_code_line(", kein Escape"), ", kein Escape");
+    }
+}
+
+#[cfg(test)]
 mod drawer_tests {
     use super::*;
 
@@ -305,6 +354,7 @@ mod drawer_tests {
     fn a_drawer_never_reaches_past_the_next_heading() {
         assert!(property_drawer(&["* A", ":PROPERTIES:", ":X: 1", "* B", ":END:"], 0).is_none());
         assert!(property_drawer(&["* A", "Text", ":PROPERTIES:", ":END:"], 0).is_none());
+        assert!(property_drawer(&["* A", "SCHEDULED: <2026-10-12>", "DEADLINE: <2026-10-13>", ":PROPERTIES:", ":END:"], 0).is_none(), "one planning line, as org reads it");
     }
 
     #[test]

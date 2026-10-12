@@ -1504,7 +1504,7 @@ Beispiel:
         let written = build_org_heading_block(&heading, &payload);
 
         assert!(written.contains(&"*** Notiz".to_string()), "demoted below the host: {written:?}");
-        assert!(written.contains(&"* zitiert".to_string()), "the block is not: {written:?}");
+        assert!(written.contains(&",* zitiert".to_string()), "the block's inside escaped the org way, not demoted: {written:?}");
         let reread = org_parser::parse_headings_from_lines(Path::new("t.org"), written.iter());
         assert_eq!(reread[0].content, typed);
     }

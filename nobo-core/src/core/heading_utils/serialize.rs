@@ -465,7 +465,7 @@ fn build_org_heading_block_inner(
 /// A task that already carries an id keeps it, and nothing inside a code
 /// block is touched: those lines are text.
 fn with_ids_on_new_tasks(mut lines: Vec<String>) -> Vec<String> {
-    let in_block = org_parser::closed_block_lines(&lines);
+    let in_block = org_parser::content_block_lines(&lines);
     let is_task = |line: &str| {
         org_parser::parse_heading_line(line).is_some_and(|parsed| is_real_structure(&parsed.state, &parsed.tags))
     };
@@ -583,14 +583,19 @@ fn apply_content_heading_offset(content: &str, host_level: usize) -> Vec<String>
     // reader never takes stars off inside a block -- so each save pushed
     // the org code in a `#+BEGIN_SRC org` a few levels deeper.
     let lines: Vec<&str> = content.lines().collect();
-    let in_block = org_parser::closed_block_lines(&lines);
+    let regions = org_parser::content_block_regions(&lines);
+    let block_line = |i: usize| regions.iter().find(|&&(begin, end)| (begin..=end).contains(&i)).copied();
 
     lines
         .iter()
-        .zip(in_block)
-        .map(|(&line, in_block)| {
-            if in_block {
-                return line.to_string();
+        .enumerate()
+        .map(|(i, &line)| {
+            // Into the file the org way: a block's inside escaped with
+            // org's comma (org-escape-code-in-string), so a `* ` or `#+`
+            // line in the code is not a heading or a marker to org -- the
+            // reader takes the comma off again. The markers stay.
+            if let Some((begin, end)) = block_line(i) {
+                return if i == begin || i == end { line.to_string() } else { crate::core::org_syntax::escape_code_line(line) };
             }
             let typed_level = count_leading_stars(line);
             if typed_level == 0 {
