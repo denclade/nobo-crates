@@ -26,6 +26,8 @@ rusqlite = { workspace = true }
 nobo-http = { path = "../nobo-http", optional = true }
 
 serde = { workspace = true }
+# Reading a Linkwarden backup (see import_linkwarden).
+serde_json = { workspace = true }
 chrono = { workspace = true }
 log = { workspace = true }
 inventory = { workspace = true }

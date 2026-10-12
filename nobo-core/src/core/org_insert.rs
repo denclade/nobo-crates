@@ -84,6 +84,12 @@ pub fn insert_under(text: &str, category: &[String], entry: impl Fn(usize) -> St
     (lines.concat(), first_line)
 }
 
+/// Whether TEXT has the heading PATH names (titles, outermost first) --
+/// for a caller that creates the missing ones before filing under them.
+pub fn has_heading_path(text: &str, path: &[String]) -> bool {
+    path.is_empty() || category_heading(&outline(text), path).is_some()
+}
+
 fn category_heading(nodes: &[Node], category: &[String]) -> Option<usize> {
     let mut found: Option<usize> = None;
     for title in category {
@@ -121,6 +127,14 @@ mod tests {
         let (out, line) = insert_under(text, &["Rust".to_string()], entry);
         assert_eq!(out, "* Rust\n** alt\n\n** Neu\n* Reisen\n");
         assert_eq!(line, 4);
+    }
+
+    #[test]
+    fn a_heading_path_is_found_level_by_level() {
+        let text = "* Rust\n** Async\n* Reisen\n";
+        assert!(super::has_heading_path(text, &["Rust".into(), "Async".into()]));
+        assert!(!super::has_heading_path(text, &["Reisen".into(), "Async".into()]));
+        assert!(super::has_heading_path(text, &[]));
     }
 
     #[test]

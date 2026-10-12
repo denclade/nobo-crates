@@ -223,3 +223,23 @@ pub async fn bookmarks_preview(url: String) -> Result<crate::model::Preview, Str
     let html = nobo_http::fetch::page(url.trim(), USER_AGENT).await?;
     Ok(crate::preview::read(url.trim(), &html))
 }
+
+/// A Linkwarden backup (JSON, the file's text) into the bookmarks file
+/// FILE_PATH: its collections as headings, its links as bookmarks, what
+/// is already saved anywhere skipped (see import_linkwarden). With
+/// DRY_RUN nothing is written -- the report says what would happen. One
+/// write, one history entry: the whole import is one undo away.
+pub fn bookmarks_import_linkwarden(
+    json: String,
+    file_path: String,
+    dry_run: bool,
+    index_manager: &IndexManager,
+    db: &Mutex<Connection>,
+) -> Result<crate::import_linkwarden::ImportReport, String> {
+    let existing: std::collections::HashSet<String> =
+        bookmarks_list(index_manager)?.iter().map(|bookmark| url::normalize(&bookmark.url)).collect();
+    if dry_run {
+        return crate::import_linkwarden::preview(&json, &existing);
+    }
+    rewrite(Path::new(&file_path), index_manager, db, |text| crate::import_linkwarden::import(text, &json, &existing))
+}

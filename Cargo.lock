@@ -2842,6 +2842,7 @@ dependencies = [
  "nobo-http",
  "rusqlite",
  "serde",
+ "serde_json",
  "specta",
  "specta-typescript",
  "tauri",

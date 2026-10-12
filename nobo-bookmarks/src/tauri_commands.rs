@@ -109,3 +109,18 @@ pub async fn bookmarks_move(
 pub async fn bookmarks_preview(url: String) -> Result<crate::model::Preview, String> {
     commands::bookmarks_preview(url).await
 }
+
+/// A Linkwarden backup (the file's text) into the bookmarks file
+/// FILE_PATH; with DRY_RUN only the report of what would happen. One
+/// history entry for the whole import.
+#[tauri::command]
+#[specta::specta]
+pub async fn bookmarks_import_linkwarden(
+    json: String,
+    file_path: String,
+    dry_run: bool,
+    index_manager: State<'_, Arc<IndexManager>>,
+    db: State<'_, Arc<Mutex<Connection>>>,
+) -> Result<crate::import_linkwarden::ImportReport, String> {
+    commands::bookmarks_import_linkwarden(json, file_path, dry_run, index_manager.inner(), db.inner())
+}

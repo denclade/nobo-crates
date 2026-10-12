@@ -67,13 +67,22 @@ fn note_lines(note: &str) -> Vec<String> {
 
 /// DRAFT as an org entry at LEVEL, saved at CREATED.
 pub fn entry(draft: &Draft, level: usize, created: &str) -> String {
+    entry_with(draft, level, created, None)
+}
+
+/// The same, with when it was last changed -- what an import carries over
+/// from where the bookmark lived before.
+pub fn entry_with(draft: &Draft, level: usize, created: &str, updated: Option<&str>) -> String {
     let mut out = vec![
         format_heading_line(level.max(1), &one_line(&draft.title), &heading_tags(&draft.tags, draft.read_later)),
         ":PROPERTIES:".to_string(),
         property("URL", &draft.url),
         property("CREATED", created),
-        ":END:".to_string(),
     ];
+    if let Some(updated) = updated {
+        out.push(property("UPDATED", updated));
+    }
+    out.push(":END:".to_string());
     out.extend(note_lines(&draft.note));
     if let Some(description) = draft.description.as_deref().map(one_line).filter(|text| !text.is_empty()) {
         if !draft.note.trim().is_empty() {
