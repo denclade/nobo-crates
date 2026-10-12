@@ -30,7 +30,6 @@
 use std::collections::{HashMap, HashSet};
 
 use chrono::{DateTime, Local};
-use nobo_core::core::org_insert::insert_under;
 use nobo_core::t;
 use nobo_core::utils::note_utils::inactive_timestamp;
 use serde::Deserialize;
@@ -194,7 +193,7 @@ fn plan(backup: &Backup, existing: &HashSet<String>) -> (Vec<Planned>, Vec<Colle
     let mut planned = Vec::new();
     let mut collections = Vec::new();
     let mut tags = HashSet::new();
-    let mut report = ImportReport { collections: backup.collections.len(), ..ImportReport::default() };
+    let mut report = ImportReport::default();
 
     for collection in ordered(backup) {
         let path = path_of(collection, &by_id);
@@ -236,26 +235,46 @@ fn plan(backup: &Backup, existing: &HashSet<String>) -> (Vec<Planned>, Vec<Colle
 
 /// What importing JSON into the bookmarks file TEXT would do -- nothing
 /// is written.
-pub fn preview(json: &str, existing: &HashSet<String>) -> Result<ImportReport, String> {
+pub fn preview(text: &str, json: &str, existing: &HashSet<String>) -> Result<ImportReport, String> {
     let backup = parse(json)?;
-    Ok(plan(&backup, existing).2)
+    let (_, collections, mut report) = plan(&backup, existing);
+    report.collections = new_collections(text, &collections);
+    Ok(report)
+}
+
+/// How many of COLLECTIONS are not in TEXT yet.
+fn new_collections(text: &str, collections: &[CollectionToCreate]) -> usize {
+    let outline = crate::parse::outline("", "", text);
+    collections
+        .iter()
+        .filter(|(path, _)| outline.collection(&path.iter().map(|name| write::as_read(name)).collect::<Vec<_>>()).is_none())
+        .count()
 }
 
 /// TEXT (a bookmarks file) with everything JSON brings that is not there
 /// yet, and what that was.
+///
+/// Built collection by collection: the links of one go in as one block,
+/// so a backup of thousands of links is read through once per collection,
+/// not once per link.
 pub fn import(text: &str, json: &str, existing: &HashSet<String>) -> Result<(String, ImportReport), String> {
     let backup = parse(json)?;
-    let (planned, collections, report) = plan(&backup, existing);
+    let (planned, collections, mut report) = plan(&backup, existing);
+    report.collections = new_collections(text, &collections);
     let mut out = text.to_string();
     // Every collection first, in the backup's order and with its own
     // description -- also one whose links all live in sub-collections,
     // and one that is empty: the structure is part of what is imported.
     for (path, description) in &collections {
-        out = write::ensure_collection(out, path, description.as_deref());
+        out = write::ensure_collection(out, path, description.as_deref()).0;
     }
-    for item in &planned {
-        out = insert_under(&out, &item.collection, |level| {
-            write::entry_with(&item.draft, level, &item.created, item.updated.as_deref())
+    for (path, _) in &collections {
+        let items: Vec<&Planned> = planned.iter().filter(|item| &item.collection == path).collect();
+        if items.is_empty() {
+            continue;
+        }
+        out = write::file_under(&out, path, |level| {
+            items.iter().map(|item| write::entry_with(&item.draft, level, &item.created, item.updated.as_deref())).collect::<Vec<_>>().join("\n")
         })
         .0;
     }
@@ -339,7 +358,7 @@ mod tests {
     #[test]
     fn what_is_already_saved_is_skipped() {
         let existing = HashSet::from([url::normalize("https://tokio.rs")]);
-        let report = preview(BACKUP, &existing).unwrap();
+        let report = preview(FILE, BACKUP, &existing).unwrap();
         assert_eq!(report.imported, 1);
         assert_eq!(report.duplicates, 2);
     }
@@ -350,12 +369,25 @@ mod tests {
         let existing: HashSet<String> = bookmarks_of("/v/p.org", "P", &once).iter().map(|b| url::normalize(&b.url)).collect();
         let (twice, report) = import(&once, BACKUP, &existing).unwrap();
         assert_eq!(report.imported, 0);
+        assert_eq!(report.collections, 0, "all there already");
         assert_eq!(twice, once);
     }
 
     #[test]
     fn something_else_is_refused_with_a_reason() {
-        assert!(preview("{\"foo\": 1}", &HashSet::new()).unwrap_err().contains("Linkwarden"));
-        assert!(preview("kein json", &HashSet::new()).is_err());
+        assert!(preview(FILE, "{\"foo\": 1}", &HashSet::new()).unwrap_err().contains("Linkwarden"));
+        assert!(preview(FILE, "kein json", &HashSet::new()).is_err());
+    }
+
+    /// Linkwarden names are free text; org would read `Work :x:` as the
+    /// title "Work" with a tag. Imported twice, it is still one collection.
+    #[test]
+    fn odd_names_import_into_one_collection() {
+        let backup = r#"{"collections":[{"id":1,"name":"Work :x:","links":[{"url":"https://a.example","name":"A"}]},{"id":2,"name":"Zwei\nZeilen","links":[]}]}"#;
+        let (once, _) = import(FILE, backup, &HashSet::new()).unwrap();
+        let (twice, _) = import(&once, backup, &HashSet::new()).unwrap();
+        assert_eq!(crate::parse::collections_of(&twice).len(), 2, "{twice}");
+        let a = &bookmarks_of("/v/p.org", "P", &twice)[0];
+        assert_eq!(a.collection, ["Work"]);
     }
 }

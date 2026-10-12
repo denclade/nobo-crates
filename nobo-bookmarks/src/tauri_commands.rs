@@ -38,8 +38,13 @@ pub async fn bookmarks_collections(index_manager: State<'_, Arc<IndexManager>>) 
 /// Declares a file a bookmarks file (a category), or takes that back.
 #[tauri::command]
 #[specta::specta]
-pub async fn bookmarks_set_file(path: String, bookmarks: bool, index_manager: State<'_, Arc<IndexManager>>) -> Result<(), String> {
-    commands::bookmarks_set_file(path, bookmarks, index_manager.inner())
+pub async fn bookmarks_set_file(
+    path: String,
+    bookmarks: bool,
+    index_manager: State<'_, Arc<IndexManager>>,
+    db: State<'_, Arc<Mutex<Connection>>>,
+) -> Result<(), String> {
+    commands::bookmarks_set_file(path, bookmarks, index_manager.inner(), db.inner())
 }
 
 /// A new, empty bookmarks file called TITLE -- a new category, kept as

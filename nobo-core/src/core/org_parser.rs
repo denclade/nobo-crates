@@ -66,6 +66,12 @@ pub fn parse_heading_line(line: &str) -> Option<ParsedHeadingLine> {
     }
 
     let level = count_leading_stars(line);
+    // Org's rule: the stars, then a space (or nothing). `*bold* text` at
+    // the start of a body line is emphasis -- read as a heading, it ended
+    // the entry above it and invented one out of the user's note.
+    if !line[level..].is_empty() && !line[level..].starts_with([' ', '\t']) {
+        return None;
+    }
     let remainder = line[level..].trim();
 
     let mut tags = Vec::new();
@@ -120,6 +126,7 @@ pub fn parse_heading_line(line: &str) -> Option<ParsedHeadingLine> {
 /// A struct rather than the six-tuple this used to return: three of the
 /// six are `Option<String>`, and at a call site `parsed.3` says nothing
 /// about which.
+#[derive(Debug, Clone, PartialEq)]
 pub struct ParsedHeadingLine {
     pub level: usize,
     pub state: Option<String>,
@@ -702,6 +709,17 @@ pub fn extract_headings_from_file(file_path: &Path) -> Vec<Heading> {
 
 #[cfg(test)]
 mod tests {
+    /// Emphasis at the start of a line is text; only stars and a space
+    /// (or the stars alone) make a heading.
+    #[test]
+    fn stars_need_a_space_to_be_a_heading() {
+        assert!(super::parse_heading_line("*wichtig* lesen").is_none());
+        assert!(super::parse_heading_line("**fett**").is_none());
+        assert_eq!(super::parse_heading_line("** Titel").map(|h| h.level), Some(2));
+        assert_eq!(super::parse_heading_line("*\tTab").map(|h| h.title), Some("Tab".to_string()));
+        assert_eq!(super::parse_heading_line("**").map(|h| h.level), Some(2));
+    }
+
     use super::*;
     use crate::core::heading_utils;
     use crate::core::models::{HeadingUpdatePayload, ORG_TAGS_COLUMN};

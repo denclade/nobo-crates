@@ -24,6 +24,7 @@
 //! heading list), written one bookmark at a time (see `write`), every
 //! write recorded in the history. See docs/concept-bookmark-manager.md.
 
+pub mod categories;
 pub mod commands;
 pub mod import_linkwarden;
 pub mod model;
@@ -137,40 +138,36 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         .commands(command_list())
 }
 
+/// The commands, once: `fetch` adds the page lookup to the same list.
+#[cfg(feature = "tauri")]
+macro_rules! command_list {
+    ($($fetch:ident),*) => {
+        tauri_specta::collect_commands![
+            tauri_commands::bookmarks_list,
+            tauri_commands::bookmarks_files,
+            tauri_commands::bookmarks_collections,
+            tauri_commands::bookmarks_set_file,
+            tauri_commands::bookmarks_create_file,
+            tauri_commands::bookmarks_find,
+            tauri_commands::bookmarks_save,
+            tauri_commands::bookmarks_update,
+            tauri_commands::bookmarks_delete,
+            tauri_commands::bookmarks_move,
+            tauri_commands::bookmarks_import_linkwarden,
+            $(tauri_commands::$fetch,)*
+        ]
+    };
+}
+
 #[cfg(all(feature = "tauri", feature = "fetch"))]
 fn command_list() -> tauri_specta::Commands<tauri::Wry> {
-    tauri_specta::collect_commands![
-        tauri_commands::bookmarks_list,
-        tauri_commands::bookmarks_files,
-        tauri_commands::bookmarks_collections,
-        tauri_commands::bookmarks_set_file,
-        tauri_commands::bookmarks_create_file,
-        tauri_commands::bookmarks_find,
-        tauri_commands::bookmarks_save,
-        tauri_commands::bookmarks_update,
-        tauri_commands::bookmarks_delete,
-        tauri_commands::bookmarks_move,
-        tauri_commands::bookmarks_import_linkwarden,
-        tauri_commands::bookmarks_preview,
-    ]
+    command_list![bookmarks_preview]
 }
 
 /// The same without looking pages up, for a build that leaves networking out.
 #[cfg(all(feature = "tauri", not(feature = "fetch")))]
 fn command_list() -> tauri_specta::Commands<tauri::Wry> {
-    tauri_specta::collect_commands![
-        tauri_commands::bookmarks_list,
-        tauri_commands::bookmarks_files,
-        tauri_commands::bookmarks_collections,
-        tauri_commands::bookmarks_set_file,
-        tauri_commands::bookmarks_create_file,
-        tauri_commands::bookmarks_find,
-        tauri_commands::bookmarks_save,
-        tauri_commands::bookmarks_update,
-        tauri_commands::bookmarks_delete,
-        tauri_commands::bookmarks_move,
-        tauri_commands::bookmarks_import_linkwarden,
-    ]
+    command_list![]
 }
 
 /// Writes this plugin's `bindings.ts` next to the frontend half that

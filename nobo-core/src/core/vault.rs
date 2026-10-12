@@ -124,6 +124,17 @@ pub fn format_heading_line(level: usize, title: &str, tags: &[String]) -> String
     crate::core::heading_utils::format_new_heading_line(level, &None, None, title, tags, None)
 }
 
+/// HEADING written back as a line -- with its TODO keyword, priority and
+/// statistics cookie, which a feature that only changes the title or the
+/// tags must not drop.
+pub fn format_heading(heading: &HeadingLine) -> String {
+    let title = match &heading.raw_cookie {
+        Some(cookie) => format!("{} {cookie}", heading.title),
+        None => heading.title.clone(),
+    };
+    crate::core::heading_utils::format_new_heading_line(heading.level, &heading.state, heading.priority.as_deref(), &title, &heading.tags, None)
+}
+
 /// One org heading line.
 ///
 /// For a feature that scans a file its own way (see
@@ -152,6 +163,15 @@ pub fn parse_property(line: &str) -> Option<(String, String)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_heading_keeps_its_keyword_priority_and_cookie() {
+        let mut heading = parse_heading_line("** TODO [#A] reqwest [1/2] :http:").unwrap();
+        heading.tags.push("readlater".into());
+        let line = format_heading(&heading);
+        assert!(line.starts_with("** TODO [#A] reqwest [1/2]"), "{line}");
+        assert!(line.ends_with(":http:readlater:"), "{line}");
+    }
 
     const KIND: FileKind = FileKind::new("vault-test-kind");
 

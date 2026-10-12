@@ -5,7 +5,8 @@
 const TRACKING: &[&str] = &["fbclid", "gclid", "dclid", "msclkid", "mc_cid", "mc_eid", "igshid", "ref_src", "_hsenc", "_hsmi"];
 
 /// URL in the form two addresses are compared in, to find a bookmark that
-/// is already there: scheme and host in lower case, no default port, no
+/// is already there: scheme and host in lower case, `http` and `https`
+/// alike, no `www.`, no default port, no
 /// `#fragment`, no tracking parameters (`utm_*` and the like), and a
 /// trailing `/` makes no difference. What is SAVED is always the address
 /// as it was given -- this is only the key.
@@ -33,6 +34,10 @@ pub fn normalize(url: &str) -> String {
         None => (path_and_query, None),
     };
     let path = path.trim_end_matches('/');
+    // The same site over http and https, with and without `www.`, is the
+    // same page for any page a bookmark is kept for.
+    let scheme = if scheme == "http" { "https".to_string() } else { scheme };
+    let host = host.strip_prefix("www.").map(str::to_string).unwrap_or(host);
     let kept: Vec<&str> = query
         .map(|query| {
             query
@@ -67,6 +72,7 @@ mod tests {
         assert_eq!(a, "https://docs.rs/reqwest");
         assert_eq!(normalize("https://docs.rs/reqwest"), a);
         assert_eq!(normalize("https://example.org/a?id=3&utm_medium=mail"), "https://example.org/a?id=3");
+        assert_eq!(normalize("http://www.heise.de/x"), normalize("https://heise.de/x"));
     }
 
     #[test]

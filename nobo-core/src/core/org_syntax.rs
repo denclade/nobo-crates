@@ -127,6 +127,98 @@ pub fn sanitize_title(title: &str) -> String {
     title.replace(['\n', '\r'], " ").trim().to_string()
 }
 
+/// TEXT on one line, its runs of whitespace one space: a title, a
+/// property value -- anything a line break would end.
+pub fn one_line(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+// --- property drawers -------------------------------------------------------
+
+pub use crate::core::models::{ORG_PROPERTIES_END, ORG_PROPERTIES_START};
+
+/// One `:KEY: value` line as org writes it (`org-property-format`,
+/// `%-10s %s`): the key padded so short values line up, the value on one
+/// line.
+pub fn property_line(key: &str, value: &str) -> String {
+    format!("{:<10} {}", format!(":{key}:"), one_line(value)).trim_end().to_string()
+}
+
+/// A whole drawer for ENTRIES, in their order.
+pub fn drawer_lines(entries: &[(&str, &str)]) -> Vec<String> {
+    let mut lines = vec![ORG_PROPERTIES_START.to_string()];
+    lines.extend(entries.iter().map(|(key, value)| property_line(key, value)));
+    lines.push(ORG_PROPERTIES_END.to_string());
+    lines
+}
+
+/// Whether LINE is a planning line (SCHEDULED, DEADLINE, CLOSED) -- what
+/// org allows between a heading and its drawer.
+pub fn is_planning_line(line: &str) -> bool {
+    let line = line.trim_start();
+    line.starts_with("SCHEDULED:") || line.starts_with("DEADLINE:") || line.starts_with("CLOSED:")
+}
+
+/// One property of a drawer, with the line (0-based) it is on.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Property {
+    pub key: String,
+    pub value: String,
+    pub line: usize,
+}
+
+/// A heading's `:PROPERTIES:` drawer, as line indexes (0-based).
+#[derive(Debug, Clone, PartialEq)]
+pub struct PropertyDrawer {
+    pub start: usize,
+    /// The `:END:` line.
+    pub end: usize,
+    pub properties: Vec<Property>,
+    /// Every line between start and end was a property. A drawer with
+    /// anything else in it can be read, but rewriting it whole would lose
+    /// that.
+    pub clean: bool,
+}
+
+impl PropertyDrawer {
+    /// KEY's property -- org compares keys without regard to case.
+    pub fn get(&self, key: &str) -> Option<&Property> {
+        self.properties.iter().find(|property| property.key.eq_ignore_ascii_case(key))
+    }
+}
+
+/// The drawer of the heading on line HEADING (0-based) of LINES, if it has
+/// one: right under it, or under its planning line. Indented drawers
+/// (`org-adapt-indentation`) and any case of the markers are read too. A
+/// drawer runs to its `:END:`; one that reaches the next heading first
+/// is none.
+pub fn property_drawer<S: AsRef<str>>(lines: &[S], heading: usize) -> Option<PropertyDrawer> {
+    let mut start = heading + 1;
+    while start < lines.len() && is_planning_line(lines[start].as_ref()) {
+        start += 1;
+    }
+    if start >= lines.len() || !lines[start].as_ref().trim().eq_ignore_ascii_case(ORG_PROPERTIES_START) {
+        return None;
+    }
+    let mut properties = Vec::new();
+    let mut clean = true;
+    for (line, text) in lines.iter().enumerate().skip(start + 1) {
+        let text = text.as_ref();
+        let trimmed = text.trim();
+        if trimmed.eq_ignore_ascii_case(ORG_PROPERTIES_END) {
+            return Some(PropertyDrawer { start, end: line, properties, clean });
+        }
+        if crate::core::org_parser::parse_heading_line(text).is_some() {
+            return None;
+        }
+        match crate::core::org_parser::parse_property(trimmed) {
+            Some((key, value)) => properties.push(Property { key, value, line }),
+            None => clean = false,
+        }
+    }
+    None
+}
+
 #[cfg(test)]
 mod unescape_tests {
     use super::*;
@@ -192,5 +284,40 @@ mod tests {
     fn weekdays_are_orgs_own_spelling() {
         assert_eq!(day_name(NaiveDate::from_ymd_opt(2026, 8, 24).unwrap()), "Mon");
         assert_eq!(day_name(NaiveDate::from_ymd_opt(2026, 8, 30).unwrap()), "Sun");
+    }
+}
+
+#[cfg(test)]
+mod drawer_tests {
+    use super::*;
+
+    #[test]
+    fn a_drawer_is_found_under_its_heading_and_planning() {
+        let lines = ["* H", "SCHEDULED: <2026-10-12 Mon>", "  :properties:", "  :URL:  https://x", ":Created: [2026-10-12 Mon]", "  :END:", "Text"];
+        let drawer = property_drawer(&lines, 0).expect("a drawer");
+        assert_eq!((drawer.start, drawer.end), (2, 5));
+        assert_eq!(drawer.get("url").map(|p| p.value.as_str()), Some("https://x"));
+        assert_eq!(drawer.get("CREATED").map(|p| p.line), Some(4));
+        assert!(drawer.clean);
+    }
+
+    #[test]
+    fn a_drawer_never_reaches_past_the_next_heading() {
+        assert!(property_drawer(&["* A", ":PROPERTIES:", ":X: 1", "* B", ":END:"], 0).is_none());
+        assert!(property_drawer(&["* A", "Text", ":PROPERTIES:", ":END:"], 0).is_none());
+    }
+
+    #[test]
+    fn a_drawer_with_other_lines_is_not_clean() {
+        let drawer = property_drawer(&["* A", ":PROPERTIES:", "kein Property", ":X: 1", ":END:"], 0).unwrap();
+        assert!(!drawer.clean);
+        assert_eq!(drawer.properties.len(), 1);
+    }
+
+    #[test]
+    fn properties_are_written_as_org_writes_them() {
+        assert_eq!(property_line("URL", " https://x \n y"), ":URL:      https://x y");
+        assert_eq!(property_line("source-url", "u"), ":source-url: u");
+        assert_eq!(drawer_lines(&[("A", "1")]), [":PROPERTIES:", ":A:        1", ":END:"]);
     }
 }

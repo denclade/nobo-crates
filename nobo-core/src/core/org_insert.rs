@@ -40,6 +40,17 @@ fn outline(text: &str) -> Vec<Node> {
 /// the caller can open it.
 pub fn insert_under(text: &str, category: &[String], entry: impl Fn(usize) -> String) -> (String, usize) {
     let nodes = outline(text);
+    let heading = category_heading(&nodes, category).map(|index| nodes[index].line_no);
+    insert_under_heading(text, heading, entry)
+}
+
+/// The same for a heading the caller has already found, by its line
+/// (1-based) -- a feature that tells its own headings apart from the
+/// others with the same title (a bookmark called "Rust" next to the
+/// collection "Rust"). `None`, or a line that holds no heading: the end
+/// of the file, at level 1.
+pub fn insert_under_heading(text: &str, heading_line: Option<usize>, entry: impl Fn(usize) -> String) -> (String, usize) {
+    let nodes = outline(text);
     // Each line with its own ending, and new ones in the file's: a file
     // written with CRLF (Emacs on Windows, Orgzly via some sync clients)
     // came back entirely LF after an import -- every line changed, as far
@@ -50,7 +61,7 @@ pub fn insert_under(text: &str, category: &[String], entry: impl Fn(usize) -> St
         last.push_str(eol);
     }
 
-    let target = category_heading(&nodes, category);
+    let target = heading_line.and_then(|line| nodes.iter().position(|node| node.line_no == line));
     let (at, level) = match target {
         Some(index) => {
             let node = &nodes[index];
