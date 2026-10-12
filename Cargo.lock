@@ -2796,7 +2796,7 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "nobo-app"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "chrono",
  "image",
@@ -2814,7 +2814,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-babel"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "blake3",
  "chrono",
@@ -2833,7 +2833,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-bookmarks"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "chrono",
  "inventory",
@@ -2852,7 +2852,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-caldav"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "async-trait",
  "blake3",
@@ -2885,7 +2885,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-calendar"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -2912,7 +2912,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-calendar-mirror"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -2929,7 +2929,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-cookbook"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "chrono",
  "inventory",
@@ -2949,7 +2949,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-core"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2975,7 +2975,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-http"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "encoding_rs",
  "log",
@@ -2988,7 +2988,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-ical"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -2997,7 +2997,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-review"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "chrono",
  "inventory",
@@ -3013,7 +3013,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-sync"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "argon2",
  "async-trait",
@@ -3048,7 +3048,7 @@ dependencies = [
 
 [[package]]
 name = "nobo-webdav"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "base64ct",
  "quick-xml 0.41.0",

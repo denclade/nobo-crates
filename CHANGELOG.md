@@ -13,6 +13,8 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+## [0.12.0] – 2026-10-12
+
 ### Neu
 
 - `nobo-bookmarks`: Lesezeichen als Org-Überschriften -- eine Lesezeichen-Datei (`#+NOBO_TYPE: bookmarks`) je Kategorie, Überschriften darüber als Sammlungen, Tags, `:readlater:`, `:CREATED:`, Notiz und Seitenbeschreibung. Lesen wie Org, Schreiben je Lesezeichen (anlegen, ändern, verschieben, löschen), jede Änderung ein Verlaufseintrag; Vorschau einer Seite (Titel, Beschreibung); Suche; Import eines Linkwarden-Backups.
