@@ -30,7 +30,7 @@
 use std::collections::{HashMap, HashSet};
 
 use chrono::{DateTime, Local};
-use nobo_core::core::org_insert::{has_heading_path, insert_under};
+use nobo_core::core::org_insert::insert_under;
 use nobo_core::t;
 use nobo_core::utils::note_utils::inactive_timestamp;
 use serde::Deserialize;
@@ -234,25 +234,6 @@ fn plan(backup: &Backup, existing: &HashSet<String>) -> (Vec<Planned>, Vec<Colle
     (planned, collections, report)
 }
 
-/// TEXT with the collection PATH there: every missing level added at the
-/// end of its parent, with DESCRIPTION under the last one when it is new.
-fn ensure_collection(text: String, path: &[String], description: Option<&str>) -> String {
-    if has_heading_path(&text, path) {
-        return text;
-    }
-    let (parent, name) = path.split_at(path.len() - 1);
-    let text = ensure_collection(text, parent, None);
-    let name = name[0].clone();
-    insert_under(&text, parent, |level| {
-        let mut heading = format!("{} {}\n", "*".repeat(level.max(1)), name);
-        if let Some(description) = description {
-            heading.push_str(&format!("{}\n", description.split_whitespace().collect::<Vec<_>>().join(" ")));
-        }
-        heading
-    })
-    .0
-}
-
 /// What importing JSON into the bookmarks file TEXT would do -- nothing
 /// is written.
 pub fn preview(json: &str, existing: &HashSet<String>) -> Result<ImportReport, String> {
@@ -270,7 +251,7 @@ pub fn import(text: &str, json: &str, existing: &HashSet<String>) -> Result<(Str
     // description -- also one whose links all live in sub-collections,
     // and one that is empty: the structure is part of what is imported.
     for (path, description) in &collections {
-        out = ensure_collection(out, path, description.as_deref());
+        out = write::ensure_collection(out, path, description.as_deref());
     }
     for item in &planned {
         out = insert_under(&out, &item.collection, |level| {

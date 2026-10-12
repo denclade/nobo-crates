@@ -34,7 +34,7 @@ pub mod write;
 #[cfg(feature = "tauri")]
 pub mod tauri_commands;
 
-pub use model::{Bookmark, BookmarkFile, Draft, Located, Patch, Preview, Target};
+pub use model::{Bookmark, BookmarkFile, Collection, Draft, Located, Patch, Preview, Target};
 
 use nobo_core::core::file_kind::{FileKind, FileKindSpec, StateSupport};
 use nobo_core::core::models::Heading;
@@ -142,6 +142,7 @@ fn command_list() -> tauri_specta::Commands<tauri::Wry> {
     tauri_specta::collect_commands![
         tauri_commands::bookmarks_list,
         tauri_commands::bookmarks_files,
+        tauri_commands::bookmarks_collections,
         tauri_commands::bookmarks_set_file,
         tauri_commands::bookmarks_create_file,
         tauri_commands::bookmarks_find,
@@ -160,6 +161,7 @@ fn command_list() -> tauri_specta::Commands<tauri::Wry> {
     tauri_specta::collect_commands![
         tauri_commands::bookmarks_list,
         tauri_commands::bookmarks_files,
+        tauri_commands::bookmarks_collections,
         tauri_commands::bookmarks_set_file,
         tauri_commands::bookmarks_create_file,
         tauri_commands::bookmarks_find,
@@ -207,6 +209,43 @@ mod search_tests {
         for words in ["reqwest", "docs.rs", "http", "scraping", "rust"] {
             assert_eq!(hits("lesezeichen.org", FILE, words).len(), 1, "{words}");
         }
+    }
+
+    /// Categories are kept in `.nobo/` -- a hidden folder, which the
+    /// index reads all the same.
+    #[test]
+    fn a_category_in_the_app_folder_is_found() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join(".nobo")).unwrap();
+        std::fs::write(dir.path().join(".nobo/bookmarks-work.org"), FILE).unwrap();
+        let index = IndexManager::new();
+        index.scan_directory(dir.path());
+        let terms = vec!["reqwest".to_string()];
+        let query = SearchQuery { raw: "reqwest", terms: &terms, vault: &Vault::new(&index, dir.path()) };
+        assert_eq!(search::search("bookmarks", &query).len(), 1);
+    }
+
+    /// The sample vault's two categories (crates/testdata/.nobo): what the
+    /// app shows when the devcontainer starts.
+    #[test]
+    fn the_sample_categories_read_as_written() {
+        let read = |name: &str| {
+            let path = format!("../testdata/.nobo/{name}");
+            let text = std::fs::read_to_string(&path).unwrap();
+            (crate::parse::category_title(&path, &text), crate::parse::bookmarks_of(&path, "", &text), crate::parse::collections_of(&text))
+        };
+        let (work, work_bookmarks, work_collections) = read("bookmarks-work.org");
+        let (private, private_bookmarks, _) = read("bookmarks-private.org");
+        assert_eq!((work.as_str(), private.as_str()), ("Work", "Private"));
+        assert_eq!(work_bookmarks.len(), 9);
+        assert_eq!(private_bookmarks.len(), 7);
+        assert!(work_collections.contains(&vec!["Meetings".to_string()]), "an empty collection is one");
+        let tokio = work_bookmarks.iter().find(|b| b.url.contains("tokio")).unwrap();
+        assert_eq!(tokio.collection, ["Rust", "Async"]);
+        assert_eq!(tokio.inherited_tags, ["rust"]);
+        assert!(tokio.read_later);
+        let read_later = work_bookmarks.iter().chain(&private_bookmarks).filter(|b| b.read_later).count();
+        assert_eq!(read_later, 4);
     }
 
     #[test]

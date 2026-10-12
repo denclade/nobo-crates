@@ -1,0 +1,75 @@
+#+TITLE:      Work
+#+NOBO_TYPE:  bookmarks
+
+* Rust                                                                 :rust:
+** reqwest – an ergonomic HTTP client                              :http:
+:PROPERTIES:
+:URL:      https://docs.rs/reqwest/latest/reqwest/
+:CREATED:  [2026-03-04 Mi 09:12]
+:END:
+Für den Seitenabruf in nobo-http – Timeouts und rustls.
+
+#+begin_quote
+An ergonomic, batteries-included HTTP Client for Rust.
+#+end_quote
+
+** The Rust Programming Language                                   :book:
+:PROPERTIES:
+:URL:      https://doc.rust-lang.org/book/
+:CREATED:  [2026-01-15 Do 20:40]
+:END:
+
+** Async
+*** Tokio – Tutorial                                        :async:readlater:
+:PROPERTIES:
+:URL:      https://tokio.rs/tokio/tutorial
+:CREATED:  [2026-09-28 Mo 18:05]
+:END:
+Kapitel zu select! und Cancellation nochmal lesen.
+
+#+begin_quote
+Tokio is an asynchronous runtime for the Rust programming language.
+#+end_quote
+
+*** Async Rust: Pin, Futures, Wakers                                 :async:
+:PROPERTIES:
+:URL:      https://rust-lang.github.io/async-book/
+:CREATED:  [2026-05-02 Sa 07:55]
+:UPDATED:  [2026-08-19 Mi 21:30]
+:END:
+
+* Tauri & Frontend                                                     :web:
+** Tauri v2 – Plugin-Entwicklung                                   :tauri:
+:PROPERTIES:
+:URL:      https://v2.tauri.app/develop/plugins/
+:CREATED:  [2026-02-10 Di 11:03]
+:END:
+Wie die Berechtigungen (ACL) für eigene Plugins gebaut werden.
+
+** SolidJS – Reactivity                                   :solidjs:readlater:
+:PROPERTIES:
+:URL:      https://docs.solidjs.com/concepts/intro-to-reactivity
+:CREATED:  [2026-10-01 Do 08:30]
+:END:
+
+** CodeMirror 6 – Decorations                                 :codemirror:
+:PROPERTIES:
+:URL:      https://codemirror.net/examples/decoration/
+:CREATED:  [2026-07-21 Di 16:47]
+:END:
+Block-Widgets nur aus einem StateField – sonst stimmt die Höhe nicht.
+
+* Org mode
+** Org Manual – Properties and Columns                               :org:
+:PROPERTIES:
+:URL:      https://orgmode.org/manual/Properties-and-Columns.html
+:CREATED:  [2026-04-18 Sa 14:20]
+:END:
+
+** Denote – file naming scheme                                :org:denote:
+:PROPERTIES:
+:URL:      https://protesilaos.com/emacs/denote
+:CREATED:  [2026-04-18 Sa 14:26]
+:END:
+
+* Meetings

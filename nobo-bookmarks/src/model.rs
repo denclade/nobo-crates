@@ -114,3 +114,12 @@ pub struct BookmarkFile {
     pub title: String,
     pub is_bookmarks: bool,
 }
+
+/// One collection: a heading that is no bookmark, in a bookmarks file.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[cfg_attr(feature = "tauri", derive(specta::Type))]
+pub struct Collection {
+    pub file_path: String,
+    /// Its titles, outermost first: `["Rust", "Async"]`.
+    pub path: Vec<String>,
+}

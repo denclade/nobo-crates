@@ -1,0 +1,55 @@
+#+TITLE:      Private
+#+NOBO_TYPE:  bookmarks
+
+* Reisen                                                            :reise:
+** Norwegen
+*** Visit Norway – Lofoten                                   :readlater:
+:PROPERTIES:
+:URL:      https://www.visitnorway.de/reiseziele/nordnorwegen/lofoten/
+:CREATED:  [2026-06-02 Di 22:10]
+:END:
+Für den Sommer: Fähre Bodø–Moskenes rechtzeitig buchen.
+
+*** Hurtigruten – Fahrplan                                         :faehre:
+:PROPERTIES:
+:URL:      https://www.hurtigruten.com/de-de/
+:CREATED:  [2026-06-02 Di 22:14]
+:END:
+
+** Island – Ringstraße in 10 Tagen                                 :island:
+:PROPERTIES:
+:URL:      https://guidetoiceland.is/travel-iceland/drive/ring-road
+:CREATED:  [2026-03-30 Mo 19:00]
+:END:
+
+#+begin_quote
+Everything you need to know about driving Iceland's Ring Road.
+#+end_quote
+
+* Kochen                                                           :kochen:
+** Sauerteig für Einsteiger                                          :brot:
+:PROPERTIES:
+:URL:      https://www.ploetzblog.de/sauerteig-grundlagen/
+:CREATED:  [2025-11-14 Fr 17:32]
+:END:
+Anstellgut am Vorabend füttern.
+
+** Serious Eats – The Food Lab                                   :readlater:
+:PROPERTIES:
+:URL:      https://www.seriouseats.com/the-food-lab
+:CREATED:  [2026-09-30 Mi 21:45]
+:END:
+
+* Sport
+** Laufplan 10 km                                               :laufen:
+:PROPERTIES:
+:URL:      https://www.runnersworld.de/trainingsplaene/10-km/
+:CREATED:  [2026-02-01 So 08:00]
+:END:
+
+* Ohne Sammlung
+** Wikipedia – Org-mode
+:PROPERTIES:
+:URL:      https://de.wikipedia.org/wiki/Org-mode
+:CREATED:  [2026-10-05 Mo 12:00]
+:END:

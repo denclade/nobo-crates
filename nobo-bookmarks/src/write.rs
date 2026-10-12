@@ -4,7 +4,7 @@
 //! every other line of the file as it was -- prose between collections,
 //! code blocks, properties the app does not know, the file's line endings.
 
-use nobo_core::core::org_insert::insert_under;
+use nobo_core::core::org_insert::{has_heading_path, insert_under};
 use nobo_core::core::vault::{closed_block_lines, format_heading_line};
 use nobo_core::t;
 
@@ -216,10 +216,30 @@ pub fn relevel(block: &[String], from: usize, to: usize) -> String {
     text
 }
 
+/// TEXT with the collection PATH there: every missing level added at the
+/// end of its parent, with DESCRIPTION under the last one when it is new.
+pub fn ensure_collection(text: String, path: &[String], description: Option<&str>) -> String {
+    if has_heading_path(&text, path) {
+        return text;
+    }
+    let (parent, name) = path.split_at(path.len() - 1);
+    let text = ensure_collection(text, parent, None);
+    let name = name[0].clone();
+    insert_under(&text, parent, |level| {
+        let mut heading = format!("{} {}\n", "*".repeat(level.max(1)), name);
+        if let Some(description) = description {
+            heading.push_str(&format!("{}\n", description.split_whitespace().collect::<Vec<_>>().join(" ")));
+        }
+        heading
+    })
+    .0
+}
+
 /// Moving within one file: TEXT with the bookmark TARGET names taken out
 /// and put under COLLECTION. Returns the new text and its new line.
 pub fn move_within(text: &str, target: &Target, collection: &[String]) -> Result<(String, usize), String> {
     let (without, block, level) = remove(text, target)?;
+    let without = ensure_collection(without, collection, None);
     Ok(insert_under(&without, collection, |to| relevel(&block, level, to)))
 }
 
@@ -332,6 +352,20 @@ mod tests {
         assert_eq!(tokio.created.as_deref(), Some("[2026-10-12 Mo 14:30]"));
         assert_eq!(all.len(), 3, "the other two are still there");
         assert!(out.contains("* Reisen\nText über Reisen.\n"));
+    }
+
+    /// A collection that is not there yet is made, level by level --
+    /// rather than the entry landing at the top level unannounced.
+    #[test]
+    fn a_new_collection_is_made_where_it_is_asked_for() {
+        let path = ["Rust".to_string(), "Async".to_string()];
+        let out = ensure_collection(FILE.to_string(), &path, None);
+        let (out, line) = insert_under(&out, &path, |level| entry(&Draft { title: "tokio".into(), url: "https://tokio.rs".into(), ..Draft::default() }, level, "[2026-10-12 Mo 14:30]"));
+        let tokio = parse::bookmarks_of("/v/a.org", "A", &out).into_iter().find(|b| b.url == "https://tokio.rs").unwrap();
+        assert_eq!(tokio.collection, ["Rust", "Async"]);
+        assert_eq!(tokio.line_no, line);
+        assert!(out.contains("** Async\n"), "{out}");
+        assert_eq!(ensure_collection(out.clone(), &path, None), out, "made once");
     }
 
     #[test]

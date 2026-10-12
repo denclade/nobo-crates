@@ -34,6 +34,49 @@ pub struct Entry {
     pub subtree_end: usize,
 }
 
+/// Every collection in TEXT: every heading that is no bookmark, as its
+/// path of titles (outermost first), in file order -- the empty ones too,
+/// so a collection made by hand or by an import can be filed into before
+/// it holds anything.
+pub fn collections_of(text: &str) -> Vec<Vec<String>> {
+    let lines: Vec<&str> = text.lines().collect();
+    let bookmark_lines: std::collections::HashSet<usize> = entries("", "", text).iter().map(|entry| entry.heading).collect();
+    let in_block = closed_block_lines(&lines);
+    let mut stack: Vec<(usize, String, bool)> = Vec::new();
+    let mut out = Vec::new();
+    for (index, line) in lines.iter().enumerate() {
+        if in_block[index] {
+            continue;
+        }
+        let Some(heading) = parse_heading_line(line) else { continue };
+        while stack.last().is_some_and(|(level, ..)| *level >= heading.level) {
+            stack.pop();
+        }
+        let is_bookmark = bookmark_lines.contains(&index);
+        // A heading under a bookmark is part of that bookmark, not a
+        // collection of its own.
+        if !is_bookmark && stack.iter().all(|(.., bookmark)| !bookmark) {
+            let mut path: Vec<String> = stack.iter().map(|(_, title, _)| title.clone()).collect();
+            path.push(heading.title.clone());
+            out.push(path);
+        }
+        stack.push((heading.level, heading.title.clone(), is_bookmark));
+    }
+    out
+}
+
+/// What a bookmarks file is called as a category: its `#+TITLE:`, else
+/// its file name without `bookmarks-` and `.org` ("work" for
+/// `bookmarks-work.org`).
+pub fn category_title(path: &str, text: &str) -> String {
+    let lines: Vec<&str> = text.lines().take(40).collect();
+    if let Some(title) = nobo_core::core::file_kind::leading_keyword(&lines, "#+TITLE:").filter(|title| !title.is_empty()) {
+        return title;
+    }
+    let name = std::path::Path::new(path).file_stem().and_then(|stem| stem.to_str()).unwrap_or(path);
+    name.strip_prefix("bookmarks-").unwrap_or(name).to_string()
+}
+
 /// Every bookmark in TEXT (the file PATH, called CATEGORY).
 pub fn bookmarks_of(path: &str, category: &str, text: &str) -> Vec<Bookmark> {
     entries(path, category, text).into_iter().map(|entry| entry.bookmark).collect()
@@ -180,6 +223,18 @@ mod tests {
         assert_eq!(reqwest.description.as_deref(), Some("An ergonomic HTTP Client."));
         assert_eq!(reqwest.line_no, 5);
         assert!(!reqwest.read_later);
+    }
+
+    #[test]
+    fn every_collection_is_listed_also_an_empty_one() {
+        let text = "* Rust\n** Async\n** reqwest\n:PROPERTIES:\n:URL: https://x\n:END:\n*** Anmerkung\n* Leer\n";
+        assert_eq!(collections_of(text), [vec!["Rust".to_string()], vec!["Rust".into(), "Async".into()], vec!["Leer".into()]]);
+    }
+
+    #[test]
+    fn a_category_is_named_by_its_title_or_its_file() {
+        assert_eq!(category_title("/v/.nobo/bookmarks-work.org", "#+TITLE: Arbeit\n"), "Arbeit");
+        assert_eq!(category_title("/v/.nobo/bookmarks-work.org", "* x\n"), "work");
     }
 
     #[test]

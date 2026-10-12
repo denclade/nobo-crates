@@ -19,33 +19,51 @@ use nobo_core::core::vault::Vault;
 use nobo_core::t;
 use nobo_core::utils::{fs_utils, note_utils};
 
-use crate::model::{Bookmark, BookmarkFile, Draft, Located, Patch, Target};
+#[cfg(test)]
+mod tests {
+    use super::category_file_name;
+
+    #[test]
+    fn a_category_has_a_file_name_of_its_own() {
+        assert_eq!(category_file_name("Work"), "bookmarks-work.org");
+        assert_eq!(category_file_name(" Privates & Schule "), "bookmarks-privates-schule.org");
+        assert_eq!(category_file_name("Bücher"), "bookmarks-buecher.org");
+        assert_eq!(category_file_name("!!"), "bookmarks-bookmarks.org");
+    }
+}
+
+use crate::model::{Bookmark, BookmarkFile, Collection, Draft, Located, Patch, Target};
 use crate::{parse, url, write};
-
-/// The note titles of the vault, by path -- what a category is called.
-fn titles(vault: &Vault) -> HashMap<String, String> {
-    vault.notes().into_iter().map(|note| (note.path, note.title)).collect()
-}
-
-fn category_of(titles: &HashMap<String, String>, path: &str) -> String {
-    titles.get(path).cloned().unwrap_or_else(|| fs_utils::filename_of(path).trim_end_matches(".org").to_string())
-}
 
 /// Every bookmark in every bookmarks file: files by title, bookmarks in
 /// the order they are written.
 pub fn bookmarks_list(index_manager: &IndexManager) -> Result<Vec<Bookmark>, String> {
+    let mut files = bookmark_files(index_manager)?;
+    files.sort_by_key(|(path, text)| parse::category_title(path, text).to_lowercase());
+    Ok(files
+        .iter()
+        .flat_map(|(path, text)| parse::bookmarks_of(path, &parse::category_title(path, text), text))
+        .collect())
+}
+
+/// The bookmarks files with their text, as the index holds them.
+fn bookmark_files(index_manager: &IndexManager) -> Result<Vec<(String, String)>, String> {
     let root = Config::require_vault_root()?;
-    let vault = Vault::new(index_manager, &root);
-    let titles = titles(&vault);
-    let mut files: Vec<(String, String)> = vault
+    Ok(Vault::new(index_manager, &root)
         .files_of_kind(crate::KIND)
         .into_iter()
         .map(|(path, text)| (path.to_string_lossy().into_owned(), text))
-        .collect();
-    files.sort_by_key(|(path, _)| category_of(&titles, path).to_lowercase());
-    Ok(files
+        .collect())
+}
+
+/// Every collection in every bookmarks file, empty ones included -- what
+/// the save and move dialogs offer to file under.
+pub fn bookmarks_collections(index_manager: &IndexManager) -> Result<Vec<Collection>, String> {
+    Ok(bookmark_files(index_manager)?
         .iter()
-        .flat_map(|(path, text)| parse::bookmarks_of(path, &category_of(&titles, path), text))
+        .flat_map(|(path, text)| {
+            parse::collections_of(text).into_iter().map(|collection| Collection { file_path: path.clone(), path: collection })
+        })
         .collect())
 }
 
@@ -54,17 +72,25 @@ pub fn bookmarks_list(index_manager: &IndexManager) -> Result<Vec<Bookmark>, Str
 pub fn bookmarks_files(index_manager: &IndexManager) -> Result<Vec<BookmarkFile>, String> {
     let root = Config::require_vault_root()?;
     let vault = Vault::new(index_manager, &root);
-    let titles = titles(&vault);
+    let titles: HashMap<String, String> = vault.notes().into_iter().map(|note| (note.path, note.title)).collect();
     let mut files: Vec<BookmarkFile> = vault
         .org_files()
         .into_iter()
         .filter_map(|(path, text)| {
             let kind = file_kind::from_lines(&text.lines().collect::<Vec<_>>());
-            if !file_kind::capabilities(kind).editable {
+            let path = path.to_string_lossy().into_owned();
+            let is_bookmarks = kind == crate::KIND;
+            // The app's own files (in `.nobo/`) other than bookmarks files
+            // are no candidates: the GTD lists, the mirrors, the archive.
+            if !file_kind::capabilities(kind).editable || (!is_bookmarks && nobo_core::utils::fs_utils::has_hidden_ancestor(Path::new(&path).strip_prefix(&root).unwrap_or(Path::new(&path)))) {
                 return None;
             }
-            let path = path.to_string_lossy().into_owned();
-            Some(BookmarkFile { title: category_of(&titles, &path), path, is_bookmarks: kind == crate::KIND })
+            let title = if is_bookmarks {
+                parse::category_title(&path, &text)
+            } else {
+                titles.get(&path).cloned().unwrap_or_else(|| fs_utils::filename_of(&path).trim_end_matches(".org").to_string())
+            };
+            Some(BookmarkFile { title, path, is_bookmarks })
         })
         .collect();
     files.sort_by_key(|file| file.title.to_lowercase());
@@ -82,31 +108,68 @@ pub fn bookmarks_set_file(path: String, bookmarks: bool, index_manager: &IndexMa
     Ok(())
 }
 
-/// A new, empty bookmarks file called TITLE ("Arbeit", "Privat") at the
-/// top of the vault -- a new category. A note like any other, declared in
-/// its header. Never written over an existing file; recorded as created.
+/// The file name a category is kept under: `bookmarks-work.org` for
+/// "Work", umlauts spelled out, anything else a dash.
+pub fn category_file_name(title: &str) -> String {
+    let mut slug = String::new();
+    for c in title.trim().to_lowercase().chars() {
+        let part = match c {
+            'ä' => "ae".to_string(),
+            'ö' => "oe".to_string(),
+            'ü' => "ue".to_string(),
+            'ß' => "ss".to_string(),
+            c if c.is_alphanumeric() => c.to_string(),
+            _ => "-".to_string(),
+        };
+        if part == "-" && (slug.is_empty() || slug.ends_with('-')) {
+            continue;
+        }
+        slug.push_str(&part);
+    }
+    let slug = slug.trim_end_matches('-');
+    format!("bookmarks-{}.org", if slug.is_empty() { "bookmarks" } else { slug })
+}
+
+/// A new, empty bookmarks file called TITLE ("Arbeit", "Privat") -- a new
+/// category -- kept with the app's own files: `.nobo/bookmarks-arbeit.org`.
+/// There it is the app's, never renamed by the notes editor (see
+/// core::app_files), and found by its declaration like any bookmarks file.
+///
+/// Never written over an existing file: one that is already a bookmarks
+/// file is simply that category; anything else there is refused.
 pub fn bookmarks_create_file(title: String, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<BookmarkFile, String> {
     let title = title.trim().to_string();
     let title = if title.is_empty() { t!("Lesezeichen", "Bookmarks") } else { title };
     let root = Config::require_vault_root()?;
-    let author = Config::load().and_then(|config| config.default_author).unwrap_or_default();
-    let declaration = format!("{} {}", file_kind::KIND_KEYWORD, crate::KIND.keyword());
-    let filename = note_utils::create_note_file(&root.to_string_lossy(), &title, &[], &author, &[declaration], "")
-        .map_err(|e| e.to_string())?;
-    let path = root.join(&filename);
+    let dir = root.join(".nobo");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(category_file_name(&title));
     let path_string = path.to_string_lossy().into_owned();
-    match std::fs::read_to_string(&path) {
-        Ok(content) => {
-            index_manager.update_file_with(&path, &content);
-            record_best_effort(
-                db,
-                HistoryEntryKind::FileCreated { filename },
-                false,
-                vec![FileSnapshot { path: path_string.clone(), before: None, after: Some(content) }],
-            );
+    let content = format!("#+TITLE:      {title}\n{} {}\n", file_kind::KIND_KEYWORD, crate::KIND.keyword());
+
+    let created = std::fs::OpenOptions::new().write(true).create_new(true).open(&path);
+    match created {
+        Ok(mut file) => {
+            use std::io::Write;
+            file.write_all(content.as_bytes()).map_err(|e| e.to_string())?;
         }
-        Err(_) => index_manager.update_file(&path),
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            let existing = std::fs::read_to_string(&path).unwrap_or_default();
+            if file_kind::from_lines(&existing.lines().collect::<Vec<_>>()) == crate::KIND {
+                return Ok(BookmarkFile { title: parse::category_title(&path_string, &existing), path: path_string, is_bookmarks: true });
+            }
+            let name = path.display().to_string();
+            return Err(t!("{name} gibt es schon und ist keine Lesezeichen-Datei", "{name} already exists and is not a bookmarks file"));
+        }
+        Err(e) => return Err(e.to_string()),
     }
+    index_manager.update_file_with(&path, &content);
+    record_best_effort(
+        db,
+        HistoryEntryKind::FileCreated { filename: fs_utils::filename_of(&path_string) },
+        false,
+        vec![FileSnapshot { path: path_string.clone(), before: None, after: Some(content) }],
+    );
     Ok(BookmarkFile { path: path_string, title, is_bookmarks: true })
 }
 
@@ -168,7 +231,8 @@ pub fn bookmarks_save(
     }
     let created = note_utils::inactive_timestamp(chrono::Local::now());
     let line_no = rewrite(Path::new(&file_path), index_manager, db, |text| {
-        Ok(insert_under(text, &collection, |level| write::entry(&draft, level, &created)))
+        let text = write::ensure_collection(text.to_string(), &collection, None);
+        Ok(insert_under(&text, &collection, |level| write::entry(&draft, level, &created)))
     })?;
     Ok(Located { file_path, line_no })
 }
@@ -205,7 +269,8 @@ pub fn bookmarks_move(
     let source_text = std::fs::read_to_string(&target.file_path).map_err(|e| e.to_string())?;
     let (_, block, level) = write::remove(&source_text, &target)?;
     let line_no = rewrite(Path::new(&file_path), index_manager, db, |text| {
-        Ok(insert_under(text, &collection, |to| write::relevel(&block, level, to)))
+        let text = write::ensure_collection(text.to_string(), &collection, None);
+        Ok(insert_under(&text, &collection, |to| write::relevel(&block, level, to)))
     })?;
     rewrite(Path::new(&target.file_path), index_manager, db, |text| {
         write::remove(text, &target).map(|(text, ..)| (text, ()))

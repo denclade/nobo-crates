@@ -12,7 +12,7 @@ use tauri::State;
 use nobo_core::core::indexer::IndexManager;
 
 use crate::commands;
-use crate::model::{Bookmark, BookmarkFile, Draft, Located, Patch, Target};
+use crate::model::{Bookmark, BookmarkFile, Collection, Draft, Located, Patch, Target};
 
 /// Every bookmark in every bookmarks file (category).
 #[tauri::command]
@@ -28,6 +28,13 @@ pub async fn bookmarks_files(index_manager: State<'_, Arc<IndexManager>>) -> Res
     commands::bookmarks_files(index_manager.inner())
 }
 
+/// Every collection in every bookmarks file, empty ones included.
+#[tauri::command]
+#[specta::specta]
+pub async fn bookmarks_collections(index_manager: State<'_, Arc<IndexManager>>) -> Result<Vec<Collection>, String> {
+    commands::bookmarks_collections(index_manager.inner())
+}
+
 /// Declares a file a bookmarks file (a category), or takes that back.
 #[tauri::command]
 #[specta::specta]
@@ -35,7 +42,8 @@ pub async fn bookmarks_set_file(path: String, bookmarks: bool, index_manager: St
     commands::bookmarks_set_file(path, bookmarks, index_manager.inner())
 }
 
-/// A new, empty bookmarks file called TITLE -- a new category.
+/// A new, empty bookmarks file called TITLE -- a new category, kept as
+/// `.nobo/bookmarks-<title>.org`.
 #[tauri::command]
 #[specta::specta]
 pub async fn bookmarks_create_file(
