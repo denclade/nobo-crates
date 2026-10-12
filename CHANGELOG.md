@@ -13,6 +13,10 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+### Neu
+
+- Lesezeichen: neue Kategorien liegen als `.nobo/bookmarks-<name>.org`; `bookmarks_collections` liefert alle Sammlungen, leere eingeschlossen; Speichern und Verschieben legen fehlende Sammlungen an. Beispieldaten im Testtresor (Work, Private).
+
 ## [0.12.0] – 2026-10-12
 
 ### Neu
