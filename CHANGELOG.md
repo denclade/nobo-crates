@@ -13,6 +13,12 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+## [0.16.0] – 2026-10-12
+
+### Behoben
+
+- Org is read and written as org-mode does
+
 ## [0.15.0] – 2026-10-12
 
 ### Behoben
