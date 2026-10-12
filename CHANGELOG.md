@@ -13,6 +13,10 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+### Geändert
+
+- Aufgeräumt: Testmodul in `nobo-bookmarks` ans Dateiende (Clippy), ohne Verhaltensänderung.
+
 ## [0.13.0] – 2026-10-12
 
 ### Neu
