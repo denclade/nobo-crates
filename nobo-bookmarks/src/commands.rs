@@ -19,18 +19,6 @@ use nobo_core::core::vault::Vault;
 use nobo_core::t;
 use nobo_core::utils::{fs_utils, note_utils};
 
-#[cfg(test)]
-mod tests {
-    use super::category_file_name;
-
-    #[test]
-    fn a_category_has_a_file_name_of_its_own() {
-        assert_eq!(category_file_name("Work"), "bookmarks-work.org");
-        assert_eq!(category_file_name(" Privates & Schule "), "bookmarks-privates-schule.org");
-        assert_eq!(category_file_name("Bücher"), "bookmarks-buecher.org");
-        assert_eq!(category_file_name("!!"), "bookmarks-bookmarks.org");
-    }
-}
 
 use crate::model::{Bookmark, BookmarkFile, Collection, Draft, Located, Patch, Target};
 use crate::{parse, url, write};
@@ -307,4 +295,17 @@ pub fn bookmarks_import_linkwarden(
         return crate::import_linkwarden::preview(&json, &existing);
     }
     rewrite(Path::new(&file_path), index_manager, db, |text| crate::import_linkwarden::import(text, &json, &existing))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::category_file_name;
+
+    #[test]
+    fn a_category_has_a_file_name_of_its_own() {
+        assert_eq!(category_file_name("Work"), "bookmarks-work.org");
+        assert_eq!(category_file_name(" Privates & Schule "), "bookmarks-privates-schule.org");
+        assert_eq!(category_file_name("Bücher"), "bookmarks-buecher.org");
+        assert_eq!(category_file_name("!!"), "bookmarks-bookmarks.org");
+    }
 }
