@@ -13,6 +13,12 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+## [0.14.0] – 2026-10-12
+
+### Neu
+
+- Bookmarks: collections carry their heading's line
+
 ## [0.13.1] – 2026-10-12
 
 ### Geändert
