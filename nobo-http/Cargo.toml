@@ -12,6 +12,9 @@ license = "GPL-3.0-or-later"
 [dependencies]
 reqwest = { workspace = true }
 log = { workspace = true }
+# A page in the charset it was written in (see src/fetch.rs) -- reqwest's
+# own `charset` feature would bring the same crate, for every request.
+encoding_rs = { workspace = true }
 # For `core::i18n`: the words in a network error are read by a person, and
 # the language they should be in lives in settings.json.
 #

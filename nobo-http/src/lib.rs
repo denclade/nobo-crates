@@ -11,6 +11,7 @@
 //! would otherwise still carry reqwest and a TLS stack for nobody. Whoever
 //! needs it says so in their Cargo.toml.
 
+pub mod fetch;
 /// Android only: the certificate verifier it needs (see the module's own
 /// doc). Everywhere else the platform verifier is right, and the crates
 /// this pulls in are not even a dependency.

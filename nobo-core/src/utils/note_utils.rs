@@ -168,6 +168,19 @@ pub fn create_note_file(
     Ok(filename)
 }
 
+/// NOW as an inactive org timestamp, `[2026-10-12 Mo 14:30]` -- the
+/// stamp every new note's `#+DATE:` gets, and what a feature writes for
+/// "when was this added" (a bookmark's `:CREATED:`). German weekday names,
+/// as everywhere the app writes a date.
+pub fn inactive_timestamp(now: chrono::DateTime<Local>) -> String {
+    let weekday_de = match now.weekday() {
+        Weekday::Mon => "Mo", Weekday::Tue => "Di", Weekday::Wed => "Mi",
+        Weekday::Thu => "Do", Weekday::Fri => "Fr", Weekday::Sat => "Sa",
+        Weekday::Sun => "So",
+    };
+    format!("[{} {} {:02}:{:02}]", now.format("%Y-%m-%d"), weekday_de, now.hour(), now.minute())
+}
+
 /// The header every new note starts with, then KEYWORDS, a blank line
 /// and BODY.
 fn note_content(
@@ -179,12 +192,7 @@ fn note_content(
     keywords: &[String],
     body: &str,
 ) -> String {
-    let weekday_de = match now.weekday() {
-        Weekday::Mon => "Mo", Weekday::Tue => "Di", Weekday::Wed => "Mi",
-        Weekday::Thu => "Do", Weekday::Fri => "Fr", Weekday::Sat => "Sa",
-        Weekday::Sun => "So",
-    };
-    let date_str = format!("[{} {} {:02}:{:02}]", now.format("%Y-%m-%d"), weekday_de, now.hour(), now.minute());
+    let date_str = inactive_timestamp(now);
 
     let mut content = format!("#+TITLE:      {}\n#+DATE:       {}\n", title, date_str);
     if !author.trim().is_empty() {

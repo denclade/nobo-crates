@@ -19,6 +19,7 @@ pub mod filter;
 pub mod org_ast;
 pub mod links;
 pub mod org_edit;
+pub mod org_insert;
 pub mod org_highlight;
 pub mod org_table;
 pub mod org_sort;

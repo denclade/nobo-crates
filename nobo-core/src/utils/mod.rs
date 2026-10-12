@@ -1,4 +1,5 @@
 pub mod fs_utils;
+pub mod html;
 pub mod note_utils;
 pub mod string_utils;
 pub mod search_utils;

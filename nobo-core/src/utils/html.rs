@@ -1,11 +1,15 @@
-//! Just enough HTML to read a recipe page, and no more.
+//! Just enough HTML to read a web page's meta data, and no more.
 //!
-//! Not a parser, and not meant to become one: a recipe page is read
-//! through its schema.org JSON-LD first (see `schema_org`), and the HTML
-//! itself is only consulted by a site refiner looking for one or two
-//! elements it knows by their class. For that, finding an element and
-//! the end that matches it is the whole job -- a DOM would be a large
-//! dependency for a few lookups that a page redesign breaks either way.
+//! Not a parser, and not meant to become one. What reads pages here -- the
+//! cookbook's recipe import, the bookmarks' preview -- wants a page's
+//! title and description, its JSON-LD blocks, an absolute address for a
+//! relative one, and now and then one element a site refiner knows by
+//! its class. For that, finding an element and the end that matches it
+//! is the whole job -- a DOM would be a large dependency for a few
+//! lookups that a page redesign breaks either way.
+//!
+//! In the core because it is pure (text in, text out) and because two
+//! features need it, which may not reach into each other.
 
 /// One element found by its class: the markup between its start and end
 /// tags.

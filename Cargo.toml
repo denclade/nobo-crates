@@ -40,6 +40,7 @@ strip = true
 # log and the clipboard, and `jni` for the Android worker.
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
+encoding_rs = "0.8"
 serde_json = "1"
 dirs = "6.0.0"
 ignore = "0.4.31"

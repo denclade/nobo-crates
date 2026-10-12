@@ -16,7 +16,9 @@
 //! The format written is org-chef's own, keys and section names
 //! included, so a file filled from this app reads the same in Emacs.
 
-pub mod html;
+// The page helpers live in the core, shared with the bookmarks; under
+// their old name here so the readers below did not have to change.
+pub use nobo_core::utils::html;
 mod schema_org;
 mod sites;
 #[cfg(feature = "import")]
@@ -24,7 +26,6 @@ pub mod fetch;
 
 use nobo_core::t;
 
-use crate::outline;
 
 /// A recipe as a page described it -- before it is anybody's org text.
 ///
@@ -200,80 +201,9 @@ fn prose(text: &str) -> String {
     }
 }
 
-/// TEXT with ENTRY added: at the end of the heading CATEGORY names (a
-/// path of titles, outermost first, as `Recipe::categories` gives it),
-/// or at the end of the file at level 1 when CATEGORY is empty or not
-/// there. ENTRY is built for the level it lands on.
-///
-/// Returns the new text and the line the entry starts on (1-based), so
-/// the caller can open it.
-pub fn insert(text: &str, category: &[String], entry: impl Fn(usize) -> String) -> (String, usize) {
-    let nodes = outline::read(text);
-    // Each line with its own ending, and new ones in the file's: a file
-    // written with CRLF (Emacs on Windows, Orgzly via some sync clients)
-    // came back entirely LF after an import -- every line changed, as far
-    // as a diff or the other device's sync is concerned.
-    let eol = if text.contains("\r\n") { "\r\n" } else { "\n" };
-    let mut lines: Vec<String> = text.split_inclusive('\n').map(str::to_string).collect();
-    if let Some(last) = lines.last_mut().filter(|last| !last.ends_with('\n')) {
-        last.push_str(eol);
-    }
-
-    let target = category_heading(&nodes, category);
-    let (at, level) = match target {
-        Some(index) => {
-            let node = &nodes[index];
-            // The end of its subtree: the next heading at its level or
-            // above, or the end of the file.
-            let end = nodes[index + 1..]
-                .iter()
-                .find(|next| next.level <= node.level)
-                .map(|next| next.line_no - 1)
-                .unwrap_or(lines.len());
-            (end, node.level + 1)
-        }
-        None => (lines.len(), 1),
-    };
-
-    // Trailing blank lines of the place it goes stay after it, so
-    // whatever spacing the file had between sections survives.
-    let mut at = at;
-    while at > 0 && lines[at - 1].trim().is_empty() {
-        at -= 1;
-    }
-    let block = entry(level);
-    let mut spaced: Vec<String> = Vec::new();
-    if at > 0 {
-        spaced.push(eol.to_string());
-    }
-    spaced.extend(block.lines().map(|line| format!("{line}{eol}")));
-    let first_line = at + 1 + usize::from(at > 0);
-    lines.splice(at..at, spaced);
-
-    (lines.concat(), first_line)
-}
-
-fn category_heading(nodes: &[outline::Node], category: &[String]) -> Option<usize> {
-    let mut found: Option<usize> = None;
-    for title in category {
-        let (from, level, until) = match found {
-            None => (0, 1, nodes.len()),
-            Some(parent) => {
-                let parent_level = nodes[parent].level;
-                let until = nodes[parent + 1..]
-                    .iter()
-                    .position(|next| next.level <= parent_level)
-                    .map(|offset| parent + 1 + offset)
-                    .unwrap_or(nodes.len());
-                (parent + 1, parent_level + 1, until)
-            }
-        };
-        found = Some(
-            (from..until).find(|&index| nodes[index].level == level && nodes[index].title.trim() == title.trim())?,
-        );
-    }
-    found
-}
+/// TEXT with ENTRY added under the heading CATEGORY names -- the core's
+/// (see `core::org_insert`), shared with the bookmarks.
+pub use nobo_core::core::org_insert::insert_under as insert;
 
 /// A file name for the picture: the recipe's title, made safe, plus the
 /// extension the image type calls for.
