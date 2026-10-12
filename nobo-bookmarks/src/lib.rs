@@ -239,7 +239,7 @@ mod search_tests {
         assert_eq!((work.as_str(), private.as_str()), ("Work", "Private"));
         assert_eq!(work_bookmarks.len(), 9);
         assert_eq!(private_bookmarks.len(), 7);
-        assert!(work_collections.contains(&vec!["Meetings".to_string()]), "an empty collection is one");
+        assert!(work_collections.iter().any(|(path, _)| path == &["Meetings".to_string()]), "an empty collection is one");
         let tokio = work_bookmarks.iter().find(|b| b.url.contains("tokio")).unwrap();
         assert_eq!(tokio.collection, ["Rust", "Async"]);
         assert_eq!(tokio.inherited_tags, ["rust"]);

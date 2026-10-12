@@ -122,4 +122,7 @@ pub struct Collection {
     pub file_path: String,
     /// Its titles, outermost first: `["Rust", "Async"]`.
     pub path: Vec<String>,
+    /// Its heading's line (1-based) -- to open the file there.
+    #[cfg_attr(feature = "tauri", specta(type = specta_typescript::Number))]
+    pub line_no: usize,
 }

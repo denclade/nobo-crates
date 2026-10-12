@@ -50,7 +50,9 @@ pub fn bookmarks_collections(index_manager: &IndexManager) -> Result<Vec<Collect
     Ok(bookmark_files(index_manager)?
         .iter()
         .flat_map(|(path, text)| {
-            parse::collections_of(text).into_iter().map(|collection| Collection { file_path: path.clone(), path: collection })
+            parse::collections_of(text)
+                .into_iter()
+                .map(|(collection, line_no)| Collection { file_path: path.clone(), path: collection, line_no })
         })
         .collect())
 }

@@ -35,10 +35,10 @@ pub struct Entry {
 }
 
 /// Every collection in TEXT: every heading that is no bookmark, as its
-/// path of titles (outermost first), in file order -- the empty ones too,
+/// path of titles (outermost first) with its line (1-based), in file order -- the empty ones too,
 /// so a collection made by hand or by an import can be filed into before
 /// it holds anything.
-pub fn collections_of(text: &str) -> Vec<Vec<String>> {
+pub fn collections_of(text: &str) -> Vec<(Vec<String>, usize)> {
     let lines: Vec<&str> = text.lines().collect();
     let bookmark_lines: std::collections::HashSet<usize> = entries("", "", text).iter().map(|entry| entry.heading).collect();
     let in_block = closed_block_lines(&lines);
@@ -58,7 +58,7 @@ pub fn collections_of(text: &str) -> Vec<Vec<String>> {
         if !is_bookmark && stack.iter().all(|(.., bookmark)| !bookmark) {
             let mut path: Vec<String> = stack.iter().map(|(_, title, _)| title.clone()).collect();
             path.push(heading.title.clone());
-            out.push(path);
+            out.push((path, index + 1));
         }
         stack.push((heading.level, heading.title.clone(), is_bookmark));
     }
@@ -228,7 +228,9 @@ mod tests {
     #[test]
     fn every_collection_is_listed_also_an_empty_one() {
         let text = "* Rust\n** Async\n** reqwest\n:PROPERTIES:\n:URL: https://x\n:END:\n*** Anmerkung\n* Leer\n";
-        assert_eq!(collections_of(text), [vec!["Rust".to_string()], vec!["Rust".into(), "Async".into()], vec!["Leer".into()]]);
+        let paths: Vec<Vec<String>> = collections_of(text).into_iter().map(|(path, _)| path).collect();
+        assert_eq!(paths, [vec!["Rust".to_string()], vec!["Rust".into(), "Async".into()], vec!["Leer".into()]]);
+        assert_eq!(collections_of(text)[2].1, 8, "where it is, to open it there");
     }
 
     #[test]
