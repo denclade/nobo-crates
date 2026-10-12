@@ -11,7 +11,7 @@ pub struct Bookmark {
     pub line_no: usize,
     pub title: String,
     pub url: String,
-    /// The site, for showing and for `site:` -- `docs.rs`.
+    /// The site, for showing and for `site:` -- `heise.de`.
     pub host: String,
     /// Its own tags, `readlater` not among them.
     pub tags: Vec<String>,
