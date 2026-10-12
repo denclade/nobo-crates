@@ -13,6 +13,11 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+### Neu
+
+- `nobo-bookmarks`: Lesezeichen als Org-Überschriften -- eine Lesezeichen-Datei (`#+NOBO_TYPE: bookmarks`) je Kategorie, Überschriften darüber als Sammlungen, Tags, `:readlater:`, `:CREATED:`, Notiz und Seitenbeschreibung. Lesen wie Org, Schreiben je Lesezeichen (anlegen, ändern, verschieben, löschen), jede Änderung ein Verlaufseintrag; Vorschau einer Seite (Titel, Beschreibung); Suche; Import eines Linkwarden-Backups.
+- `core::utils::html` (die HTML-Helfer des Rezept-Imports), `nobo_http::fetch` (Seitenabruf mit Größengrenze, neu mit Zeichensatz-Erkennung), `core::org_insert` (Eintrag unter einen Überschriftenpfad), `note_utils::inactive_timestamp`, `vault::format_heading_line`.
+
 ## [0.11.0] – 2026-10-07
 
 ### Neu
