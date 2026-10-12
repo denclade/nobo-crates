@@ -13,6 +13,12 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+## [0.15.0] – 2026-10-12
+
+### Behoben
+
+- Bookmarks: a robust format, safe concurrent edits, no duplicates
+
 ## [0.14.0] – 2026-10-12
 
 ### Neu
