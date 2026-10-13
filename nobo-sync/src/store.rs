@@ -5,7 +5,7 @@
 //!
 //! Shares the app's existing single sqlite connection/Mutex (see
 //! `history::open_connection`, `lib.rs`) rather than opening a second
-//! database file -- same convention `nobo_babel::commands`/`commands_headings.rs`
+//! database file -- same convention `nobo_babel::commands`/`nobo_app::commands_headings`
 //! already follow for their own unrelated tables in the same file.
 
 use rusqlite::{params, Connection, OptionalExtension};
