@@ -13,6 +13,10 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+### Neu
+
+- Kochbuch: `import_known_site` / `known_site` – ob eine Adresse eine bekannte Rezeptseite ist (Chefkoch, Cookidoo), ohne etwas abzurufen; als Befehl `cookbook_import_known_site`.
+
 ## [0.17.0] – 2026-10-13
 
 ### Geändert (Hosts passen an)
