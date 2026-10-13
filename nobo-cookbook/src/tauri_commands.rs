@@ -98,6 +98,15 @@ pub async fn cookbook_repair_collapsed_properties(
     commands::repair_collapsed_properties(index_manager.inner(), db.inner())
 }
 
+/// Whether URL is a recipe site the import knows by its address
+/// (Chefkoch, Cookidoo) -- asked before anything is fetched, to offer the
+/// cookbook first for a shared link. Nothing is fetched.
+#[tauri::command]
+#[specta::specta]
+pub fn cookbook_import_known_site(url: String) -> bool {
+    commands::import_known_site(url)
+}
+
 /// The recipe on the page at URL, read but not saved -- what the import
 /// shows before anything is written. In a build without the import
 /// (no networking), always registered all the same and refused with a

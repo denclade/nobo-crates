@@ -244,6 +244,7 @@ fn command_list() -> tauri_specta::Commands<tauri::Wry> {
         tauri_commands::cookbook_repair_collapsed_properties,
         tauri_commands::cookbook_import_preview,
         tauri_commands::cookbook_import_save,
+        tauri_commands::cookbook_import_known_site,
     ]
 }
 
