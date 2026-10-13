@@ -39,13 +39,13 @@ pub async fn cookbook_files(index_manager: State<'_, Arc<IndexManager>>) -> Resu
 /// touched.
 #[tauri::command]
 #[specta::specta]
-pub async fn set_cookbook(
+pub async fn cookbook_set_file(
     path: String,
     cookbook: bool,
     index_manager: State<'_, Arc<IndexManager>>,
     db: State<'_, Arc<Mutex<Connection>>>,
 ) -> Result<(), String> {
-    commands::set_cookbook(path, cookbook, index_manager.inner(), db.inner())
+    commands::cookbook_set_file(path, cookbook, index_manager.inner(), db.inner())
 }
 
 /// A new, empty cookbook at the top of the vault -- for a vault without
@@ -101,18 +101,21 @@ pub async fn cookbook_repair_collapsed_properties(
 }
 
 /// The recipe on the page at URL, read but not saved -- what the import
-/// shows before anything is written.
-#[cfg(feature = "import")]
+/// shows before anything is written. In a build without the import
+/// (no networking), always registered all the same and refused with a
+/// reason: one command list for every build (see the app's build.rs).
 #[tauri::command]
 #[specta::specta]
 pub async fn cookbook_import_preview(url: String) -> Result<crate::import::ImportedRecipe, String> {
-    commands::import_preview(url).await
+    #[cfg(feature = "import")]
+    return commands::import_preview(url).await;
+    #[cfg(not(feature = "import"))]
+    return { let _ = url; Err(crate::import_unavailable()) };
 }
 
 /// RECIPE (as the preview gave it) into the cookbook FILE_PATH, under
 /// CATEGORY (a heading path, empty for the top level), with its picture
 /// when WITH_IMAGE. One history entry, so an import is one undo away.
-#[cfg(feature = "import")]
 #[tauri::command]
 #[specta::specta]
 pub async fn cookbook_import_save(
@@ -123,5 +126,8 @@ pub async fn cookbook_import_save(
     index_manager: State<'_, Arc<IndexManager>>,
     db: State<'_, Arc<Mutex<Connection>>>,
 ) -> Result<commands::ImportedAt, String> {
-    commands::import_save(recipe, file_path, category, with_image, index_manager.inner(), db.inner()).await
+    #[cfg(feature = "import")]
+    return commands::import_save(recipe, file_path, category, with_image, index_manager.inner(), db.inner()).await;
+    #[cfg(not(feature = "import"))]
+    return { let _ = (recipe, file_path, category, with_image, index_manager, db); Err(crate::import_unavailable()) };
 }

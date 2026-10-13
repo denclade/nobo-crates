@@ -60,28 +60,28 @@ pub fn babel_trust_file(file_path: String, content: String) -> Result<(), String
 /// runaway interpreter.
 #[tauri::command]
 #[specta::specta]
-pub async fn execute_babel_block(
+pub async fn babel_execute_block(
     payload: ExecuteBabelBlockPayload,
     session_registry: State<'_, Arc<SessionRegistry>>,
 ) -> Result<ExecutionResult, String> {
     let registry = Arc::clone(&session_registry);
-    off_the_main_thread(move || commands::execute_babel_block(payload, &registry)).await
+    off_the_main_thread(move || commands::babel_execute_block(payload, &registry)).await
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn kill_babel_session(
+pub fn babel_kill_session(
     file_path: String,
     session_name: String,
     session_registry: State<'_, Arc<SessionRegistry>>,
 ) {
-    commands::kill_babel_session(file_path, session_name, &session_registry)
+    commands::babel_kill_session(file_path, session_name, &session_registry)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn discover_bash() -> Option<String> {
-    commands::discover_bash()
+pub fn babel_discover_bash() -> Option<String> {
+    commands::babel_discover_bash()
 }
 
 /// Every interpreter it can find, each asked for its `--version` -- a
@@ -89,13 +89,13 @@ pub fn discover_bash() -> Option<String> {
 /// thread either.
 #[tauri::command]
 #[specta::specta]
-pub async fn discover_python_interpreters() -> Result<Vec<InterpreterInfo>, String> {
-    off_the_main_thread(commands::discover_python_interpreters).await
+pub async fn babel_discover_python_interpreters() -> Result<Vec<InterpreterInfo>, String> {
+    off_the_main_thread(commands::babel_discover_python_interpreters).await
 }
 
 /// Builds a virtualenv, which means `python -m venv` and a wait of
 /// seconds to a minute -- off the main thread for the same reason as
-/// running a block (see `execute_babel_block`).
+/// running a block (see `babel_execute_block`).
 #[tauri::command]
 #[specta::specta]
 pub async fn babel_create_venv(target_dir: String, python_path: Option<String>) -> Result<String, String> {

@@ -17,14 +17,14 @@ use crate::summary::{self, Counts, Summary};
 /// No vault configured yet (fresh install, still on Setup) reads as "never
 /// reviewed" rather than an error -- same reasoning as `state::load`'s
 /// own missing-file case, just one layer further out.
-pub fn get_review_state() -> ReviewState {
+pub fn review_state() -> ReviewState {
     match Config::require_vault_root() {
         Ok(vault_root) => state::load(&vault_root),
         Err(_) => ReviewState::default(),
     }
 }
 
-pub fn save_review_state(state: ReviewState) -> Result<(), String> {
+pub fn review_save_state(state: ReviewState) -> Result<(), String> {
     let vault_root = Config::require_vault_root()?;
     state::save(&vault_root, &state)
 }
@@ -34,7 +34,7 @@ pub fn review_settings() -> crate::Settings {
     crate::SETTINGS.load()
 }
 
-pub fn save_review_settings(settings: crate::Settings) -> Result<(), String> {
+pub fn review_save_settings(settings: crate::Settings) -> Result<(), String> {
     crate::SETTINGS.save(&settings)
 }
 
@@ -47,7 +47,7 @@ pub fn save_review_settings(settings: crate::Settings) -> Result<(), String> {
 /// derives this in TypeScript (see src/features/review); this is what it
 /// would call once it stops.
 pub fn review_summary(index_manager: &IndexManager) -> Summary {
-    let state = get_review_state();
+    let state = review_state();
     let settings = review_settings();
     summary::summarize(count(index_manager), &state, &settings, Utc::now())
 }

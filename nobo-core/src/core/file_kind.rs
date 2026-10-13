@@ -105,7 +105,7 @@ impl FileKind {
     }
 
     /// The word this kind is declared with. Public because declaring a
-    /// file IS a user action (see cookbook's set_cookbook), not just
+    /// file IS a user action (see cookbook's cookbook_set_file), not just
     /// something the app reads.
     pub fn keyword(self) -> &'static str {
         self.0

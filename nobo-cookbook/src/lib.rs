@@ -150,6 +150,12 @@ pub fn unavailable() -> String {
     nobo_core::t!("Diese Version von nobo hat keine Rezeptansicht.", "This build of nobo has no recipe view.")
 }
 
+/// What the import answers in a build that has no networking.
+#[cfg(not(feature = "import"))]
+pub fn import_unavailable() -> String {
+    nobo_core::t!("Diese Version von nobo kann keine Rezepte aus dem Netz holen.", "This build of nobo cannot fetch recipes from the web.")
+}
+
 #[cfg(test)]
 mod search_tests {
     use nobo_core::core::indexer::IndexManager;
@@ -227,30 +233,21 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         .commands(command_list())
 }
 
-#[cfg(all(feature = "tauri", feature = "import"))]
+/// Every command, in every build: the import is registered without the
+/// `import` feature too, and says why it cannot run (see
+/// tauri_commands) -- so there is one list, which the app's build.rs
+/// reads for the ACL.
+#[cfg(feature = "tauri")]
 fn command_list() -> tauri_specta::Commands<tauri::Wry> {
     tauri_specta::collect_commands![
         tauri_commands::cookbook_recipes,
         tauri_commands::cookbook_files,
-        tauri_commands::set_cookbook,
+        tauri_commands::cookbook_set_file,
         tauri_commands::cookbook_create,
         tauri_commands::cookbook_collapsed_properties,
         tauri_commands::cookbook_repair_collapsed_properties,
         tauri_commands::cookbook_import_preview,
         tauri_commands::cookbook_import_save,
-    ]
-}
-
-/// The same without the import, for a build that leaves networking out.
-#[cfg(all(feature = "tauri", not(feature = "import")))]
-fn command_list() -> tauri_specta::Commands<tauri::Wry> {
-    tauri_specta::collect_commands![
-        tauri_commands::cookbook_recipes,
-        tauri_commands::cookbook_files,
-        tauri_commands::set_cookbook,
-        tauri_commands::cookbook_create,
-        tauri_commands::cookbook_collapsed_properties,
-        tauri_commands::cookbook_repair_collapsed_properties,
     ]
 }
 

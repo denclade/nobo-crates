@@ -82,7 +82,7 @@ fn interpreter_program(lang: BabelLanguage, interpreter_path: Option<&str>) -> S
 /// A SRC block is somebody's code, so "it loops forever" is not an exotic
 /// case -- it is a typo. Without a limit the process would sit there for
 /// the life of the app, holding an interpreter and whatever it opened,
-/// with nothing in the UI to end it (`kill_babel_session` only knows
+/// with nothing in the UI to end it (`babel_kill_session` only knows
 /// about `:session` blocks).
 ///
 /// Thirty seconds is the same limit a session waits for its marker

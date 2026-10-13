@@ -16,14 +16,14 @@ use crate::state::ReviewState;
 /// own missing-file case, just one layer further out.
 #[tauri::command]
 #[specta::specta]
-pub fn get_review_state() -> ReviewState {
-    commands::get_review_state()
+pub fn review_state() -> ReviewState {
+    commands::review_state()
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn save_review_state(state: ReviewState) -> Result<(), String> {
-    commands::save_review_state(state)
+pub fn review_save_state(state: ReviewState) -> Result<(), String> {
+    commands::review_save_state(state)
 }
 
 /// How often the review is due on this device (see `crate::Settings`).
@@ -35,6 +35,6 @@ pub fn review_settings() -> crate::Settings {
 
 #[tauri::command]
 #[specta::specta]
-pub fn save_review_settings(settings: crate::Settings) -> Result<(), String> {
-    commands::save_review_settings(settings)
+pub fn review_save_settings(settings: crate::Settings) -> Result<(), String> {
+    commands::review_save_settings(settings)
 }

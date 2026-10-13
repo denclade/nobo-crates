@@ -121,10 +121,10 @@ fn specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
     tauri_specta::Builder::<R>::new()
         .plugin_name("nobo-review")
         .commands(tauri_specta::collect_commands![
-            tauri_commands::get_review_state,
-            tauri_commands::save_review_state,
+            tauri_commands::review_state,
+            tauri_commands::review_save_state,
             tauri_commands::review_settings,
-            tauri_commands::save_review_settings,
+            tauri_commands::review_save_settings,
         ])
 }
 

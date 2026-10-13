@@ -12,6 +12,7 @@ use nobo_core::core::file_kind;
 use nobo_core::core::history::record_best_effort;
 use nobo_core::core::vault_write;
 use nobo_core::core::models::{FileSnapshot, HistoryEntryKind};
+#[cfg(feature = "import")]
 use nobo_core::utils::fs_utils::filename_of;
 use rusqlite::Connection;
 use std::sync::Mutex;
@@ -62,7 +63,7 @@ pub fn cookbook_files(index_manager: &IndexManager) -> Result<Vec<CookbookFile>,
 /// also how a file stops being one. Undeclaring only removes what this
 /// wrote; the recipes themselves are the user's text and are never
 /// touched.
-pub fn set_cookbook(path: String, cookbook: bool, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
+pub fn cookbook_set_file(path: String, cookbook: bool, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
     vault_write::declare_kind(std::path::Path::new(&path), crate::KIND, cookbook, index_manager, db)
 }
 

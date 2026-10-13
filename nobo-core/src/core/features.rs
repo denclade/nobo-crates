@@ -57,8 +57,10 @@ pub struct FeatureSpec {
     pub id: &'static str,
     /// Whether this build compiled it in.
     pub compiled_in: bool,
-    /// What it is nothing without. Switching off `calendar` switches off
-    /// `caldav` with it -- CalDAV writes the calendar mirrors.
+    /// What it is nothing without: switching one of these off switches
+    /// this one off with it. Empty for nearly every feature -- what two
+    /// features share is usually a library (see `built_on`), not each
+    /// other.
     pub needs: &'static [&'static str],
     /// The shared libraries it is built on (`nobo-http`, `nobo-webdav`,
     /// `nobo-ical`, `nobo-calendar-mirror`).

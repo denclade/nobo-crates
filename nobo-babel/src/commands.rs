@@ -48,7 +48,7 @@ pub fn babel_trust_file(file_path: String, content: String) -> Result<(), String
 /// after `exec::TIMEOUT` and its process killed. Without that, moving off
 /// the main thread would only trade a frozen window for an invisible
 /// runaway interpreter.
-pub fn execute_babel_block(
+pub fn babel_execute_block(
     payload: ExecuteBabelBlockPayload,
     session_registry: &SessionRegistry,
 ) -> Result<ExecutionResult, String> {
@@ -85,7 +85,7 @@ pub fn execute_babel_block(
     }
 }
 
-pub fn kill_babel_session(
+pub fn babel_kill_session(
     file_path: String,
     session_name: String,
     session_registry: &SessionRegistry,
@@ -93,20 +93,20 @@ pub fn kill_babel_session(
     session_registry.kill(&(file_path, session_name));
 }
 
-pub fn discover_bash() -> Option<String> {
+pub fn babel_discover_bash() -> Option<String> {
     interpreters::discover_shell().map(|p| p.to_string_lossy().into_owned())
 }
 
 /// Every interpreter it can find, each asked for its `--version` -- a
 /// dozen processes on a machine with several Pythons, so this blocks for
-/// the same reason `execute_babel_block` does.
-pub fn discover_python_interpreters() -> Result<Vec<InterpreterInfo>, String> {
+/// the same reason `babel_execute_block` does.
+pub fn babel_discover_python_interpreters() -> Result<Vec<InterpreterInfo>, String> {
     Ok(interpreters::discover_pythons())
 }
 
 /// Builds a virtualenv, which means `python -m venv` and a wait of
 /// seconds to a minute -- blocking for the same reason as running a
-/// block (see `execute_babel_block`).
+/// block (see `babel_execute_block`).
 pub fn babel_create_venv(target_dir: String, python_path: Option<String>) -> Result<String, String> {
     let path = interpreters::create_venv(Path::new(&target_dir), python_path.as_deref()).to_cmd()?;
     Ok(path.to_string_lossy().into_owned())

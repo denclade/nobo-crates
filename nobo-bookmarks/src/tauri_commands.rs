@@ -115,12 +115,16 @@ pub async fn bookmarks_move(
     commands::bookmarks_move(target, file_path, collection, index_manager.inner(), db.inner())
 }
 
-/// What the page at URL says about itself. Nothing is written.
-#[cfg(feature = "fetch")]
+/// What the page at URL says about itself. Nothing is written. In a
+/// build without networking, registered all the same and refused with a
+/// reason -- the save dialog then falls back to the site as the title.
 #[tauri::command]
 #[specta::specta]
 pub async fn bookmarks_preview(url: String) -> Result<crate::model::Preview, String> {
-    commands::bookmarks_preview(url).await
+    #[cfg(feature = "fetch")]
+    return commands::bookmarks_preview(url).await;
+    #[cfg(not(feature = "fetch"))]
+    return { let _ = url; Err(nobo_core::t!("Diese Version von nobo ruft keine Seiten ab.", "This build of nobo does not fetch pages.")) };
 }
 
 /// A Linkwarden backup (the file's text) into the bookmarks file
