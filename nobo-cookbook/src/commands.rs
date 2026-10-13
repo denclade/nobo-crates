@@ -189,6 +189,12 @@ pub async fn import_preview(url: String) -> Result<crate::import::ImportedRecipe
     crate::import::parse_page(&url, &html)
 }
 
+/// Whether URL is a recipe site the import knows by its address (see
+/// import::known_site). Nothing is fetched.
+pub fn import_known_site(url: String) -> bool {
+    crate::import::known_site(url.trim())
+}
+
 /// Where a saved import landed, so the caller can open it.
 #[derive(Debug, Clone, serde::Serialize)]
 #[cfg_attr(feature = "tauri", derive(specta::Type))]

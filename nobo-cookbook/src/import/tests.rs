@@ -233,3 +233,12 @@ fn an_lf_file_without_a_final_newline_gets_one_before_the_entry() {
     let (out, _) = super::insert("* A\ntext", &[], |level| format!("{} Neu\n", "*".repeat(level)));
     assert_eq!(out, "* A\ntext\n\n* Neu\n");
 }
+
+#[test]
+fn known_sites_are_told_by_their_address() {
+    assert!(known_site("https://www.chefkoch.de/rezepte/519331148201779/Bihun-Suppe.html"));
+    assert!(known_site("https://cookidoo.at/recipes/recipe/de-AT/r1"));
+    // A WP Recipe Maker blog is only known by its page.
+    assert!(!known_site("https://biancazapatka.com/de/vegane-poke-bowl/"));
+    assert!(!known_site("https://example.org/chefkoch-tipps"));
+}

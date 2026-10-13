@@ -92,6 +92,17 @@ impl<'a> Page<'a> {
     }
 }
 
+/// Whether URL is a recipe site this import knows by its address --
+/// Chefkoch, Cookidoo: one a refiner recognises without seeing the page.
+/// What a host asks before anything is fetched, to offer the import
+/// first when a link from such a site is shared. A plugin known only by
+/// its markup (WP Recipe Maker) cannot be told from the address, and is
+/// not claimed.
+pub fn known_site(url: &str) -> bool {
+    let page = Page::new(url, "");
+    sites::REFINERS.iter().any(|refiner| refiner.recognises(&page))
+}
+
 /// The recipe on a page, or why there is none.
 pub fn parse_page(url: &str, html: &str) -> Result<ImportedRecipe, String> {
     let page = Page::new(url, html);
