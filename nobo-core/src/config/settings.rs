@@ -1,30 +1,39 @@
+use crate::utils::ToCmdResult;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
-use crate::utils::ToCmdResult;
 
-fn default_24h() -> bool { true }
+fn default_24h() -> bool {
+    true
+}
 
-fn default_clock_show_seconds() -> bool { true }
+fn default_clock_show_seconds() -> bool {
+    true
+}
 
 /// Default attachment folder: a dot-prefixed sibling of each note, hidden
 /// from the OS file browser (the "Zettelkasten" convention). Relative
 /// values resolve against the note's own directory; absolute values are
 /// used as-is but must stay inside `notes_path` (enforced on the frontend
 /// when resolving, see `attachmentPath.ts`).
-fn default_attachments_dir() -> String { String::from(".attachments") }
+fn default_attachments_dir() -> String {
+    String::from(".attachments")
+}
 
 /// Editor Tab/Shift-Tab block-indent width (see orgIndentActions.ts) --
 /// 4 spaces matches this app's own org files' existing convention (list
 /// nesting is already 2 spaces per level, headings/tables aren't affected
 /// by this at all), and is the common default across other editors.
-fn default_tab_indent_size() -> u32 { 4 }
+fn default_tab_indent_size() -> u32 {
+    4
+}
 
 /// A later addition, so it needs a serde default -- a settings.json
 /// written before this field existed must still deserialize.
-fn default_someday_path() -> String { String::from("./.nobo/someday.org") }
-
+fn default_someday_path() -> String {
+    String::from("./.nobo/someday.org")
+}
 
 /// Mirrors `crate::utils::effort_utils::DEFAULT_EFFORT_PRESETS_ORG` -- kept
 /// as a separate literal (not a re-export used directly as the serde
@@ -476,12 +485,8 @@ impl Config {
     /// The rule behind `load_for_update`, for a given path.
     fn for_update(path: &std::path::Path) -> Result<Self, String> {
         match fs::read_to_string(path) {
-            Ok(content) => serde_json::from_str(&content).map_err(|e| {
-                format!(
-                    "the settings file at {} could not be read ({e}) -- refusing to overwrite it",
-                    path.display()
-                )
-            }),
+            Ok(content) => serde_json::from_str(&content)
+                .map_err(|e| format!("the settings file at {} could not be read ({e}) -- refusing to overwrite it", path.display())),
             // No file at all: a first run, where defaults are right.
             Err(_) => Ok(Self::default()),
         }
@@ -537,10 +542,12 @@ impl Config {
     /// re-deriving it from a freshly loaded Config on its own.
     pub fn require_vault_root() -> Result<PathBuf, String> {
         Self::load()
-            .ok_or_else(|| crate::t!(
-                "Keine Konfiguration gefunden -- zuerst einen Notiz-Ordner einrichten",
-                "No configuration found -- set up a notes vault first"
-            ))?
+            .ok_or_else(|| {
+                crate::t!(
+                    "Keine Konfiguration gefunden -- zuerst einen Notiz-Ordner einrichten",
+                    "No configuration found -- set up a notes vault first"
+                )
+            })?
             .vault_root()
     }
 
@@ -588,12 +595,14 @@ mod tests {
     /// `carry_sections_from` for the other half of the rule).
     #[test]
     fn a_config_from_the_frontend_keeps_what_it_does_not_know() {
-        let from_frontend: Config = serde_json::from_str(r#"{
+        let from_frontend: Config = serde_json::from_str(
+            r#"{
             "notes_path": "/vault", "language": "de_DE", "default_author": null,
             "actions_file_path": "a.org", "projects_file_path": "p.org", "inbox_file_path": "i.org",
             "archive_done_after_days": null,
             "caldav": { "accounts": [], "lists_hide_done": true }
-        }"#)
+        }"#,
+        )
         .expect("a config from the frontend must still load");
 
         assert!(from_frontend.has_section("caldav"), "a feature section was dropped on the way in");
@@ -645,10 +654,9 @@ mod tests {
     #[test]
     fn saved_task_filters_round_trip_through_json() {
         let mut config = Config::default();
-        config.saved_task_filters.push(SavedTaskFilter {
-            name: "Kurze Laptop-Aufgaben".to_string(),
-            query: "@Laptop time:<15m".to_string(),
-        });
+        config
+            .saved_task_filters
+            .push(SavedTaskFilter { name: "Kurze Laptop-Aufgaben".to_string(), query: "@Laptop time:<15m".to_string() });
 
         let json = serde_json::to_string(&config).unwrap();
         let restored: Config = serde_json::from_str(&json).unwrap();

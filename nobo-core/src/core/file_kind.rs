@@ -272,9 +272,7 @@ pub fn capabilities(kind: FileKind) -> FileCapabilities {
             // only reads it. Asked at call time rather than stored,
             // because being switched off is a runtime answer.
             match spec.served_by {
-                Some(feature) if !crate::core::features::is_on(feature) => {
-                    capabilities.locked(unavailable(feature))
-                }
+                Some(feature) if !crate::core::features::is_on(feature) => capabilities.locked(unavailable(feature)),
                 _ if !spec.editable => capabilities.locked(ReadOnly::Generated),
                 _ => capabilities,
             }
@@ -327,10 +325,7 @@ fn from_keyword(value: &str) -> FileKind {
     // Registered keywords are lower case, so the plain lookup answers
     // every ordinary file without touching the heap; only an unusual
     // spelling ("#+NOBO_TYPE: CalDAV-List") pays for a copy.
-    let registered = registry()
-        .get(value)
-        .copied()
-        .or_else(|| registry().get(value.to_ascii_lowercase().as_str()).copied());
+    let registered = registry().get(value).copied().or_else(|| registry().get(value.to_ascii_lowercase().as_str()).copied());
 
     match registered {
         Some(spec) => spec.kind,
@@ -374,10 +369,7 @@ pub fn set_leading_keyword(path: &Path, keyword: &str, value: Option<&str>) -> R
 /// answer to "where does the line go" must not.
 pub fn splice_leading_keyword(mut lines: Vec<String>, keyword: &str, value: Option<&str>) -> Option<Vec<String>> {
     let lowercase = keyword.to_ascii_lowercase();
-    let existing = lines
-        .iter()
-        .take(SCAN_LINES)
-        .position(|line| line.trim().to_ascii_lowercase().starts_with(&lowercase));
+    let existing = lines.iter().take(SCAN_LINES).position(|line| line.trim().to_ascii_lowercase().starts_with(&lowercase));
 
     let wanted = value.map(|value| format!("{keyword} {value}").trim_end().to_string());
     match (wanted, existing) {
@@ -419,8 +411,7 @@ pub fn leading_keyword<S: AsRef<str>>(lines: &[S], keyword: &str) -> Option<Stri
     lines.iter().take(SCAN_LINES).find_map(|line| {
         let trimmed = line.as_ref().trim();
         let rest = trimmed.get(..keyword.len())?;
-        rest.eq_ignore_ascii_case(keyword)
-            .then(|| trimmed[keyword.len()..].trim().to_string())
+        rest.eq_ignore_ascii_case(keyword).then(|| trimmed[keyword.len()..].trim().to_string())
     })
 }
 
@@ -432,11 +423,7 @@ pub fn leading_keyword<S: AsRef<str>>(lines: &[S], keyword: &str) -> Option<Stri
 pub fn of_path(path: &Path) -> FileKind {
     use std::io::{BufRead, BufReader};
     let Ok(file) = std::fs::File::open(path) else { return FileKind::NOTES };
-    let lines: Vec<String> = BufReader::new(file)
-        .lines()
-        .take(SCAN_LINES)
-        .map_while(Result::ok)
-        .collect();
+    let lines: Vec<String> = BufReader::new(file).lines().take(SCAN_LINES).map_while(Result::ok).collect();
     from_lines(&lines)
 }
 
@@ -637,10 +624,7 @@ mod tests {
 
         set_leading_keyword(&file, KIND_KEYWORD, Some(CHECKLIST.keyword())).unwrap();
 
-        assert_eq!(
-            std::fs::read_to_string(&file).unwrap(),
-            "#+TITLE: Rezepte\n#+NOBO_TYPE: test-checklist\n\n* Lasagne\n"
-        );
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "#+TITLE: Rezepte\n#+NOBO_TYPE: test-checklist\n\n* Lasagne\n");
     }
 
     #[test]

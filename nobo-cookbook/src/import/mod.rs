@@ -19,14 +19,13 @@
 // The page helpers live in the core, shared with the bookmarks; under
 // their old name here so the readers below did not have to change.
 pub use nobo_core::utils::html;
-mod schema_org;
-mod sites;
 #[cfg(feature = "import")]
 pub mod fetch;
+mod schema_org;
+mod sites;
 
 use nobo_core::core::org_syntax::one_line;
 use nobo_core::t;
-
 
 /// A recipe as a page described it -- before it is anybody's org text.
 ///
@@ -82,14 +81,7 @@ pub struct Page<'a> {
 
 impl<'a> Page<'a> {
     pub fn new(url: &'a str, html: &'a str) -> Self {
-        let host = url
-            .split("://")
-            .nth(1)
-            .unwrap_or(url)
-            .split(['/', '?', '#', ':'])
-            .next()
-            .unwrap_or("")
-            .to_ascii_lowercase();
+        let host = url.split("://").nth(1).unwrap_or(url).split(['/', '?', '#', ':']).next().unwrap_or("").to_ascii_lowercase();
         Page { url, html, host }
     }
 
@@ -161,13 +153,7 @@ pub fn to_org(recipe: &ImportedRecipe, level: usize, image_link: Option<&str>) -
     out
 }
 
-fn section(
-    out: &mut String,
-    stars: &str,
-    heading: &str,
-    groups: &[Group],
-    item: impl Fn(usize, &str) -> String,
-) {
+fn section(out: &mut String, stars: &str, heading: &str, groups: &[Group], item: impl Fn(usize, &str) -> String) {
     if groups.is_empty() {
         return;
     }

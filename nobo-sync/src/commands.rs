@@ -8,9 +8,6 @@ use rusqlite::Connection;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use nobo_core::config::settings::{config_dir, Config};
-use nobo_core::core::indexer::{IndexListener, IndexManager};
-use nobo_core::core::secrets::Intent;
 use crate::model::{ConflictInfo, Settings, SyncSummary};
 use crate::orchestrator;
 #[cfg(feature = "pocketbase")]
@@ -21,10 +18,13 @@ use crate::providers::pocketbase::PocketBaseProvider;
 use crate::providers::webdav::WebDavProvider;
 #[cfg(feature = "webdav")]
 use crate::providers::SyncProvider;
-use crate::session::{RealtimeState, SyncLockState, SyncSessionState};
-use crate::session::{self, StoredSession};
 use crate::session::SyncSession;
+use crate::session::{self, StoredSession};
+use crate::session::{RealtimeState, SyncLockState, SyncSessionState};
 use crate::{crypto, store};
+use nobo_core::config::settings::{config_dir, Config};
+use nobo_core::core::indexer::{IndexListener, IndexManager};
+use nobo_core::core::secrets::Intent;
 
 // What a sync run costs, and how often it is supposed to happen (see
 // core::cost). The most expensive thing this app does on its own.
@@ -44,10 +44,7 @@ inventory::submit! {
 /// button permanently disabled.
 #[cfg(feature = "pocketbase")]
 fn short_lived_client() -> Result<reqwest::Client, String> {
-    nobo_http::builder()
-        .timeout(nobo_http::SOMEBODY_IS_WAITING)
-        .build()
-        .map_err(|e| nobo_http::describe_error(&e))
+    nobo_http::builder().timeout(nobo_http::SOMEBODY_IS_WAITING).build().map_err(|e| nobo_http::describe_error(&e))
 }
 
 /// What a host does when the server says the vault changed elsewhere.
@@ -313,7 +310,10 @@ pub async fn sync_login_pocketbase(
 
         let client = short_lived_client()?;
         let auth = pb_auth::login(&client, &base_url, &email, &auth_secret).await;
-        log::info!("sync_login_pocketbase: pb_auth::login returned: {}", if auth.is_ok() { "Ok".to_string() } else { format!("Err({:?})", auth.as_ref().err()) });
+        log::info!(
+            "sync_login_pocketbase: pb_auth::login returned: {}",
+            if auth.is_ok() { "Ok".to_string() } else { format!("Err({:?})", auth.as_ref().err()) }
+        );
         let auth = auth?;
         let verified = auth.verified;
         let provider = PocketBaseProvider::new(base_url.clone(), &auth)?.with_email(email.clone());
@@ -324,12 +324,10 @@ pub async fn sync_login_pocketbase(
             crate::store::ensure_remote_identity(&conn, &identity).map_err(|e| e.to_string())?;
         }
 
-        persist_or_forget_session(remember, StoredSession::PocketBase {
-            base_url,
-            email,
-            auth_secret,
-            master_key_hex: crypto::master_key_to_hex(&master_key),
-        });
+        persist_or_forget_session(
+            remember,
+            StoredSession::PocketBase { base_url, email, auth_secret, master_key_hex: crypto::master_key_to_hex(&master_key) },
+        );
 
         replace_realtime_listener(&remote, &realtime_state, Some(&provider)).await;
 
@@ -370,10 +368,12 @@ pub async fn sync_login_webdav(
     #[cfg(feature = "webdav")]
     {
         let master_key = if encrypt {
-            let vault_password = vault_password.filter(|p| !p.is_empty()).ok_or_else(|| nobo_core::t!(
-                "Bei aktivierter Verschlüsselung wird ein Vault-Passwort benötigt",
-                "A vault password is required when encryption is enabled"
-            ))?;
+            let vault_password = vault_password.filter(|p| !p.is_empty()).ok_or_else(|| {
+                nobo_core::t!(
+                    "Bei aktivierter Verschlüsselung wird ein Vault-Passwort benötigt",
+                    "A vault password is required when encryption is enabled"
+                )
+            })?;
             if vault_password.len() < 8 {
                 return Err(nobo_core::t!(
                     "Das Vault-Passwort muss mindestens 8 Zeichen lang sein",
@@ -398,12 +398,10 @@ pub async fn sync_login_webdav(
             crate::store::ensure_remote_identity(&conn, &identity).map_err(|e| e.to_string())?;
         }
 
-        persist_or_forget_session(remember, StoredSession::WebDav {
-            root,
-            username,
-            webdav_password,
-            master_key_hex: master_key.as_ref().map(crypto::master_key_to_hex),
-        });
+        persist_or_forget_session(
+            remember,
+            StoredSession::WebDav { root, username, webdav_password, master_key_hex: master_key.as_ref().map(crypto::master_key_to_hex) },
+        );
 
         #[cfg(not(feature = "pocketbase"))]
         let _ = (&remote, &realtime_state);
@@ -420,16 +418,19 @@ pub async fn sync_login_webdav(
     }
 }
 
-pub async fn sync_logout(remote: std::sync::Arc<dyn RemoteChanged>, session_state: &SyncSessionState, realtime_state: &RealtimeState) -> Result<(), String> {
-
-*session_state.lock().await = None;
-#[cfg(not(feature = "pocketbase"))]
-let _ = (&remote, &realtime_state);
-// Only PocketBase ever starts one.
-#[cfg(feature = "pocketbase")]
-replace_realtime_listener(&remote, &realtime_state, None).await;
-forget_and_unremember();
-Ok(())
+pub async fn sync_logout(
+    remote: std::sync::Arc<dyn RemoteChanged>,
+    session_state: &SyncSessionState,
+    realtime_state: &RealtimeState,
+) -> Result<(), String> {
+    *session_state.lock().await = None;
+    #[cfg(not(feature = "pocketbase"))]
+    let _ = (&remote, &realtime_state);
+    // Only PocketBase ever starts one.
+    #[cfg(feature = "pocketbase")]
+    replace_realtime_listener(&remote, &realtime_state, None).await;
+    forget_and_unremember();
+    Ok(())
 }
 
 /// Logs back in from whatever is in the keychain, shared by the silent
@@ -485,11 +486,17 @@ async fn restore_session_from_keychain(
         StoredSession::PocketBase { base_url, email, auth_secret, master_key_hex } => {
             let master_key = match crypto::master_key_from_hex(&master_key_hex) {
                 Ok(k) => k,
-                Err(e) => { log::warn!("restore_session_from_keychain: stored master key was invalid: {e}"); return Ok(false); }
+                Err(e) => {
+                    log::warn!("restore_session_from_keychain: stored master key was invalid: {e}");
+                    return Ok(false);
+                }
             };
             let client = match short_lived_client() {
                 Ok(c) => c,
-                Err(e) => { log::warn!("restore_session_from_keychain: failed to build HTTP client: {e}"); return Ok(false); }
+                Err(e) => {
+                    log::warn!("restore_session_from_keychain: failed to build HTTP client: {e}");
+                    return Ok(false);
+                }
             };
             // A fresh token every restore -- sidesteps needing to persist
             // or refresh a raw JWT ourselves (see docs/sync.md's stated
@@ -498,11 +505,17 @@ async fn restore_session_from_keychain(
             // the login form" below, same as any other restore failure.
             let auth = match pb_auth::login(&client, &base_url, &email, &auth_secret).await {
                 Ok(a) => a,
-                Err(e) => { log::warn!("restore_session_from_keychain: silent re-login against {base_url} failed: {e}"); return Ok(false); }
+                Err(e) => {
+                    log::warn!("restore_session_from_keychain: silent re-login against {base_url} failed: {e}");
+                    return Ok(false);
+                }
             };
             let provider = match PocketBaseProvider::new(base_url, &auth) {
                 Ok(p) => p.with_email(email),
-                Err(e) => { log::warn!("restore_session_from_keychain: failed to construct PocketBase provider: {e}"); return Ok(false); }
+                Err(e) => {
+                    log::warn!("restore_session_from_keychain: failed to construct PocketBase provider: {e}");
+                    return Ok(false);
+                }
             };
             replace_realtime_listener(remote, realtime_state, Some(&provider)).await;
             SyncSession { provider: Box::new(provider), master_key: Some(master_key) }
@@ -512,13 +525,19 @@ async fn restore_session_from_keychain(
             let master_key = match master_key_hex {
                 Some(hex) => match crypto::master_key_from_hex(&hex) {
                     Ok(k) => Some(k),
-                    Err(e) => { log::warn!("restore_session_from_keychain: stored master key was invalid: {e}"); return Ok(false); }
+                    Err(e) => {
+                        log::warn!("restore_session_from_keychain: stored master key was invalid: {e}");
+                        return Ok(false);
+                    }
                 },
                 None => None,
             };
             let provider = match WebDavProvider::new(root, username, webdav_password) {
                 Ok(p) => p,
-                Err(e) => { log::warn!("restore_session_from_keychain: failed to construct WebDAV provider: {e}"); return Ok(false); }
+                Err(e) => {
+                    log::warn!("restore_session_from_keychain: failed to construct WebDAV provider: {e}");
+                    return Ok(false);
+                }
             };
             if let Err(e) = provider.download_index().await {
                 log::warn!("restore_session_from_keychain: WebDAV reachability check failed: {e}");
@@ -540,28 +559,31 @@ async fn restore_session_from_keychain(
 /// but restoring it failed" (expired/revoked token, server unreachable,
 /// credentials changed server-side) -- either way the frontend's fallback
 /// is identical: show the normal login form.
-pub async fn sync_try_restore_session(remote: std::sync::Arc<dyn RemoteChanged>, session_state: &SyncSessionState, realtime_state: &RealtimeState) -> Result<bool, String> {
-
-// Gated on this flag rather than the keychain entry alone: a settings
-// reset wipes this file, while the OS keychain entry survives it, so a
-// stale entry would otherwise keep sync on.
-if !super::SETTINGS.load().remembered {
-    return Ok(false);
-}
-if restore_session_from_keychain(&remote, session_state, realtime_state, Intent::Background).await? {
-    return Ok(true);
-}
-// One retry after a short delay before giving up -- this runs at the
-// very start of the app's life, and on macOS in particular the OS
-// keychain has occasionally not been ready to hand back an entry this
-// early yet (observed as a restore that fails silently right at cold
-// launch but then succeeds a moment later from the exact same code
-// path, e.g. the user manually clicking "reconnect"). Cheap even when
-// it doesn't help: a real "nothing remembered"/"credentials revoked"
-// case just retries once and gets the same `false` back.
-log::info!("sync_try_restore_session: first attempt failed, retrying once after a short delay");
-tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-restore_session_from_keychain(&remote, session_state, realtime_state, Intent::Background).await
+pub async fn sync_try_restore_session(
+    remote: std::sync::Arc<dyn RemoteChanged>,
+    session_state: &SyncSessionState,
+    realtime_state: &RealtimeState,
+) -> Result<bool, String> {
+    // Gated on this flag rather than the keychain entry alone: a settings
+    // reset wipes this file, while the OS keychain entry survives it, so a
+    // stale entry would otherwise keep sync on.
+    if !super::SETTINGS.load().remembered {
+        return Ok(false);
+    }
+    if restore_session_from_keychain(&remote, session_state, realtime_state, Intent::Background).await? {
+        return Ok(true);
+    }
+    // One retry after a short delay before giving up -- this runs at the
+    // very start of the app's life, and on macOS in particular the OS
+    // keychain has occasionally not been ready to hand back an entry this
+    // early yet (observed as a restore that fails silently right at cold
+    // launch but then succeeds a moment later from the exact same code
+    // path, e.g. the user manually clicking "reconnect"). Cheap even when
+    // it doesn't help: a real "nothing remembered"/"credentials revoked"
+    // case just retries once and gets the same `false` back.
+    log::info!("sync_try_restore_session: first attempt failed, retrying once after a short delay");
+    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    restore_session_from_keychain(&remote, session_state, realtime_state, Intent::Background).await
 }
 
 /// Whether a keychain entry from a previous login exists that the restore
@@ -572,17 +594,16 @@ restore_session_from_keychain(&remote, session_state, realtime_state, Intent::Ba
 /// silently auto-syncing or demanding the password again. False whenever a
 /// session is already remembered, which is the normal restore path.
 pub async fn sync_orphaned_credentials_available() -> Result<bool, String> {
-
-if super::SETTINGS.load().remembered {
-    return Ok(false);
-}
-match super::SESSION.load(session::STORED_SESSION_NAME).await {
-    Ok(entry) => Ok(entry.is_some()),
-    Err(e) => {
-        log::warn!("sync_orphaned_credentials_available: OS keychain read failed: {e}");
-        Ok(false)
+    if super::SETTINGS.load().remembered {
+        return Ok(false);
     }
-}
+    match super::SESSION.load(session::STORED_SESSION_NAME).await {
+        Ok(entry) => Ok(entry.is_some()),
+        Err(e) => {
+            log::warn!("sync_orphaned_credentials_available: OS keychain read failed: {e}");
+            Ok(false)
+        }
+    }
 }
 
 /// The explicit, user-initiated counterpart to the silent startup restore
@@ -590,26 +611,27 @@ match super::SESSION.load(session::STORED_SESSION_NAME).await {
 /// just clicked "reconnect" on the orphaned-credentials prompt (see
 /// `sync_orphaned_credentials_available`), so re-marking the session as
 /// remembered here is a conscious choice, not a silent reactivation.
-pub async fn sync_reconnect_orphaned_session(remote: std::sync::Arc<dyn RemoteChanged>, session_state: &SyncSessionState, realtime_state: &RealtimeState) -> Result<bool, String> {
-
-let restored = restore_session_from_keychain(&remote, session_state, realtime_state, Intent::Interactive).await?;
-if restored {
-    set_sync_remembered(true);
-}
-Ok(restored)
+pub async fn sync_reconnect_orphaned_session(
+    remote: std::sync::Arc<dyn RemoteChanged>,
+    session_state: &SyncSessionState,
+    realtime_state: &RealtimeState,
+) -> Result<bool, String> {
+    let restored = restore_session_from_keychain(&remote, session_state, realtime_state, Intent::Interactive).await?;
+    if restored {
+        set_sync_remembered(true);
+    }
+    Ok(restored)
 }
 
 /// The "no, forget it" counterpart -- clears the orphaned keychain entry
 /// outright so the reconnect prompt doesn't keep resurfacing it forever.
 pub async fn sync_discard_orphaned_session() -> Result<(), String> {
-
-forget_and_unremember();
-Ok(())
+    forget_and_unremember();
+    Ok(())
 }
 
 pub async fn sync_is_logged_in(session_state: &SyncSessionState) -> Result<bool, String> {
-
-Ok(session_state.lock().await.is_some())
+    Ok(session_state.lock().await.is_some())
 }
 
 /// Marks this vault as never-synced so the next run uploads all of it.
@@ -631,54 +653,53 @@ pub async fn sync_run(
     lock: &SyncLockState,
     index_manager: &IndexManager,
 ) -> Result<SyncSummary, String> {
+    let _cost = nobo_core::core::cost::timed_by("vault-sync", "sync");
+    let _lock_guard = orchestrator::acquire_lock(&lock)?;
 
-let _cost = nobo_core::core::cost::timed_by("vault-sync", "sync");
-let _lock_guard = orchestrator::acquire_lock(&lock)?;
+    let vault_root = Config::require_vault_root()?;
+    let work_dir = sync_work_dir();
 
-let vault_root = Config::require_vault_root()?;
-let work_dir = sync_work_dir();
+    // The handle is cloned out and the mutex released immediately: a sync
+    // run is minutes of network plus a full reindex, and holding it that long
+    // made every read of the session -- `sync_is_logged_in`,
+    // `sync_connection_info` -- block behind it. Two runs are kept apart by
+    // `SyncLockState` above, which is what that is for.
+    let session = {
+        let guard = session_state.lock().await;
+        guard.clone().ok_or("not logged in to a sync account")?
+    };
 
-// The handle is cloned out and the mutex released immediately: a sync
-// run is minutes of network plus a full reindex, and holding it that long
-// made every read of the session -- `sync_is_logged_in`,
-// `sync_connection_info` -- block behind it. Two runs are kept apart by
-// `SyncLockState` above, which is what that is for.
-let session = {
-    let guard = session_state.lock().await;
-    guard.clone().ok_or("not logged in to a sync account")?
-};
+    // At most one emit per interval, except the last file, which always
+    // sends so the bar lands on 100% rather than wherever the last tick
+    // fell. One IPC event per changed file is a burst of round trips for a
+    // sync touching thousands, each triggering a signal update.
+    const THROTTLE_INTERVAL: std::time::Duration = std::time::Duration::from_millis(150);
+    let mut last_emit: Option<std::time::Instant> = None;
+    let summary = orchestrator::run_sync(session.provider.as_ref(), db, &vault_root, session.master_key.as_ref(), &work_dir, |progress| {
+        let is_final = progress.current >= progress.total;
+        let due = last_emit.is_none_or(|t| t.elapsed() >= THROTTLE_INTERVAL);
+        if is_final || due {
+            last_emit = Some(std::time::Instant::now());
+            progress_sink.report(&progress);
+        }
+    })
+    .await
+    // Logged as well as returned: the caller shows it on the sync
+    // settings page, which nobody has open during a background pass --
+    // and "the vault stopped syncing" has to be findable afterwards.
+    .inspect_err(|e| log::warn!("vault sync failed: {e}"))?;
 
-// At most one emit per interval, except the last file, which always
-// sends so the bar lands on 100% rather than wherever the last tick
-// fell. One IPC event per changed file is a burst of round trips for a
-// sync touching thousands, each triggering a signal update.
-const THROTTLE_INTERVAL: std::time::Duration = std::time::Duration::from_millis(150);
-let mut last_emit: Option<std::time::Instant> = None;
-let summary = orchestrator::run_sync(session.provider.as_ref(), db, &vault_root, session.master_key.as_ref(), &work_dir, |progress| {
-    let is_final = progress.current >= progress.total;
-    let due = last_emit.is_none_or(|t| t.elapsed() >= THROTTLE_INTERVAL);
-    if is_final || due {
-        last_emit = Some(std::time::Instant::now());
-        progress_sink.report(&progress);
+    // run_sync writes files directly with no knowledge of IndexManager,
+    // and the watcher does not fire for this process's own writes -- so
+    // the Notes browser, which only reads the index cache, would never
+    // show newly-synced files. A full rescan is simpler than tracking
+    // which paths changed and no more expensive than the startup one.
+    if summary.uploaded + summary.downloaded + summary.deleted_remote + summary.deleted_local > 0 {
+        index_manager.scan_directory(&vault_root);
+        listener.index_updated();
     }
-})
-.await
-// Logged as well as returned: the caller shows it on the sync
-// settings page, which nobody has open during a background pass --
-// and "the vault stopped syncing" has to be findable afterwards.
-.inspect_err(|e| log::warn!("vault sync failed: {e}"))?;
 
-// run_sync writes files directly with no knowledge of IndexManager,
-// and the watcher does not fire for this process's own writes -- so
-// the Notes browser, which only reads the index cache, would never
-// show newly-synced files. A full rescan is simpler than tracking
-// which paths changed and no more expensive than the startup one.
-if summary.uploaded + summary.downloaded + summary.deleted_remote + summary.deleted_local > 0 {
-    index_manager.scan_directory(&vault_root);
-    listener.index_updated();
-}
-
-Ok(summary)
+    Ok(summary)
 }
 
 /// Read-only info for the "connected to ..." section of the sync settings
@@ -687,33 +708,27 @@ Ok(summary)
 /// rather than erroring, since "not connected yet" is the normal idle
 /// state here, not a failure).
 pub async fn sync_connection_info(session_state: &SyncSessionState) -> Result<Option<SyncConnectionInfo>, String> {
-
-// Cloned out for the same reason as `sync_run`: this makes two network
-// round trips, and doing them under the session mutex blocked every other
-// question about the session for their duration.
-let session = {
-    let guard = session_state.lock().await;
-    let Some(session) = guard.clone() else { return Ok(None) };
-    session
-};
-let remote_file_count = session.provider.list_remote_files().await?.len() as u32;
-let storage_used_bytes = session.provider.remote_storage_bytes().await.ok();
-Ok(Some(SyncConnectionInfo {
-    label: session.provider.label(),
-    account: session.provider.account_label(),
-    remote_file_count,
-    storage_used_bytes,
-}))
+    // Cloned out for the same reason as `sync_run`: this makes two network
+    // round trips, and doing them under the session mutex blocked every other
+    // question about the session for their duration.
+    let session = {
+        let guard = session_state.lock().await;
+        let Some(session) = guard.clone() else { return Ok(None) };
+        session
+    };
+    let remote_file_count = session.provider.list_remote_files().await?.len() as u32;
+    let storage_used_bytes = session.provider.remote_storage_bytes().await.ok();
+    Ok(Some(SyncConnectionInfo {
+        label: session.provider.label(),
+        account: session.provider.account_label(),
+        remote_file_count,
+        storage_used_bytes,
+    }))
 }
 
-pub async fn sync_resolve_conflict(
-    conflict: ConflictInfo,
-    keep_local: bool,
-    db: &Mutex<Connection>,
-) -> Result<(), String> {
-
-let conn = store::lock(&db)?;
-orchestrator::resolve_conflict(&conn, &conflict, keep_local)
+pub async fn sync_resolve_conflict(conflict: ConflictInfo, keep_local: bool, db: &Mutex<Connection>) -> Result<(), String> {
+    let conn = store::lock(&db)?;
+    orchestrator::resolve_conflict(&conn, &conflict, keep_local)
 }
 
 /// The remote side of a conflict's diff preview -- the local side is just
@@ -722,17 +737,13 @@ orchestrator::resolve_conflict(&conn, &conflict, keep_local)
 /// dedicated command. Read-only: see `orchestrator::fetch_remote_content`'s
 /// own doc comment on why this is safe to call freely without affecting
 /// how the conflict actually gets resolved later.
-pub async fn sync_fetch_conflict_remote_content(
-    path: String,
-    session_state: &SyncSessionState,
-) -> Result<Option<String>, String> {
-
-let work_dir = sync_work_dir();
-let session = {
-    let guard = session_state.lock().await;
-    guard.clone().ok_or("not logged in to a sync account")?
-};
-orchestrator::fetch_remote_content(session.provider.as_ref(), session.master_key.as_ref(), &work_dir, &path).await
+pub async fn sync_fetch_conflict_remote_content(path: String, session_state: &SyncSessionState) -> Result<Option<String>, String> {
+    let work_dir = sync_work_dir();
+    let session = {
+        let guard = session_state.lock().await;
+        guard.clone().ok_or("not logged in to a sync account")?
+    };
+    orchestrator::fetch_remote_content(session.provider.as_ref(), session.master_key.as_ref(), &work_dir, &path).await
 }
 
 /// This feature's own settings, read and written on their own (see

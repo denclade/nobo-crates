@@ -171,8 +171,7 @@ pub fn run(owner: &str, from: u32, context: &Context) -> (u32, Result<(), String
 
 /// OWNER's migrations above FROM, in id order.
 fn pending(owner: &str, from: u32) -> Vec<&'static Migration> {
-    let mut pending: Vec<&'static Migration> =
-        registered().filter(|m| m.owner == owner && m.id > from).collect();
+    let mut pending: Vec<&'static Migration> = registered().filter(|m| m.owner == owner && m.id > from).collect();
     pending.sort_by_key(|migration| migration.id);
     pending
 }
@@ -184,10 +183,7 @@ fn run_list(list: &[&Migration], from: u32, context: &Context) -> (u32, Result<(
     for migration in list {
         log::info!("migration {}/{}: {}", migration.owner, migration.id, migration.description);
         if let Err(e) = (migration.run)(context) {
-            return (
-                reached,
-                Err(format!("migration {}/{} ({}) failed: {e}", migration.owner, migration.id, migration.description)),
-            );
+            return (reached, Err(format!("migration {}/{} ({}) failed: {e}", migration.owner, migration.id, migration.description)));
         }
         reached = migration.id;
     }

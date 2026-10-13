@@ -3,10 +3,10 @@
 //! wrapper. Distinct from `utils::clock_utils`, which is pure line parsing
 //! and formatting with no I/O -- this is I/O orchestration built on it.
 
-use crate::core::vault_write;
+use crate::core::heading_utils;
 use crate::core::indexer::IndexManager;
 use crate::core::models::{HeadingTarget, HeadingUpdatePayload, HistoryEntryKind};
-use crate::core::heading_utils;
+use crate::core::vault_write;
 use crate::utils::clock_utils;
 use crate::utils::fs_utils::filename_of;
 use rusqlite::Connection;
@@ -20,12 +20,7 @@ use std::sync::Mutex;
 /// instead of closed (the minimum-time rule, see the body's own doc
 /// comment on why that's checked as minute-rounding, not a literal
 /// seconds comparison).
-pub fn clock_out(
-    file_path: &str,
-    target: &HeadingTarget,
-    index_manager: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<(), String> {
+pub fn clock_out(file_path: &str, target: &HeadingTarget, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
     let target_path = PathBuf::from(file_path);
     // Same basis as every other write: one read of the file as it is now,
     // and the heading found by identity in it (see
@@ -38,14 +33,11 @@ pub fn clock_out(
     let open_idx = heading
         .clocks
         .iter()
-        .position(|line| {
-            clock_utils::parse_clock_line(line)
-                .map(|entry| entry.end.is_none())
-                .unwrap_or(false)
-        })
+        .position(|line| clock_utils::parse_clock_line(line).map(|entry| entry.end.is_none()).unwrap_or(false))
         .ok_or_else(|| crate::t!("Diese Aufgabe hat gerade keinen laufenden Timer.", "This task has no timer running right now."))?;
-    let entry = clock_utils::parse_clock_line(&heading.clocks[open_idx])
-        .ok_or_else(|| crate::t!("Der laufende Timer-Eintrag konnte nicht gelesen werden.", "The running timer entry could not be read."))?;
+    let entry = clock_utils::parse_clock_line(&heading.clocks[open_idx]).ok_or_else(|| {
+        crate::t!("Der laufende Timer-Eintrag konnte nicht gelesen werden.", "The running timer entry could not be read.")
+    })?;
     let now = chrono::Local::now().naive_local();
 
     let mut clocks = heading.clocks.clone();
@@ -71,11 +63,17 @@ pub fn clock_out(
     let payload = HeadingUpdatePayload { clocks: Some(clocks), ..Default::default() };
 
     let entry = HistoryEntryKind::ClockStopped { filename: filename_of(&target_path), title };
-    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
-        edit.write(&payload)?;
-        edit.touch_ancestors()?;
-        edit.commit()
-    })
+    vault_write::recorded(
+        &target_path,
+        |_| entry,
+        index_manager,
+        db,
+        || {
+            edit.write(&payload)?;
+            edit.touch_ancestors()?;
+            edit.commit()
+        },
+    )
 }
 
 /// Starts an open CLOCK entry, closing whatever else was running first --
@@ -87,12 +85,7 @@ pub fn clock_out(
 /// its line count, since a too-short entry takes the whole :LOGBOOK:
 /// drawer with it, shifting everything below. Captured before the close,
 /// resolved after.
-pub fn clock_in(
-    file_path: &str,
-    target: &HeadingTarget,
-    index_manager: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<(), String> {
+pub fn clock_in(file_path: &str, target: &HeadingTarget, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
     let target_path = PathBuf::from(file_path);
 
     // Stopping the other timer first can shift this heading's line (same
@@ -116,11 +109,17 @@ pub fn clock_in(
     let payload = HeadingUpdatePayload { clocks: Some(clocks), ..Default::default() };
 
     let entry = HistoryEntryKind::ClockStarted { filename: filename_of(&target_path), title };
-    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
-        edit.write(&payload)?;
-        edit.touch_ancestors()?;
-        edit.commit()
-    })
+    vault_write::recorded(
+        &target_path,
+        |_| entry,
+        index_manager,
+        db,
+        || {
+            edit.write(&payload)?;
+            edit.touch_ancestors()?;
+            edit.commit()
+        },
+    )
 }
 
 #[cfg(test)]
@@ -162,7 +161,8 @@ mod tests {
             &path,
             "* TODO Fremde Aufgabe\n:PROPERTIES:\n:CUSTOM_ID: h:other\n:END:\n\
              * TODO Meine Aufgabe\n:PROPERTIES:\n:CUSTOM_ID: h:mine\n:END:\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         clock_in(&path.to_string_lossy(), &target, &index, &db).unwrap();
 
@@ -223,10 +223,7 @@ mod tests {
         let now = chrono::Local::now().naive_local();
         let current_minute_start = now.with_second(0).unwrap().with_nanosecond(0).unwrap();
         let start = current_minute_start - chrono::Duration::minutes(minutes_ago);
-        std::fs::write(path, format!(
-            "* TODO Task\n  :LOGBOOK:\n  {}\n  :END:\n",
-            clock_utils::format_clock_line(start, None),
-        )).unwrap();
+        std::fs::write(path, format!("* TODO Task\n  :LOGBOOK:\n  {}\n  :END:\n", clock_utils::format_clock_line(start, None),)).unwrap();
     }
 
     #[test]
@@ -317,9 +314,8 @@ mod tests {
         index.update_file(&path);
         let path_str = path.to_string_lossy().into_owned();
 
-        let by_title = |title: &str| {
-            heading_identity::target_of(index.get_headings_or_parse(&path).iter().find(|h| h.title == title).unwrap())
-        };
+        let by_title =
+            |title: &str| heading_identity::target_of(index.get_headings_or_parse(&path).iter().find(|h| h.title == title).unwrap());
         clock_in(&path_str, &by_title("Task A"), &index, &db).unwrap();
         clock_in(&path_str, &by_title("Task B"), &index, &db).unwrap();
 
@@ -345,12 +341,13 @@ mod tests {
         let projects_str = projects_path.to_string_lossy().into_owned();
         let actions_str = actions_path.to_string_lossy().into_owned();
 
-        let subtask = heading_identity::target_of(index.get_headings_or_parse(&projects_path)
-            .iter().find(|h| h.title == "Subtask").unwrap());
+        let subtask =
+            heading_identity::target_of(index.get_headings_or_parse(&projects_path).iter().find(|h| h.title == "Subtask").unwrap());
         clock_in(&projects_str, &subtask, &index, &db).unwrap();
 
-        let action = heading_identity::target_of(index.get_headings_or_parse(&actions_path)
-            .iter().find(|h| h.title == "Standalone action").unwrap());
+        let action = heading_identity::target_of(
+            index.get_headings_or_parse(&actions_path).iter().find(|h| h.title == "Standalone action").unwrap(),
+        );
         clock_in(&actions_str, &action, &index, &db).unwrap();
 
         let subtask_after = index.get_headings_or_parse(&projects_path);

@@ -44,11 +44,11 @@
 //! the outline IS the structure, exactly as org itself reads it, so this
 //! module reads the file that way (see `outline`).
 
+pub mod check;
+pub mod import;
 pub mod ingredients;
 pub mod parse;
 pub mod repair;
-pub mod check;
-pub mod import;
 pub use parse::recipes_of;
 
 pub mod commands;
@@ -85,9 +85,9 @@ inventory::submit! {
 }
 mod outline;
 
+pub use check::{FileCheck, Finding};
 pub use model::{Amount, Ingredient, IngredientGroup, Recipe, Sections, StepGroup};
 pub use repair::CollapsedProperties;
-pub use check::{FileCheck, Finding};
 
 // Recipes, as a search anyone can ask for by name.
 //
@@ -219,18 +219,14 @@ mod search_tests {
 /// parameter on every command for a second runtime nobody has.
 #[cfg(feature = "tauri")]
 pub fn init() -> tauri::plugin::TauriPlugin<tauri::Wry> {
-    tauri::plugin::Builder::new("nobo-cookbook")
-        .invoke_handler(specta_builder().invoke_handler())
-        .build()
+    tauri::plugin::Builder::new("nobo-cookbook").invoke_handler(specta_builder().invoke_handler()).build()
 }
 
 /// This plugin's command surface, in the one place both the runtime and
 /// the bindings read it from.
 #[cfg(feature = "tauri")]
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
-    tauri_specta::Builder::<tauri::Wry>::new()
-        .plugin_name("nobo-cookbook")
-        .commands(command_list())
+    tauri_specta::Builder::<tauri::Wry>::new().plugin_name("nobo-cookbook").commands(command_list())
 }
 
 /// Every command, in every build: the import is registered without the
@@ -262,11 +258,7 @@ mod bindings_export {
     #[test]
     fn export_bindings() {
         super::specta_builder()
-            .export(
-                specta_typescript::Typescript::default(),
-                "../../src/features/cookbook/bindings.ts",
-            )
+            .export(specta_typescript::Typescript::default(), "../../src/features/cookbook/bindings.ts")
             .expect("failed to write the bindings");
     }
 }
-

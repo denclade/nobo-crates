@@ -13,8 +13,8 @@
 use chrono::{Days, Duration, Local, Months, NaiveDate, NaiveDateTime, NaiveTime};
 
 use crate::core::models::{
-    property_value, set_property, state_log_line, Heading, HeadingUpdatePayload, OrgTimestamp, Repeater,
-    RepeaterKind, DATE_FORMAT_CLOSED, DATE_FORMAT_LOG, TODO_STATES,
+    property_value, set_property, state_log_line, Heading, HeadingUpdatePayload, OrgTimestamp, Repeater, RepeaterKind, DATE_FORMAT_CLOSED,
+    DATE_FORMAT_LOG, TODO_STATES,
 };
 use crate::core::task_utils;
 use crate::utils::timestamp_utils;
@@ -79,14 +79,7 @@ pub fn repeat_on_finish(heading: &Heading, payload: &HeadingUpdatePayload) -> Op
     // the same state it started from, so the builder's own state note never
     // fires, and there is no CLOSED line on a task that never closes.
     let mut history = payload.history.clone().unwrap_or_else(|| heading.history.clone());
-    history.insert(
-        0,
-        state_log_line(
-            finishing_state,
-            heading.state.as_deref().unwrap_or(""),
-            &now.format(DATE_FORMAT_LOG).to_string(),
-        ),
-    );
+    history.insert(0, state_log_line(finishing_state, heading.state.as_deref().unwrap_or(""), &now.format(DATE_FORMAT_LOG).to_string()));
     repeated.history = Some(history);
 
     let mut advanced = heading.clone();
@@ -113,11 +106,7 @@ pub fn next_occurrence(ts: &OrgTimestamp, completed_at: NaiveDateTime) -> Option
     }
 
     let start = NaiveDate::parse_from_str(&ts.start_date, "%Y-%m-%d").ok()?;
-    let time_of_day = ts
-        .start_time
-        .as_deref()
-        .and_then(|t| NaiveTime::parse_from_str(t, "%H:%M").ok())
-        .unwrap_or(NaiveTime::MIN);
+    let time_of_day = ts.start_time.as_deref().and_then(|t| NaiveTime::parse_from_str(t, "%H:%M").ok()).unwrap_or(NaiveTime::MIN);
 
     let base = match repeater.kind {
         RepeaterKind::Restart => completed_at.date().and_time(time_of_day),
@@ -136,9 +125,7 @@ pub fn next_occurrence(ts: &OrgTimestamp, completed_at: NaiveDateTime) -> Option
     // A multi-day range keeps its length rather than collapsing onto the
     // new start date.
     if let Some(end_date) = &ts.end_date {
-        let shifted_end = NaiveDate::parse_from_str(end_date, "%Y-%m-%d")
-            .ok()
-            .and_then(|d| d.checked_add_signed(next.date() - start));
+        let shifted_end = NaiveDate::parse_from_str(end_date, "%Y-%m-%d").ok().and_then(|d| d.checked_add_signed(next.date() - start));
         advanced.end_date = shifted_end.map(|d| d.format("%Y-%m-%d").to_string());
     }
     if ts.start_time.is_some() {

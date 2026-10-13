@@ -47,9 +47,7 @@ pub fn capture_identity(heading: &Heading) -> HeadingIdentity {
 /// `Title` takes the first match.
 pub fn resolve<'a>(flat: &'a [Heading], identity: &HeadingIdentity) -> Option<&'a Heading> {
     match identity {
-        HeadingIdentity::CustomId(id) => flat
-            .iter()
-            .find(|h| get_custom_id(&h.properties) == Some(id.as_str())),
+        HeadingIdentity::CustomId(id) => flat.iter().find(|h| get_custom_id(&h.properties) == Some(id.as_str())),
         HeadingIdentity::Title(title) => flat.iter().find(|h| &h.title == title),
     }
 }
@@ -100,11 +98,7 @@ pub fn target_of(heading: &Heading) -> crate::core::models::HeadingTarget {
 /// ("Überschrift", "Übergeordnete Überschrift", "Quell-Überschrift",
 /// "Ziel-Überschrift"), same wording as core::errors::not_found_at_line's
 /// own callers.
-pub fn resolve_target(
-    flat: &[Heading],
-    target: &crate::core::models::HeadingTarget,
-    subject: &str,
-) -> Result<usize, String> {
+pub fn resolve_target(flat: &[Heading], target: &crate::core::models::HeadingTarget, subject: &str) -> Result<usize, String> {
     let at_line = flat.iter().position(|h| h.line_no == target.line_no);
 
     if let Some(id) = target.custom_id.as_deref().filter(|id| !id.is_empty()) {
@@ -113,12 +107,12 @@ pub fn resolve_target(
         }
         // The line moved (or holds someone else now) -- the id still says
         // which heading this is, wherever it ended up in the file.
-        return flat
-            .iter()
-            .position(|h| get_custom_id(&h.properties) == Some(id))
-            .ok_or_else(|| {
-                crate::t!("{subject} (CUSTOM_ID {id}) ist nicht mehr in der Datei -- die Änderung wurde nicht gespeichert, bitte neu laden", "{subject} (CUSTOM_ID {id}) is no longer in this file -- the change was not saved, please reload")
-            });
+        return flat.iter().position(|h| get_custom_id(&h.properties) == Some(id)).ok_or_else(|| {
+            crate::t!(
+                "{subject} (CUSTOM_ID {id}) ist nicht mehr in der Datei -- die Änderung wurde nicht gespeichert, bitte neu laden",
+                "{subject} (CUSTOM_ID {id}) is no longer in this file -- the change was not saved, please reload"
+            )
+        });
     }
 
     // No CUSTOM_ID to go by -- the title, under the rules documented above.
@@ -216,13 +210,8 @@ mod tests {
     #[test]
     fn generate_custom_id_is_practically_unique_across_many_calls() {
         const SAMPLE: usize = 300;
-        let ids: std::collections::HashSet<String> =
-            (0..SAMPLE).map(|_| generate_custom_id()).collect();
-        assert_eq!(
-            ids.len(),
-            SAMPLE,
-            "no collisions across {SAMPLE} generations"
-        );
+        let ids: std::collections::HashSet<String> = (0..SAMPLE).map(|_| generate_custom_id()).collect();
+        assert_eq!(ids.len(), SAMPLE, "no collisions across {SAMPLE} generations");
     }
 
     #[test]
@@ -245,11 +234,7 @@ mod tests {
         let mut props = HashMap::new();
         props.insert("custom_id".to_string(), "already-there".to_string());
         ensure_custom_id(&mut props);
-        assert_eq!(
-            props.len(),
-            1,
-            "did not add a second, differently-cased key"
-        );
+        assert_eq!(props.len(), 1, "did not add a second, differently-cased key");
     }
 
     #[test]
@@ -273,10 +258,7 @@ mod tests {
         // other.
         let mut props = HashMap::new();
         props.insert("custom_id".to_string(), "stable-id".to_string());
-        let h = Heading {
-            properties: props,
-            ..heading("Some Title", None)
-        };
+        let h = Heading { properties: props, ..heading("Some Title", None) };
         assert!(matches!(capture_identity(&h), HeadingIdentity::CustomId(id) if id == "stable-id"));
 
         let flat = vec![h];
@@ -285,10 +267,7 @@ mod tests {
 
     #[test]
     fn resolve_finds_by_custom_id_even_if_title_changed() {
-        let flat = vec![
-            heading("New Title", Some("stable-id")),
-            heading("Other", Some("other-id")),
-        ];
+        let flat = vec![heading("New Title", Some("stable-id")), heading("Other", Some("other-id"))];
         let found = resolve(&flat, &HeadingIdentity::CustomId("stable-id".into())).unwrap();
         assert_eq!(found.title, "New Title");
     }
@@ -297,20 +276,13 @@ mod tests {
     fn resolve_falls_back_to_title_matching_first_match_wins() {
         let flat = vec![heading("Dup", None), heading("Dup", None)];
         let found = resolve(&flat, &HeadingIdentity::Title("Dup".into())).unwrap();
-        assert!(
-            std::ptr::eq(found, &flat[0]),
-            "resolves to the first occurrence"
-        );
+        assert!(std::ptr::eq(found, &flat[0]), "resolves to the first occurrence");
     }
 
     /* --- resolve_target: the write guard --- */
 
     fn target(line_no: usize, custom_id: Option<&str>, title: Option<&str>) -> crate::core::models::HeadingTarget {
-        crate::core::models::HeadingTarget {
-            line_no,
-            custom_id: custom_id.map(str::to_string),
-            title: title.map(str::to_string),
-        }
+        crate::core::models::HeadingTarget { line_no, custom_id: custom_id.map(str::to_string), title: title.map(str::to_string) }
     }
 
     /// Two headings, ids "a" and "b", at lines 1 and 10.

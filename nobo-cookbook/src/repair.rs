@@ -157,13 +157,8 @@ impl Plan {
                 // The first recipe keeps its own share and everything the
                 // repair would not touch -- the CUSTOM_ID, and any key
                 // whose count did not match.
-                let kept: Vec<(String, String)> = self
-                    .drawer
-                    .entries
-                    .iter()
-                    .filter(|(key, _)| !distributed.contains(&key.to_lowercase()))
-                    .cloned()
-                    .collect();
+                let kept: Vec<(String, String)> =
+                    self.drawer.entries.iter().filter(|(key, _)| !distributed.contains(&key.to_lowercase())).cloned().collect();
                 let mut entries = share.clone();
                 entries.extend(kept);
                 out.splice(self.drawer.start..=self.drawer.end, drawer_lines(&entries));
@@ -207,7 +202,11 @@ fn drawer_lines(entries: &[(String, String)]) -> Vec<String> {
 /// after it, or after its one planning line -- org's own rule.
 fn drawer_position(lines: &[&str], heading: usize) -> usize {
     let at = heading + 1;
-    if at < lines.len() && org_syntax::is_planning_line(lines[at]) { at + 1 } else { at }
+    if at < lines.len() && org_syntax::is_planning_line(lines[at]) {
+        at + 1
+    } else {
+        at
+    }
 }
 
 /// The drawer belonging to the heading on line HEADING, if it has one and

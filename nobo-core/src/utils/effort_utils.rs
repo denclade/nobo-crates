@@ -70,7 +70,9 @@ const DAY_MINUTES: u32 = 24 * 60;
 /// minutes), and compound unit shorthand ("1d3h5min", "2h", "45min", ...).
 pub fn parse_effort(raw: &str) -> Option<u32> {
     let s = raw.trim();
-    if s.is_empty() { return None; }
+    if s.is_empty() {
+        return None;
+    }
 
     // H:MM / H:MM:SS -- org format. A stray colon in anything else is
     // never valid syntax, so this doesn't fall through to the other
@@ -131,7 +133,9 @@ pub fn parse_effort(raw: &str) -> Option<u32> {
         }
     }
 
-    if !buf.is_empty() { return None; }
+    if !buf.is_empty() {
+        return None;
+    }
     matched.then_some(total)
 }
 

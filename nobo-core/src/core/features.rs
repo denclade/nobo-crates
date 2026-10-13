@@ -107,20 +107,14 @@ fn registry() -> &'static HashMap<&'static str, Registered> {
         let by_id: HashMap<&'static str, &'static FeatureSpec> =
             inventory::iter::<FeatureSpec>.into_iter().map(|spec| (spec.id, spec)).collect();
 
-        by_id
-            .values()
-            .map(|spec| (spec.id, Registered { spec, stands_on: flatten_needs(spec, &by_id) }))
-            .collect()
+        by_id.values().map(|spec| (spec.id, Registered { spec, stands_on: flatten_needs(spec, &by_id) })).collect()
     })
 }
 
 /// Every feature SPEC stands on, directly or through another.
 ///
 /// `None` if any of them is not registered.
-fn flatten_needs(
-    spec: &'static FeatureSpec,
-    by_id: &HashMap<&'static str, &'static FeatureSpec>,
-) -> Option<Vec<&'static FeatureSpec>> {
+fn flatten_needs(spec: &'static FeatureSpec, by_id: &HashMap<&'static str, &'static FeatureSpec>) -> Option<Vec<&'static FeatureSpec>> {
     let mut stands_on = Vec::new();
     let mut seen: HashSet<&'static str> = HashSet::from([spec.id]);
     let mut todo: Vec<&'static str> = spec.needs.to_vec();

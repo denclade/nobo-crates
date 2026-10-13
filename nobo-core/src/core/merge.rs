@@ -118,9 +118,9 @@ impl MergeHandler for OrgAstMerge {
 /// another one names it instead.
 pub const DEFAULT: &OrgAstMerge = &OrgAstMerge;
 
-use diffy::MergeOptions;
 use crate::core::heading_identity;
 use crate::core::models::Heading;
+use diffy::MergeOptions;
 
 /// Create AST for each variant and tries to merge them heading by heading.
 pub(crate) fn merge_org_ast(path: &str, base_text: &str, local_text: &str, remote_text: &str) -> Result<String, String> {
@@ -157,17 +157,18 @@ pub(crate) fn merge_org_ast(path: &str, base_text: &str, local_text: &str, remot
     let get_preamble = |text: &str, flat: &[Heading]| -> String {
         if let Some(first) = flat.first() {
             let p = text.lines().take(first.line_no - 1).collect::<Vec<_>>().join("\n");
-            if p.is_empty() { String::new() } else { format!("{}\n", p) }
+            if p.is_empty() {
+                String::new()
+            } else {
+                format!("{}\n", p)
+            }
         } else {
             text.to_string()
         }
     };
 
-    let merged_preamble = merge_text(
-        &get_preamble(base_text, &base_flat),
-        &get_preamble(local_text, &local_flat),
-        &get_preamble(remote_text, &remote_flat)
-    )?;
+    let merged_preamble =
+        merge_text(&get_preamble(base_text, &base_flat), &get_preamble(local_text, &local_flat), &get_preamble(remote_text, &remote_flat))?;
 
     // Unique key per heading -- CUSTOM_ID only (guaranteed present on
     // every heading here, checked above), via heading_identity::
@@ -254,7 +255,9 @@ pub(crate) fn merge_org_ast(path: &str, base_text: &str, local_text: &str, remot
                 if l_text.join("\n") == r_text.join("\n") {
                     l_text
                 } else {
-                    return Err(format!("merge conflict: heading \"{key}\" exists on both sides with different content but no common base"));
+                    return Err(format!(
+                        "merge conflict: heading \"{key}\" exists on both sides with different content but no common base"
+                    ));
                 }
             }
             // Task exists only on one device - use it
@@ -270,11 +273,7 @@ pub(crate) fn merge_org_ast(path: &str, base_text: &str, local_text: &str, remot
     Ok(final_lines.join("\n") + "\n")
 }
 
-pub fn merge_headings(
-    base: &Heading,
-    local: &Heading,
-    remote: &Heading,
-) -> Result<Heading, String> {
+pub fn merge_headings(base: &Heading, local: &Heading, remote: &Heading) -> Result<Heading, String> {
     // Every field, spelled out, with no `..Default::default()` -- unlike
     // the fixtures, which is the point. A field added to `Heading` needs a
     // decision here (merge it? take local's? refuse?), and the compiler
@@ -415,7 +414,7 @@ const STAMPED_PROPERTIES: [&str; 2] = ["UPDATED", "LAST_ACTIVITY"];
 fn merge_properties(
     base: &HashMap<String, String>,
     local: &HashMap<String, String>,
-    remote: &HashMap<String, String>
+    remote: &HashMap<String, String>,
 ) -> Result<HashMap<String, String>, String> {
     let mut final_props = HashMap::new();
 
@@ -430,11 +429,17 @@ fn merge_properties(
         let remote_val = remote.get(key);
 
         if local_val == remote_val {
-            if let Some(val) = local_val { final_props.insert(key.clone(), val.clone()); }
+            if let Some(val) = local_val {
+                final_props.insert(key.clone(), val.clone());
+            }
         } else if base_val == local_val {
-            if let Some(val) = remote_val { final_props.insert(key.clone(), val.clone()); }
+            if let Some(val) = remote_val {
+                final_props.insert(key.clone(), val.clone());
+            }
         } else if base_val == remote_val {
-            if let Some(val) = local_val { final_props.insert(key.clone(), val.clone()); }
+            if let Some(val) = local_val {
+                final_props.insert(key.clone(), val.clone());
+            }
         } else if STAMPED_PROPERTIES.iter().any(|stamped| key.eq_ignore_ascii_case(stamped)) {
             // Not a conflict, a clock: whichever device edited last is the
             // answer, and both devices compute the same one. See
@@ -445,9 +450,7 @@ fn merge_properties(
         } else {
             // A value the user wrote, changed differently on both sides.
             // This used to keep the local one and upload it as the winner.
-            return Err(format!(
-                "merge conflict: property \"{key}\" was changed differently on both devices"
-            ));
+            return Err(format!("merge conflict: property \"{key}\" was changed differently on both devices"));
         }
     }
     Ok(final_props)
@@ -527,9 +530,7 @@ fn merge_clocks(base: &[String], local: &[String], remote: &[String]) -> Result<
             // both devices. Tracked time is data the user typed as much as
             // a title is, and silently keeping one side is how an hour
             // disappears.
-            return Err(format!(
-                "merge conflict: clock entry \"{key}\" was changed differently on both devices"
-            ));
+            return Err(format!("merge conflict: clock entry \"{key}\" was changed differently on both devices"));
         };
 
         if let Some(line) = chosen {
@@ -552,7 +553,11 @@ pub fn merge_text(base: &str, local: &str, remote: &str) -> Result<String, Strin
 
     // diffy relies on clean line endings for proper diffing
     let format_nl = |s: &str| {
-        if s.is_empty() || s.ends_with('\n') { s.to_string() } else { format!("{}\n", s) }
+        if s.is_empty() || s.ends_with('\n') {
+            s.to_string()
+        } else {
+            format!("{}\n", s)
+        }
     };
 
     let base_nl = format_nl(base);
@@ -632,7 +637,7 @@ mod tests {
     }
 
     /* --- merge_org_ast: structural safety -- must never bleed content
-       across headings, corrupt siblings, or silently drop an edit --- */
+    across headings, corrupt siblings, or silently drop an edit --- */
 
     // Every task needs a real TODO state -- otherwise only "Task A" (the
     // first heading in the file) stays real structure, and B/C get
@@ -874,7 +879,6 @@ mod tests {
         assert_eq!(merged.iter().filter(|l| l.as_str() == "CLOCK: garbage").count(), 1, "deduped, not one per side");
     }
 
-
     // ---- ADVERSARIAL VERIFICATION (temporary) ----
     const B: &str = "* TODO Buy milk\n:PROPERTIES:\n:CUSTOM_ID: h1\n:END:\n";
     const L: &str = "* DONE Buy oat milk\n:PROPERTIES:\n:CUSTOM_ID: h1\n:END:\n";
@@ -903,5 +907,4 @@ mod tests {
         let out = merge_org_ast("t.org", base, local, remote);
         println!("CASE C => {:?}", out);
     }
-
 }

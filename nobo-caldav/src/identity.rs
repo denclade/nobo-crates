@@ -93,7 +93,11 @@ fn normalize_url(url: &str) -> String {
         "http" => authority.strip_suffix(":80").unwrap_or(&authority),
         _ => &authority,
     };
-    if path.is_empty() { format!("{scheme}://{authority}") } else { format!("{scheme}://{authority}/{path}") }
+    if path.is_empty() {
+        format!("{scheme}://{authority}")
+    } else {
+        format!("{scheme}://{authority}/{path}")
+    }
 }
 
 #[cfg(test)]

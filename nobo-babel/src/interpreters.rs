@@ -12,9 +12,7 @@ use crate::model::InterpreterInfo;
 const FALLBACK_DIRS: &[&str] = &["/usr/local/bin", "/usr/bin", "/bin", "/opt/homebrew/bin"];
 
 fn path_dirs() -> Vec<PathBuf> {
-    let mut dirs: Vec<PathBuf> = env::var_os("PATH")
-        .map(|p| env::split_paths(&p).collect())
-        .unwrap_or_default();
+    let mut dirs: Vec<PathBuf> = env::var_os("PATH").map(|p| env::split_paths(&p).collect()).unwrap_or_default();
 
     for fallback in FALLBACK_DIRS {
         let path = PathBuf::from(fallback);
@@ -68,10 +66,7 @@ pub fn discover_pythons() -> Vec<InterpreterInfo> {
                 continue;
             }
 
-            results.push(InterpreterInfo {
-                path: candidate.to_string_lossy().into_owned(),
-                version: read_version(&candidate),
-            });
+            results.push(InterpreterInfo { path: candidate.to_string_lossy().into_owned(), version: read_version(&candidate) });
         }
     }
 
@@ -81,11 +76,9 @@ pub fn discover_pythons() -> Vec<InterpreterInfo> {
 /// Resolves a freshly created venv's own interpreter binary, covering both
 /// the Unix (`bin/python3`) and Windows (`Scripts/python.exe`) layouts.
 fn venv_python_path(venv_dir: &Path) -> Option<PathBuf> {
-    for candidate in [
-        venv_dir.join("bin").join("python3"),
-        venv_dir.join("bin").join("python"),
-        venv_dir.join("Scripts").join("python.exe"),
-    ] {
+    for candidate in
+        [venv_dir.join("bin").join("python3"), venv_dir.join("bin").join("python"), venv_dir.join("Scripts").join("python.exe")]
+    {
         if candidate.is_file() {
             return Some(candidate);
         }
@@ -110,9 +103,7 @@ pub fn create_venv(target_dir: &Path, python_path: Option<&str>) -> std::io::Res
         let python = python_path
             .map(PathBuf::from)
             .or_else(|| discover_pythons().into_iter().next().map(|i| PathBuf::from(i.path)))
-            .ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::NotFound, "no python interpreter found to create a venv with")
-            })?;
+            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "no python interpreter found to create a venv with"))?;
         Command::new(python).arg("-m").arg("venv").arg(target_dir).status()?
     };
 

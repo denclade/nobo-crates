@@ -68,9 +68,6 @@ mod tests {
 
         assert!(rendered.starts_with("#+TITLE: Arbeit\n"), "{rendered}");
         assert!(rendered.contains("#+COMMENT:"), "{rendered}");
-        assert_eq!(
-            nobo_core::core::file_kind::from_lines(&rendered.lines().collect::<Vec<_>>()),
-            crate::MIRROR_KIND,
-        );
+        assert_eq!(nobo_core::core::file_kind::from_lines(&rendered.lines().collect::<Vec<_>>()), crate::MIRROR_KIND,);
     }
 }

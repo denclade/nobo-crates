@@ -43,11 +43,7 @@ pub fn heading_block_range(lines: &[String], heading: &Heading) -> Result<(usize
 /// with certainty (see heading_identity::resolve_target) aborts the whole
 /// batch before LINES is touched, rather than being skipped or -- far
 /// worse -- applied to whatever moved into its line meanwhile.
-pub fn apply_bulk_update(
-    flat: &[Heading],
-    updates: &[BulkHeadingUpdate],
-    lines: &mut Vec<String>,
-) -> Result<u32, String> {
+pub fn apply_bulk_update(flat: &[Heading], updates: &[BulkHeadingUpdate], lines: &mut Vec<String>) -> Result<u32, String> {
     let mut edits: Vec<(usize, &HeadingUpdatePayload)> = Vec::new();
     let mut ancestor_idxs: std::collections::BTreeSet<usize> = std::collections::BTreeSet::new();
     // Bulk-finishing a selection that happens to contain a repeating task
@@ -68,7 +64,8 @@ pub fn apply_bulk_update(
         // loses nothing.
         if edits.iter().any(|&(existing, _)| existing == idx) {
             return Err(crate::t!(
-                "\"{}\" ist in dieser Auswahl doppelt -- die Änderungen wurden nicht gespeichert, bitte neu laden", "\"{}\" appears twice in this selection -- the changes were not saved, please reload",
+                "\"{}\" ist in dieser Auswahl doppelt -- die Änderungen wurden nicht gespeichert, bitte neu laden",
+                "\"{}\" appears twice in this selection -- the changes were not saved, please reload",
                 flat[idx].title
             ));
         }
@@ -104,11 +101,8 @@ pub fn apply_bulk_update(
         })
         .collect();
 
-    let mut all: Vec<(usize, Option<&HeadingUpdatePayload>)> = edits
-        .iter()
-        .map(|&(i, p)| (i, Some(p)))
-        .chain(ancestor_idxs.iter().map(|&i| (i, None)))
-        .collect();
+    let mut all: Vec<(usize, Option<&HeadingUpdatePayload>)> =
+        edits.iter().map(|&(i, p)| (i, Some(p))).chain(ancestor_idxs.iter().map(|&i| (i, None))).collect();
     all.sort_unstable_by(|a, b| flat[b.0].line_no.cmp(&flat[a.0].line_no));
 
     for (idx, payload) in &all {
@@ -161,11 +155,9 @@ pub fn apply_bulk_delete(flat: &[Heading], targets: &[HeadingTarget], lines: &mu
 
     let selected: std::collections::BTreeSet<usize> = idxs.iter().copied().collect();
     idxs.retain(|&idx| {
-        !ancestors_of(flat, idx).iter().any(|a| {
-            flat.iter()
-                .position(|h| h.line_no == a.line_no)
-                .is_some_and(|a_idx| selected.contains(&a_idx))
-        })
+        !ancestors_of(flat, idx)
+            .iter()
+            .any(|a| flat.iter().position(|h| h.line_no == a.line_no).is_some_and(|a_idx| selected.contains(&a_idx)))
     });
 
     let mut ancestor_idxs: std::collections::BTreeSet<usize> = std::collections::BTreeSet::new();
@@ -221,11 +213,7 @@ pub fn apply_bulk_delete(flat: &[Heading], targets: &[HeadingTarget], lines: &mu
     // across it: a selected heading inside another selected heading's
     // subtree was dropped above, so no ancestor sits in a removed range.
     let shift_of = |line_no: usize| -> usize {
-        ranges
-            .iter()
-            .filter(|&&(_, end_line, _)| end_line < line_no)
-            .map(|&(start_line, end_line, _)| end_line + 1 - start_line)
-            .sum()
+        ranges.iter().filter(|&&(_, end_line, _)| end_line < line_no).map(|&(start_line, end_line, _)| end_line + 1 - start_line).sum()
     };
 
     let mut touches: Vec<usize> = ancestor_idxs.into_iter().collect();
@@ -235,12 +223,8 @@ pub fn apply_bulk_delete(flat: &[Heading], targets: &[HeadingTarget], lines: &mu
         heading.progress_stats = task_utils::subtree_progress_excluding(flat, idx, &removed_indices);
         let block = touch_last_activity(&heading);
         let shift = shift_of(heading.line_no);
-        let (start, end) = block_range(
-            lines,
-            heading.line_no.saturating_sub(shift),
-            heading.last_line.saturating_sub(shift),
-            &heading.title,
-        )?;
+        let (start, end) =
+            block_range(lines, heading.line_no.saturating_sub(shift), heading.last_line.saturating_sub(shift), &heading.title)?;
         lines.splice(start..end, block);
     }
 

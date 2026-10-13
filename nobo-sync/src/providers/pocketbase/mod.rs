@@ -300,7 +300,10 @@ impl SyncProvider for PocketBaseProvider {
         let file_bytes = tokio::fs::read(local_path).await.map_err(|e| format!("failed to read {}: {e}", local_path.display()))?;
         let size = file_bytes.len();
 
-        let part = reqwest::multipart::Part::bytes(file_bytes).file_name(file_name).mime_str("application/octet-stream").map_err(|e| e.to_string())?;
+        let part = reqwest::multipart::Part::bytes(file_bytes)
+            .file_name(file_name)
+            .mime_str("application/octet-stream")
+            .map_err(|e| e.to_string())?;
         let form = reqwest::multipart::Form::new()
             .text("owner", self.user_id.clone())
             .text("contentHash", content_hash.to_string())
@@ -698,7 +701,11 @@ mod tests {
     #[tokio::test]
     async fn file_lookup_forbidden_names_the_likely_missing_list_rule() {
         let server = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/collections/user_files/records")).respond_with(ResponseTemplate::new(403)).mount(&server).await;
+        Mock::given(method("GET"))
+            .and(path("/api/collections/user_files/records"))
+            .respond_with(ResponseTemplate::new(403))
+            .mount(&server)
+            .await;
 
         let provider = PocketBaseProvider::new(server.uri(), &session("u1")).unwrap();
         let err = provider.upload_file("abc123", Path::new("/nonexistent")).await.unwrap_err();

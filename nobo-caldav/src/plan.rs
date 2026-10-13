@@ -103,11 +103,7 @@ pub fn plan(state: &[TaskState], remote: &[RemoteTask], local: &[LocalTask]) -> 
                 // still the one they deleted -- otherwise somebody else
                 // has changed it since and it is not theirs to remove.
                 if base.etag == entry.etag {
-                    actions.push(TaskAction::DeleteRemote {
-                        uid: entry.uid.clone(),
-                        url: entry.url.clone(),
-                        etag: entry.etag.clone(),
-                    });
+                    actions.push(TaskAction::DeleteRemote { uid: entry.uid.clone(), url: entry.url.clone(), etag: entry.etag.clone() });
                 } else {
                     actions.push(pull(entry));
                 }
@@ -118,11 +114,9 @@ pub fn plan(state: &[TaskState], remote: &[RemoteTask], local: &[LocalTask]) -> 
                 match (remote_changed, local_changed) {
                     (false, false) => {}
                     (true, false) => actions.push(pull(entry)),
-                    (false, true) => actions.push(TaskAction::Push {
-                        uid: entry.uid.clone(),
-                        url: entry.url.clone(),
-                        etag: entry.etag.clone(),
-                    }),
+                    (false, true) => {
+                        actions.push(TaskAction::Push { uid: entry.uid.clone(), url: entry.url.clone(), etag: entry.etag.clone() })
+                    }
                     (true, true) => actions.push(TaskAction::PushOverRemoteChange {
                         uid: entry.uid.clone(),
                         url: entry.url.clone(),
@@ -142,9 +136,7 @@ pub fn plan(state: &[TaskState], remote: &[RemoteTask], local: &[LocalTask]) -> 
             // Gone on both sides already -- nothing to do but forget it,
             // which the caller does once the run succeeds.
             None => {}
-            Some(current) if current.hash == base.local_hash => {
-                actions.push(TaskAction::DeleteLocal { uid: base.uid.clone() })
-            }
+            Some(current) if current.hash == base.local_hash => actions.push(TaskAction::DeleteLocal { uid: base.uid.clone() }),
             Some(_) => actions.push(TaskAction::RecreateRemote { uid: base.uid.clone() }),
         }
     }
@@ -165,9 +157,7 @@ pub fn plan(state: &[TaskState], remote: &[RemoteTask], local: &[LocalTask]) -> 
         // heading's hash, and no url yet. Finding one whose hash matches
         // and whose task the server actually has means the create already
         // happened -- so this run adopts it instead of doing it again.
-        let already_created = state.iter().find(|s| {
-            s.url.is_empty() && !s.local_hash.is_empty() && s.local_hash == entry.hash
-        });
+        let already_created = state.iter().find(|s| s.url.is_empty() && !s.local_hash.is_empty() && s.local_hash == entry.hash);
         //
         // Nothing is pushed here: the loop over the server's tasks above
         // has already planned the Pull for it (the uid is in `state` with
@@ -207,25 +197,13 @@ mod tests {
     /// tasks.
     #[test]
     fn a_create_that_already_reached_the_server_is_adopted() {
-        let pending = TaskState {
-            url: String::new(),
-            etag: String::new(),
-            local_hash: "h-neu".to_string(),
-            ..state("uid-1", "", "h-neu")
-        };
-        let remote = vec![RemoteTask {
-            uid: "uid-1".to_string(),
-            url: "https://x/uid-1.ics".to_string(),
-            etag: "\"v1\"".to_string(),
-        }];
+        let pending = TaskState { url: String::new(), etag: String::new(), local_hash: "h-neu".to_string(), ..state("uid-1", "", "h-neu") };
+        let remote = vec![RemoteTask { uid: "uid-1".to_string(), url: "https://x/uid-1.ics".to_string(), etag: "\"v1\"".to_string() }];
         let local = vec![LocalTask { uid: None, hash: "h-neu".to_string() }];
 
         let actions = plan(&[pending], &remote, &local);
 
-        assert!(
-            actions.iter().all(|a| !matches!(a, TaskAction::Create { .. })),
-            "nothing is created a second time: {actions:?}"
-        );
+        assert!(actions.iter().all(|a| !matches!(a, TaskAction::Create { .. })), "nothing is created a second time: {actions:?}");
         assert_eq!(actions.len(), 1);
         assert!(matches!(&actions[0], TaskAction::Pull { uid, .. } if uid == "uid-1"), "{actions:?}");
     }
@@ -291,10 +269,7 @@ mod tests {
     fn a_task_only_the_file_changed_is_pushed() {
         let actions = plan(&[state("a", "\"v1\"", "h1")], &[remote("a", "\"v1\"")], &[local(Some("a"), "h2")]);
 
-        assert_eq!(
-            only(actions),
-            TaskAction::Push { uid: "a".into(), url: "https://x/a.ics".into(), etag: "\"v1\"".into() }
-        );
+        assert_eq!(only(actions), TaskAction::Push { uid: "a".into(), url: "https://x/a.ics".into(), etag: "\"v1\"".into() });
     }
 
     #[test]
@@ -325,10 +300,7 @@ mod tests {
     fn a_heading_deleted_from_the_file_is_deleted_on_the_server() {
         let actions = plan(&[state("a", "\"v1\"", "h1")], &[remote("a", "\"v1\"")], &[]);
 
-        assert_eq!(
-            only(actions),
-            TaskAction::DeleteRemote { uid: "a".into(), url: "https://x/a.ics".into(), etag: "\"v1\"".into() }
-        );
+        assert_eq!(only(actions), TaskAction::DeleteRemote { uid: "a".into(), url: "https://x/a.ics".into(), etag: "\"v1\"".into() });
     }
 
     /// The user deleted the version they had; somebody has changed it

@@ -1,11 +1,11 @@
-use std::{fs, io};
+use crate::core::models::FileEntry;
+use crate::utils::temp_file_utils::is_temp_file;
+use chrono::{DateTime, Utc};
 use ignore::WalkBuilder;
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-use chrono::{DateTime, Utc};
-use crate::core::models::FileEntry;
-use crate::utils::temp_file_utils::is_temp_file;
+use std::{fs, io};
 
 /// Canonicalizes `dir`, falling back to it unchanged when that fails --
 /// the directory does not exist, or the file was just deleted and its path
@@ -31,9 +31,7 @@ pub fn ensure_dir_exists(dir: &Path) -> Result<bool, String> {
     if dir.is_dir() {
         return Ok(false);
     }
-    fs::create_dir_all(dir)
-        .map(|()| true)
-        .map_err(|e| format!("failed to create {}: {e}", dir.display()))
+    fs::create_dir_all(dir).map(|()| true).map_err(|e| format!("failed to create {}: {e}", dir.display()))
 }
 
 /// Basename for a path, falling back to the full path if it has none
@@ -117,11 +115,7 @@ core::indexer::IndexManager::directory_contents), this stays a live disk
 walk rather than an index lookup.
  */
 pub fn get_dir_entries(dir: &Path) -> Vec<(PathBuf, String, bool)> {
-    let walker = WalkBuilder::new(dir)
-        .max_depth(Some(1))
-        .hidden(true)
-        .git_ignore(true)
-        .build();
+    let walker = WalkBuilder::new(dir).max_depth(Some(1)).hidden(true).git_ignore(true).build();
 
     let mut entries: Vec<(PathBuf, String, bool)> = walker
         .into_iter()
@@ -152,9 +146,7 @@ pub fn get_dir_entries(dir: &Path) -> Vec<(PathBuf, String, bool)> {
 pub fn build_file_entry(path: &Path, root: Option<&Path>) -> Option<FileEntry> {
     let name = path.file_name()?.to_string_lossy().into_owned();
     let metadata = fs::metadata(path).ok()?;
-    let is_in_hidden_dir = root
-        .and_then(|r| path.strip_prefix(r).ok())
-        .is_some_and(has_hidden_ancestor);
+    let is_in_hidden_dir = root.and_then(|r| path.strip_prefix(r).ok()).is_some_and(has_hidden_ancestor);
 
     Some(FileEntry {
         path: path.to_string_lossy().into_owned(),
@@ -240,10 +232,7 @@ pub fn get_path_suggestions(input: &str) -> Vec<String> {
     let (dir_to_search, prefix) = if input.ends_with('/') || input.ends_with('\\') {
         (input_path, "")
     } else {
-        (
-            input_path.parent().unwrap_or_else(|| Path::new("")),
-            input_path.file_name().and_then(|n| n.to_str()).unwrap_or(""),
-        )
+        (input_path.parent().unwrap_or_else(|| Path::new("")), input_path.file_name().and_then(|n| n.to_str()).unwrap_or(""))
     };
 
     let search_dir = if dir_to_search.as_os_str().is_empty() { Path::new(".") } else { dir_to_search };
@@ -420,9 +409,7 @@ pub fn write_atomic_bytes(path: &Path, content: &[u8]) -> io::Result<()> {
 
     let (temp_path, mut file) = create_temp_beside(&target)?;
 
-    let written = file
-        .write_all(content)
-        .and_then(|()| file.sync_all());
+    let written = file.write_all(content).and_then(|()| file.sync_all());
     // Closed before the rename: Windows will not move an open file, and
     // there is nothing left to write to it in any case.
     drop(file);
@@ -462,10 +449,7 @@ fn create_temp_beside(target: &Path) -> io::Result<(PathBuf, fs::File)> {
         Some(p) if !p.as_os_str().is_empty() => p.to_path_buf(),
         _ => PathBuf::from("."),
     };
-    let name = target
-        .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
-        .unwrap_or_else(|| "datei".to_string());
+    let name = target.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "datei".to_string());
     let pid = std::process::id();
 
     for _ in 0..MAX_TEMP_ATTEMPTS {
@@ -508,7 +492,8 @@ pub fn splice_lines(path: &Path, start_idx: usize, end_idx: usize, new_lines: Ve
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
             crate::t!(
-                "{}: Zeilen {}..{} gibt es nicht mehr (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.", "{}: lines {}..{} are gone (the file has {}) -- it has changed since, please reload.",
+                "{}: Zeilen {}..{} gibt es nicht mehr (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.",
+                "{}: lines {}..{} are gone (the file has {}) -- it has changed since, please reload.",
                 path.display(),
                 start_idx,
                 end_idx,
@@ -557,9 +542,13 @@ pub fn append_line(path: &Path, new_line: String) -> io::Result<()> {
 pub fn remove_lines(path: &Path, start_line: usize, end_line: usize) -> io::Result<()> {
     let lines = read_lines(path)?;
     refuse_unwritable_kind_of(&lines)?;
-    let remaining: Vec<String> = lines.into_iter()
+    let remaining: Vec<String> = lines
+        .into_iter()
         .enumerate()
-        .filter(|(i, _)| { let line_no = i + 1; !(line_no >= start_line && line_no <= end_line) })
+        .filter(|(i, _)| {
+            let line_no = i + 1;
+            !(line_no >= start_line && line_no <= end_line)
+        })
         .map(|(_, l)| l)
         .collect();
     write_checked(path, &remaining)
@@ -642,13 +631,14 @@ pub fn append_to_file(path: &Path, content: &str) -> io::Result<()> {
         Err(e) if e.kind() == io::ErrorKind::NotFound => String::new(),
         Err(e) => return Err(e),
     };
-    if !existing.is_empty() && !existing.ends_with('\n') { existing.push('\n'); }
+    if !existing.is_empty() && !existing.ends_with('\n') {
+        existing.push('\n');
+    }
     existing.push_str(content);
     write_atomic_checked(path, &existing)
 }
 
 /* --------- Test -------- */
-
 
 #[cfg(test)]
 mod file_kind_write_guard_tests {
@@ -1235,7 +1225,8 @@ mod tests {
         write_lines(&path, &["* Eins".to_string()]).unwrap();
         write_lines(&path, &["* Zwei".to_string()]).unwrap();
 
-        let leftovers: Vec<String> = fs::read_dir(tmp.path()).unwrap()
+        let leftovers: Vec<String> = fs::read_dir(tmp.path())
+            .unwrap()
             .filter_map(|e| e.ok())
             .map(|e| e.file_name().to_string_lossy().into_owned())
             .filter(|name| name != "note.org")
@@ -1653,5 +1644,4 @@ mod tests {
             assert_eq!(fs::read_to_string(&path).unwrap(), "zwei Jahre erledigter Aufgaben\n");
         }
     }
-
 }

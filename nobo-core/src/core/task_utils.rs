@@ -1,14 +1,17 @@
-use std::num::NonZero;
+use crate::core::heading_utils;
 use crate::core::history::record_best_effort;
 use crate::core::indexer::IndexManager;
-use crate::core::models::{has_project_tag, property_value, CategoryTimeTotal, FileSnapshot, Heading, HistoryEntryKind, ProgressStats, TimeTrackingSummary, ORG_CATEGORY_PROPERTY, FINISHED_STATES};
-use std::collections::HashMap;
-use chrono::NaiveDate;
-use crate::core::heading_utils;
+use crate::core::models::{
+    has_project_tag, property_value, CategoryTimeTotal, FileSnapshot, Heading, HistoryEntryKind, ProgressStats, TimeTrackingSummary,
+    FINISHED_STATES, ORG_CATEGORY_PROPERTY,
+};
 use crate::utils::clock_utils;
 use crate::utils::fs_utils;
 use crate::utils::ToCmdResult;
+use chrono::NaiveDate;
 use rusqlite::Connection;
+use std::collections::HashMap;
+use std::num::NonZero;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -60,18 +63,23 @@ pub fn archive_ranges(
     // above would skip this entirely and produce the one state with no way
     // back: the archive already grown, and nothing in the history saying
     // it happened.
-    record_best_effort(db, HistoryEntryKind::Archived { filename: fs_utils::filename_of(target_path), count: ranges.len() as u32 }, false, vec![
-        FileSnapshot {
-            path: target_path.to_string_lossy().into_owned(),
-            before: before_target,
-            after: if shortened.is_ok() { Some(keep_content) } else { std::fs::read_to_string(target_path).ok() },
-        },
-        FileSnapshot {
-            path: archive_file_path.to_string_lossy().into_owned(),
-            before: before_archive,
-            after: std::fs::read_to_string(&archive_file_path).ok(),
-        },
-    ]);
+    record_best_effort(
+        db,
+        HistoryEntryKind::Archived { filename: fs_utils::filename_of(target_path), count: ranges.len() as u32 },
+        false,
+        vec![
+            FileSnapshot {
+                path: target_path.to_string_lossy().into_owned(),
+                before: before_target,
+                after: if shortened.is_ok() { Some(keep_content) } else { std::fs::read_to_string(target_path).ok() },
+            },
+            FileSnapshot {
+                path: archive_file_path.to_string_lossy().into_owned(),
+                before: before_archive,
+                after: std::fs::read_to_string(&archive_file_path).ok(),
+            },
+        ],
+    );
 
     shortened.to_cmd()?;
     Ok(ranges.len())
@@ -134,14 +142,9 @@ pub fn find_archivable_ranges(flat_headings: &[Heading], archive_after_days: u32
         // find_archivable_project_ranges's own check, where a PROJECT with
         // zero subtasks isn't really a project to judge completion by, a
         // plain action with zero subtasks is just... a normal, done action.
-        let subtree_fully_finished = heading.progress_stats
-            .map(|stats| stats.done == stats.total.get())
-            .unwrap_or(true);
+        let subtree_fully_finished = heading.progress_stats.map(|stats| stats.done == stats.total.get()).unwrap_or(true);
 
-        if is_finished(heading.state.as_deref())
-            && subtree_fully_finished
-            && is_older_than_n_days(&heading.closed, archive_after_days)
-        {
+        if is_finished(heading.state.as_deref()) && subtree_fully_finished && is_older_than_n_days(&heading.closed, archive_after_days) {
             ranges.push((heading.line_no, flat_headings[j - 1].last_line));
         }
 
@@ -162,18 +165,21 @@ pub fn subtree_progress(flat: &[Heading], idx: usize) -> Option<ProgressStats> {
     let mut done = 0u32;
 
     for h in flat.iter().skip(idx + 1) {
-        if h.level <= level { break; }
+        if h.level <= level {
+            break;
+        }
         if h.state.is_some() {
             total += 1;
-            if is_finished(h.state.as_deref()) { done += 1; }
+            if is_finished(h.state.as_deref()) {
+                done += 1;
+            }
         }
     }
 
-    if total == 0 { return None; }
-    Some(ProgressStats{
-        done,
-        total: NonZero::new(total)?,
-    })
+    if total == 0 {
+        return None;
+    }
+    Some(ProgressStats { done, total: NonZero::new(total)? })
 }
 
 /// Set `progress_stats` on all headings in `flat`.
@@ -195,7 +201,9 @@ fn own_clocked_minutes(heading: &Heading) -> Option<u32> {
             any = true;
         }
     }
-    if !any { return None; }
+    if !any {
+        return None;
+    }
     Some(total.max(0) as u32)
 }
 
@@ -212,7 +220,9 @@ pub fn annotate_clocked_time(flat: &mut [Heading]) {
         let level = flat[i].level;
         let mut total = flat[i].own_clocked_minutes.unwrap_or(0);
         for h in flat[i + 1..].iter() {
-            if h.level <= level { break; }
+            if h.level <= level {
+                break;
+            }
             total += h.own_clocked_minutes.unwrap_or(0);
         }
         flat[i].total_clocked_minutes = if total > 0 { Some(total) } else { None };
@@ -234,21 +244,31 @@ pub fn annotate_clocked_time(flat: &mut [Heading]) {
 /// time it runs), there's no freshly-parsed FLAT to read an up-to-date
 /// state from; this reconstructs the equivalent from FLAT (still the
 /// pre-batch parse) plus the pending updates themselves.
-pub fn subtree_progress_with_overlay(flat: &[Heading], idx: usize, overlay: &std::collections::HashMap<usize, Option<String>>) -> Option<ProgressStats> {
+pub fn subtree_progress_with_overlay(
+    flat: &[Heading],
+    idx: usize,
+    overlay: &std::collections::HashMap<usize, Option<String>>,
+) -> Option<ProgressStats> {
     let level = flat[idx].level;
     let mut total = 0u32;
     let mut done = 0u32;
 
     for h in flat.iter().skip(idx + 1) {
-        if h.level <= level { break; }
+        if h.level <= level {
+            break;
+        }
         let state = overlay.get(&h.line_no).cloned().unwrap_or_else(|| h.state.clone());
         if let Some(s) = state {
             total += 1;
-            if is_finished(Some(&s)) { done += 1; }
+            if is_finished(Some(&s)) {
+                done += 1;
+            }
         }
     }
 
-    if total == 0 { return None; }
+    if total == 0 {
+        return None;
+    }
     Some(ProgressStats { done, total: NonZero::new(total)? })
 }
 
@@ -265,15 +285,23 @@ pub fn subtree_progress_excluding(flat: &[Heading], idx: usize, removed: &std::c
     let mut done = 0u32;
 
     for (h_idx, h) in flat.iter().enumerate().skip(idx + 1) {
-        if h.level <= level { break; }
-        if removed.contains(&h_idx) { continue; }
+        if h.level <= level {
+            break;
+        }
+        if removed.contains(&h_idx) {
+            continue;
+        }
         if let Some(s) = h.state.as_deref() {
             total += 1;
-            if is_finished(Some(s)) { done += 1; }
+            if is_finished(Some(s)) {
+                done += 1;
+            }
         }
     }
 
-    if total == 0 { return None; }
+    if total == 0 {
+        return None;
+    }
     Some(ProgressStats { done, total: NonZero::new(total)? })
 }
 
@@ -283,11 +311,7 @@ pub fn subtree_progress_excluding(flat: &[Heading], idx: usize, removed: &std::c
 pub fn find_archivable_project_ranges(flat: &[Heading]) -> Vec<(usize, usize)> {
     flat.iter()
         .enumerate()
-        .filter(|(_, h)| {
-            h.level == 1
-                && has_project_tag(&h.tags)
-                && h.progress_stats.is_some_and(|stats| stats.done == stats.total.get())
-        })
+        .filter(|(_, h)| h.level == 1 && has_project_tag(&h.tags) && h.progress_stats.is_some_and(|stats| stats.done == stats.total.get()))
         .map(|(idx, _)| heading_utils::subtree_line_range(flat, idx))
         .collect()
 }
@@ -311,19 +335,16 @@ pub fn time_tracking_summary(headings_by_file: &HashMap<String, Vec<Heading>>) -
             if minutes == 0 {
                 continue;
             }
-            let category = property_value(&heading.properties, ORG_CATEGORY_PROPERTY)
-                .map(|v| v.trim().to_string())
-                .filter(|v| !v.is_empty());
+            let category =
+                property_value(&heading.properties, ORG_CATEGORY_PROPERTY).map(|v| v.trim().to_string()).filter(|v| !v.is_empty());
 
             *totals.entry(category).or_insert(0) += minutes;
             grand_total_minutes += minutes;
         }
     }
 
-    let mut by_category: Vec<CategoryTimeTotal> = totals
-        .into_iter()
-        .map(|(category, total_minutes)| CategoryTimeTotal { category, total_minutes })
-        .collect();
+    let mut by_category: Vec<CategoryTimeTotal> =
+        totals.into_iter().map(|(category, total_minutes)| CategoryTimeTotal { category, total_minutes }).collect();
     by_category.sort_by(|a, b| a.category.cmp(&b.category));
 
     TimeTrackingSummary { by_category, grand_total_minutes }
@@ -359,7 +380,8 @@ mod tests {
             "* DONE Old finished task\n:PROPERTIES:\n:CLOSED: [2020-01-01 Wed]\n:END:\n\
              * TODO Still open task\nSome notes here.\n\
              * TODO Another open task\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         let (lines, flat) = heading_utils::read_and_parse(&path).unwrap();
         let idx = flat.iter().position(|h| h.title == "Old finished task").unwrap();
@@ -537,10 +559,8 @@ mod tests {
     fn archivable_range_includes_all_child_headings_once_they_are_also_finished() {
         // Parent DONE+alt, Kind (höheres Level) ist ebenfalls fertig (WONT-DO,
         // Teil von FINISHED_STATES) -> ganzer Range wird archiviert.
-        let mut headings = vec![
-            make_heading(1, 2, 1, Some("DONE"), Some("2000-01-01 Sa 10:00")),
-            make_heading(3, 5, 2, Some("WONT-DO"), None),
-        ];
+        let mut headings =
+            vec![make_heading(1, 2, 1, Some("DONE"), Some("2000-01-01 Sa 10:00")), make_heading(3, 5, 2, Some("WONT-DO"), None)];
         annotate_progress(&mut headings);
         let ranges = find_archivable_ranges(&headings, 7);
         // end_line kommt vom letzten Kind (last_line = 5), nicht vom Parent selbst (last_line = 2).
@@ -586,10 +606,8 @@ mod tests {
     /// is -- only top-level headings are independently archivable.
     #[test]
     fn a_done_child_inside_a_still_open_parent_is_never_independently_archived() {
-        let mut headings = vec![
-            make_heading(1, 4, 1, Some("TODO"), None),
-            make_heading(2, 2, 2, Some("DONE"), Some("2000-01-01 Sa 10:00")),
-        ];
+        let mut headings =
+            vec![make_heading(1, 4, 1, Some("TODO"), None), make_heading(2, 2, 2, Some("DONE"), Some("2000-01-01 Sa 10:00"))];
         annotate_progress(&mut headings);
         let ranges = find_archivable_ranges(&headings, 7);
         assert!(ranges.is_empty());
@@ -626,10 +644,7 @@ mod tests {
 
     #[test]
     fn overlay_progress_none_entry_means_the_pending_change_clears_the_state() {
-        let flat = vec![
-            make_heading(1, 2, 1, None, None),
-            make_heading(2, 2, 2, Some("DONE"), None),
-        ];
+        let flat = vec![make_heading(1, 2, 1, None, None), make_heading(2, 2, 2, Some("DONE"), None)];
         let mut overlay = std::collections::HashMap::new();
         overlay.insert(2, None); // payload's own "clear the state" sentinel
 
@@ -649,10 +664,7 @@ mod tests {
         ];
         let overlay = std::collections::HashMap::new();
 
-        assert_eq!(
-            subtree_progress_with_overlay(&flat, 0, &overlay),
-            Some(ProgressStats { done: 1, total: NonZero::new(2).unwrap() })
-        );
+        assert_eq!(subtree_progress_with_overlay(&flat, 0, &overlay), Some(ProgressStats { done: 1, total: NonZero::new(2).unwrap() }));
     }
 
     /* --- subtree_progress_excluding --- */
@@ -676,10 +688,7 @@ mod tests {
 
     #[test]
     fn excluding_progress_is_none_once_every_descendant_is_removed() {
-        let flat = vec![
-            make_heading(1, 2, 1, None, None),
-            make_heading(2, 2, 2, Some("DONE"), None),
-        ];
+        let flat = vec![make_heading(1, 2, 1, None, None), make_heading(2, 2, 2, Some("DONE"), None)];
         let mut removed = std::collections::BTreeSet::new();
         removed.insert(1);
 
@@ -696,9 +705,7 @@ mod tests {
 
     #[test]
     fn own_and_total_match_for_a_leaf_with_no_children() {
-        let mut flat = vec![heading_with_clocks(1, 1, vec![
-            "CLOCK: [2026-08-17 Mon 13:00]--[2026-08-17 Mon 14:30] =>  1:30",
-        ])];
+        let mut flat = vec![heading_with_clocks(1, 1, vec!["CLOCK: [2026-08-17 Mon 13:00]--[2026-08-17 Mon 14:30] =>  1:30"])];
         annotate_clocked_time(&mut flat);
         assert_eq!(flat[0].own_clocked_minutes, Some(90));
         assert_eq!(flat[0].total_clocked_minutes, Some(90));
@@ -706,20 +713,25 @@ mod tests {
 
     #[test]
     fn sums_multiple_closed_entries_on_the_same_heading() {
-        let mut flat = vec![heading_with_clocks(1, 1, vec![
-            "CLOCK: [2026-08-17 Mon 13:00]--[2026-08-17 Mon 14:30] =>  1:30",
-            "CLOCK: [2026-08-16 Sun 09:00]--[2026-08-16 Sun 09:45] =>  0:45",
-        ])];
+        let mut flat = vec![heading_with_clocks(
+            1,
+            1,
+            vec![
+                "CLOCK: [2026-08-17 Mon 13:00]--[2026-08-17 Mon 14:30] =>  1:30",
+                "CLOCK: [2026-08-16 Sun 09:00]--[2026-08-16 Sun 09:45] =>  0:45",
+            ],
+        )];
         annotate_clocked_time(&mut flat);
         assert_eq!(flat[0].own_clocked_minutes, Some(135));
     }
 
     #[test]
     fn an_open_running_entry_does_not_count_toward_own_minutes() {
-        let mut flat = vec![heading_with_clocks(1, 1, vec![
-            "CLOCK: [2026-08-17 Mon 13:00]--[2026-08-17 Mon 14:30] =>  1:30",
-            "CLOCK: [2026-08-17 Mon 18:00]",
-        ])];
+        let mut flat = vec![heading_with_clocks(
+            1,
+            1,
+            vec!["CLOCK: [2026-08-17 Mon 13:00]--[2026-08-17 Mon 14:30] =>  1:30", "CLOCK: [2026-08-17 Mon 18:00]"],
+        )];
         annotate_clocked_time(&mut flat);
         assert_eq!(flat[0].own_clocked_minutes, Some(90), "only the closed entry counts");
     }
@@ -766,10 +778,8 @@ mod tests {
 
     #[test]
     fn a_malformed_clock_line_is_silently_ignored_not_counted() {
-        let mut flat = vec![heading_with_clocks(1, 1, vec![
-            "CLOCK: garbage",
-            "CLOCK: [2026-08-17 Mon 09:00]--[2026-08-17 Mon 09:10] =>  0:10",
-        ])];
+        let mut flat =
+            vec![heading_with_clocks(1, 1, vec!["CLOCK: garbage", "CLOCK: [2026-08-17 Mon 09:00]--[2026-08-17 Mon 09:10] =>  0:10"])];
         annotate_clocked_time(&mut flat);
         assert_eq!(flat[0].own_clocked_minutes, Some(10));
     }

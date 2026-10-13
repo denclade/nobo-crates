@@ -51,11 +51,7 @@ fn split_call(token: &str) -> (String, Vec<String>) {
     match trimmed.find('(') {
         Some(open) if trimmed.ends_with(')') => {
             let name = trimmed[..open].trim_end_matches('!').to_string();
-            let args = trimmed[open + 1..trimmed.len() - 1]
-                .split(',')
-                .map(|a| a.trim().to_string())
-                .filter(|a| !a.is_empty())
-                .collect();
+            let args = trimmed[open + 1..trimmed.len() - 1].split(',').map(|a| a.trim().to_string()).filter(|a| !a.is_empty()).collect();
             (name, args)
         }
         _ => (trimmed.to_string(), Vec::new()),
@@ -176,10 +172,8 @@ fn sibling_indices(flat: &[Heading], idx: usize) -> Vec<usize> {
         Some(p) => (p + 1, subtree_end_idx(flat, p)),
         None => (0, flat.len()),
     };
-    
-    (start..end)
-        .filter(|&i| i != idx && flat[i].level == level)
-        .collect()
+
+    (start..end).filter(|&i| i != idx && flat[i].level == level).collect()
 }
 
 /// Where a finder points, seen from IDX.
@@ -214,10 +208,7 @@ pub fn resolve_finder(flat: &[Heading], idx: usize, finder: &Finder) -> Vec<usiz
         Finder::Parent => parent_idx(flat, idx).into_iter().collect(),
         Finder::FirstChild => {
             let level = flat[idx].level;
-            (idx + 1 < flat.len() && flat[idx + 1].level == level + 1)
-                .then_some(idx + 1)
-                .into_iter()
-                .collect()
+            (idx + 1 < flat.len() && flat[idx + 1].level == level + 1).then_some(idx + 1).into_iter().collect()
         }
         Finder::Children => {
             let level = flat[idx].level;
@@ -231,9 +222,9 @@ pub fn resolve_finder(flat: &[Heading], idx: usize, finder: &Finder) -> Vec<usiz
 
 fn condition_holds(flat: &[Heading], idx: usize, cond: &Condition) -> bool {
     match cond {
-        Condition::NoSiblingWithTodo(state) => sibling_indices(flat, idx)
-            .into_iter()
-            .all(|i| flat[i].state.as_deref() != Some(state.as_str())),
+        Condition::NoSiblingWithTodo(state) => {
+            sibling_indices(flat, idx).into_iter().all(|i| flat[i].state.as_deref() != Some(state.as_str()))
+        }
         Condition::SourceTodoIn(states) => match flat[idx].state.as_deref() {
             Some(s) => states.iter().any(|w| w == s),
             None => states.is_empty(),
@@ -267,11 +258,7 @@ pub fn evaluate_trigger(flat: &[Heading], source_line_no: usize) -> Vec<PlannedC
         return Vec::new();
     }
 
-    let mut targets: Vec<usize> = spec
-        .finders
-        .iter()
-        .flat_map(|f| resolve_finder(flat, idx, f))
-        .collect();
+    let mut targets: Vec<usize> = spec.finders.iter().flat_map(|f| resolve_finder(flat, idx, f)).collect();
     targets.sort_unstable();
     targets.dedup();
 
@@ -325,11 +312,7 @@ fn inherited_trigger(flat: &[Heading], idx: usize) -> Option<&String> {
 /// Re-evaluates the TRIGGER property of the heading at SOURCE_LINE_NO (after
 /// its own change has already been written) and applies any resulting state
 /// changes to the affected headings.
-pub fn apply_triggers(
-    path: &Path,
-    source_line_no: usize,
-    index_manager: &IndexManager,
-) -> Result<(), String> {
+pub fn apply_triggers(path: &Path, source_line_no: usize, index_manager: &IndexManager) -> Result<(), String> {
     // The file as it is on disk, not the index cache. The caller has just
     // written its own edit, and the cache is only as current as the last
     // watcher event -- which on mobile never comes at all. Same rule every
@@ -346,9 +329,7 @@ pub fn apply_triggers(
     let targets: Vec<(HeadingTarget, Option<String>)> = changes
         .iter()
         .filter_map(|change| {
-            flat.iter()
-                .find(|h| h.line_no == change.target_line_no)
-                .map(|h| (heading_identity::target_of(h), change.new_state.clone()))
+            flat.iter().find(|h| h.line_no == change.target_line_no).map(|h| (heading_identity::target_of(h), change.new_state.clone()))
         })
         .collect();
 
@@ -371,10 +352,7 @@ pub fn apply_triggers(
             continue;
         }
 
-        let payload = HeadingUpdatePayload {
-            state: Some(new_state.clone().unwrap_or_default()),
-            ..Default::default()
-        };
+        let payload = HeadingUpdatePayload { state: Some(new_state.clone().unwrap_or_default()), ..Default::default() };
 
         edit.write(&payload)?;
         edit.commit()?;
@@ -403,14 +381,7 @@ mod tests {
         }
     }
 
-    fn heading_with_prop(
-        line_no: usize,
-        level: usize,
-        title: &str,
-        state: Option<&str>,
-        key: &str,
-        value: &str,
-    ) -> Heading {
+    fn heading_with_prop(line_no: usize, level: usize, title: &str, state: Option<&str>, key: &str, value: &str) -> Heading {
         let mut heading = heading(line_no, level, title, state);
         heading.properties.insert(key.to_string(), value.to_string());
         heading
@@ -421,8 +392,7 @@ mod tests {
     #[test]
     fn a_projects_trigger_fires_for_a_task_under_it() {
         let flat = vec![
-            heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY,
-                              "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
+            heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY, "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
             heading(2, 2, "A", Some("DONE")),
             heading(3, 2, "B", Some("TODO")),
             heading(4, 2, "C", Some("TODO")),
@@ -453,8 +423,7 @@ mod tests {
     #[test]
     fn a_finished_sibling_is_walked_past_rather_than_reopened() {
         let flat = vec![
-            heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY,
-                              "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
+            heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY, "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
             heading(2, 2, "A", Some("DONE")),
             heading(3, 2, "B", Some("WONT-DO")),
             heading(4, 2, "C", Some("TODO")),
@@ -470,8 +439,7 @@ mod tests {
     #[test]
     fn nothing_open_after_it_means_nothing_happens() {
         let flat = vec![
-            heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY,
-                              "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
+            heading_with_prop(1, 1, "Projekt", None, ORG_TRIGGER_PROPERTY, "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
             heading(2, 2, "A", Some("DONE")),
             heading(3, 2, "B", Some("DONE")),
             heading(4, 2, "C", Some("WONT-DO")),
@@ -523,10 +491,7 @@ mod tests {
 
     #[test]
     fn evaluate_returns_nothing_without_trigger_property() {
-        let flat = vec![
-            heading(1, 1, "P", None),
-            heading(2, 2, "A", Some("DONE")),
-        ];
+        let flat = vec![heading(1, 1, "P", None), heading(2, 2, "A", Some("DONE"))];
         assert!(evaluate_trigger(&flat, 2).is_empty());
     }
 
@@ -538,18 +503,14 @@ mod tests {
             heading(3, 2, "B", Some("TODO")),
         ];
         let changes = evaluate_trigger(&flat, 2);
-        assert_eq!(changes, vec![PlannedChange {
-            target_line_no: 3,
-            new_state: Some("NEXT".to_string()),
-        }]);
+        assert_eq!(changes, vec![PlannedChange { target_line_no: 3, new_state: Some("NEXT".to_string()) }]);
     }
 
     #[test]
     fn evaluate_respects_no_sibling_condition() {
         let flat = vec![
             heading(1, 1, "P", None),
-            heading_with_prop(2, 2, "A", Some("DONE"), ORG_TRIGGER_PROPERTY,
-                              "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
+            heading_with_prop(2, 2, "A", Some("DONE"), ORG_TRIGGER_PROPERTY, "if-no-sibling-todo(NEXT) next-sibling todo!(NEXT)"),
             heading(3, 2, "B", Some("TODO")),
             heading(4, 2, "C", Some("NEXT")),
         ];
@@ -558,21 +519,13 @@ mod tests {
 
     #[test]
     fn parent_finder_returns_enclosing_heading() {
-        let flat = vec![
-            heading(1, 1, "P", None),
-            heading(2, 2, "A", Some("DONE")),
-        ];
+        let flat = vec![heading(1, 1, "P", None), heading(2, 2, "A", Some("DONE"))];
         assert_eq!(resolve_finder(&flat, 1, &Finder::Parent), vec![0]);
     }
 
     #[test]
     fn children_finder_returns_direct_children_only() {
-        let flat = vec![
-            heading(1, 1, "P", None),
-            heading(2, 2, "A", None),
-            heading(3, 3, "A.child", None),
-            heading(4, 2, "B", None),
-        ];
+        let flat = vec![heading(1, 1, "P", None), heading(2, 2, "A", None), heading(3, 3, "A.child", None), heading(4, 2, "B", None)];
         assert_eq!(resolve_finder(&flat, 0, &Finder::Children), vec![1, 3]);
     }
 }

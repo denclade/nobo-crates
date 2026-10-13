@@ -8,7 +8,6 @@ use super::{org, store};
 use rusqlite::Connection;
 use std::sync::Mutex;
 
-
 pub use nobo_calendar_mirror::{dir as calendars_dir, is_mirror_file as is_calendar_file};
 
 /// Downloads one feed and rewrites its file. Returns how many events
@@ -58,17 +57,12 @@ pub async fn refresh_one(
         if let Some(parent) = target.parent() {
             std::fs::create_dir_all(parent).map_err(|e| format!("could not create {}: {e}", parent.display()))?;
         }
-        nobo_core::utils::fs_utils::write_atomic(&target, &rendered)
-            .map_err(|e| format!("could not write {}: {e}", target.display()))?;
+        nobo_core::utils::fs_utils::write_atomic(&target, &rendered).map_err(|e| format!("could not write {}: {e}", target.display()))?;
     }
 
     {
         let conn = db.lock().map_err(|_| "database lock poisoned".to_string())?;
-        let state = store::FeedState {
-            etag: body.etag,
-            last_modified: body.last_modified,
-            event_count: events.len(),
-        };
+        let state = store::FeedState { etag: body.etag, last_modified: body.last_modified, event_count: events.len() };
         store::set(&conn, &subscription.id, &state).map_err(|e| e.to_string())?;
     }
 
@@ -109,11 +103,7 @@ pub(crate) fn normalize_url(url: &str) -> String {
 /// and a 304 carries no body at all, so an unchanged feed costs the
 /// request and nothing else. No download, no parse, no write, and nothing
 /// for the vault sync to carry afterwards.
-async fn fetch(
-    client: &reqwest::Client,
-    url: &str,
-    known: Option<&store::FeedState>,
-) -> Result<Option<Body>, String> {
+async fn fetch(client: &reqwest::Client, url: &str, known: Option<&store::FeedState>) -> Result<Option<Body>, String> {
     let mut request = client.get(normalize_url(url));
     if let Some(state) = known {
         // Both, where both are known: a server may honour either, and
@@ -126,10 +116,7 @@ async fn fetch(
         }
     }
 
-    let response = request
-        .send()
-        .await
-        .map_err(|e| format!("could not reach the calendar: {}", nobo_http::request_failed(&e)))?;
+    let response = request.send().await.map_err(|e| format!("could not reach the calendar: {}", nobo_http::request_failed(&e)))?;
 
     if response.status() == reqwest::StatusCode::NOT_MODIFIED {
         return Ok(None);
@@ -138,9 +125,7 @@ async fn fetch(
         return Err(format!("the calendar answered HTTP {}", response.status()));
     }
 
-    let header = |name: reqwest::header::HeaderName| {
-        response.headers().get(name).and_then(|value| value.to_str().ok()).map(String::from)
-    };
+    let header = |name: reqwest::header::HeaderName| response.headers().get(name).and_then(|value| value.to_str().ok()).map(String::from);
     let etag = header(reqwest::header::ETAG);
     let last_modified = header(reqwest::header::LAST_MODIFIED);
     let text = response.text().await.map_err(|e| format!("could not read the calendar: {e}"))?;
@@ -178,17 +163,12 @@ SUMMARY:Neujahr\r\nDTSTART;VALUE=DATE:20260101\r\nEND:VEVENT\r\nEND:VCALENDAR\r\
 
         let server = MockServer::start().await;
         // Same body every time, and not a validator in sight.
-        Mock::given(method("GET"))
-            .and(path("/cal.ics"))
-            .respond_with(ResponseTemplate::new(200).set_body_string(ICS))
-            .mount(&server)
-            .await;
+        Mock::given(method("GET")).and(path("/cal.ics")).respond_with(ResponseTemplate::new(200).set_body_string(ICS)).mount(&server).await;
 
         let vault = tempfile::tempdir().unwrap();
         let db = Mutex::new(Connection::open_in_memory().unwrap());
         store::init_schema(&db.lock().unwrap()).unwrap();
-        let subscription =
-            super::super::registry::subscription_for("Feiertage", &format!("{}/cal.ics", server.uri()));
+        let subscription = super::super::registry::subscription_for("Feiertage", &format!("{}/cal.ics", server.uri()));
         let client = reqwest::Client::new();
 
         let first = refresh_one(&client, &db, vault.path(), &subscription).await.unwrap();
@@ -242,16 +222,12 @@ SUMMARY:Neujahr\r\nDTSTART;VALUE=DATE:20260101\r\nEND:VEVENT\r\nEND:VCALENDAR\r\
         let vault = tempfile::tempdir().unwrap();
         let db = Mutex::new(Connection::open_in_memory().unwrap());
         store::init_schema(&db.lock().unwrap()).unwrap();
-        let subscription =
-            super::super::registry::subscription_for("Feiertage", &format!("{}/cal.ics", server.uri()));
+        let subscription = super::super::registry::subscription_for("Feiertage", &format!("{}/cal.ics", server.uri()));
         let client = reqwest::Client::new();
 
         let first = refresh_one(&client, &db, vault.path(), &subscription).await.unwrap();
         assert_eq!((first.event_count, first.unchanged), (1, false));
-        let written = std::fs::metadata(super::super::registry::file_for(vault.path(), &subscription.id))
-            .unwrap()
-            .modified()
-            .unwrap();
+        let written = std::fs::metadata(super::super::registry::file_for(vault.path(), &subscription.id)).unwrap().modified().unwrap();
 
         let second = refresh_one(&client, &db, vault.path(), &subscription).await.unwrap();
 
@@ -260,10 +236,7 @@ SUMMARY:Neujahr\r\nDTSTART;VALUE=DATE:20260101\r\nEND:VEVENT\r\nEND:VCALENDAR\r\
         // recorded.
         assert_eq!(second.event_count, 1);
         assert_eq!(
-            std::fs::metadata(super::super::registry::file_for(vault.path(), &subscription.id))
-                .unwrap()
-                .modified()
-                .unwrap(),
+            std::fs::metadata(super::super::registry::file_for(vault.path(), &subscription.id)).unwrap().modified().unwrap(),
             written,
             "the mirror was rewritten for an unchanged feed"
         );
@@ -289,8 +262,7 @@ SUMMARY:Neujahr\r\nDTSTART;VALUE=DATE:20260101\r\nEND:VEVENT\r\nEND:VCALENDAR\r\
         let vault = tempfile::tempdir().unwrap();
         let db = Mutex::new(Connection::open_in_memory().unwrap());
         store::init_schema(&db.lock().unwrap()).unwrap();
-        let subscription =
-            super::super::registry::subscription_for("Feiertage", &format!("{}/cal.ics", server.uri()));
+        let subscription = super::super::registry::subscription_for("Feiertage", &format!("{}/cal.ics", server.uri()));
         let client = reqwest::Client::new();
 
         refresh_one(&client, &db, vault.path(), &subscription).await.unwrap();

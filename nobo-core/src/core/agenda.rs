@@ -255,7 +255,11 @@ pub fn day(vault: &Vault, projects_file: &Path, actions_file: &Path, day: &str) 
         let Some(when) = when else { continue };
         let is_timed = when.start_time.is_some();
         let placed = AgendaEntry { timed: is_timed, when: Some(when), ..entry.clone() };
-        if is_timed { timed.push(placed) } else { all_day.push(placed) }
+        if is_timed {
+            timed.push(placed)
+        } else {
+            all_day.push(placed)
+        }
     }
 
     // Calendar entries first among the whole-day ones: a holiday or a
@@ -284,26 +288,12 @@ pub fn day(vault: &Vault, projects_file: &Path, actions_file: &Path, day: &str) 
         .collect();
     // Dated first and by date, undated after: what is due soonest is what
     // a reader reaches for.
-    next_actions.sort_by_key(|entry| {
-        entry
-            .when
-            .as_ref()
-            .map(|w| (0, w.start_date.clone()))
-            .unwrap_or((1, String::new()))
-    });
+    next_actions.sort_by_key(|entry| entry.when.as_ref().map(|w| (0, w.start_date.clone())).unwrap_or((1, String::new())));
     let unscheduled_effort_minutes =
         next_actions.iter().filter(|entry| entry.when.is_none()).filter_map(|entry| entry.heading.effort_minutes).sum();
     next_actions.truncate(NEXT_ACTION_LIMIT);
 
-    AgendaDay {
-        date: day.to_string(),
-        all_day,
-        timed,
-        next_actions,
-        busy_minutes,
-        planned_effort_minutes,
-        unscheduled_effort_minutes,
-    }
+    AgendaDay { date: day.to_string(), all_day, timed, next_actions, busy_minutes, planned_effort_minutes, unscheduled_effort_minutes }
 }
 
 /// Which days between `from` and `to` (ISO, inclusive) carry anything --
@@ -316,9 +306,10 @@ pub fn busy_days(vault: &Vault, projects_file: &Path, actions_file: &Path, from:
     let entries = vault_entries(vault, projects_file, actions_file);
     let mut days: Vec<String> = Vec::new();
     for entry in &entries {
-        for stamp in [entry.when.as_ref(), entry.heading.scheduled.as_ref(), entry.heading.deadline.as_ref(), entry.heading.occurrence.as_ref()]
-            .into_iter()
-            .flatten()
+        for stamp in
+            [entry.when.as_ref(), entry.heading.scheduled.as_ref(), entry.heading.deadline.as_ref(), entry.heading.occurrence.as_ref()]
+                .into_iter()
+                .flatten()
         {
             // Only the start day, not every day of a range: a dot says
             // "something begins here", and a week-long range would
@@ -332,11 +323,7 @@ pub fn busy_days(vault: &Vault, projects_file: &Path, actions_file: &Path, from:
     // `entries`: what a calendar has on a day is in its mirror files,
     // and a contributor is the only thing that knows which those are.
     for contributor in inventory::iter::<AgendaContributor> {
-        days.extend(
-            (contributor.days)(vault, from, to)
-                .into_iter()
-                .filter(|day| day.as_str() >= from && day.as_str() <= to),
-        );
+        days.extend((contributor.days)(vault, from, to).into_iter().filter(|day| day.as_str() >= from && day.as_str() <= to));
     }
     days.sort();
     days.dedup();
@@ -362,13 +349,7 @@ mod tests {
     }
 
     fn heading(title: &str, state: Option<&str>) -> Heading {
-        Heading {
-            title: title.to_string(),
-            state: state.map(str::to_string),
-            level: 1,
-            properties: HashMap::new(),
-            ..Default::default()
-        }
+        Heading { title: title.to_string(), state: state.map(str::to_string), level: 1, properties: HashMap::new(), ..Default::default() }
     }
 
     #[test]

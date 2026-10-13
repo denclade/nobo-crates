@@ -34,8 +34,8 @@ use chrono::{NaiveDate, NaiveDateTime};
 
 use super::model::{CalDavTask, TaskDate, TaskStatus};
 use nobo_core::core::heading_identity;
-use nobo_core::core::org_syntax;
 use nobo_core::core::models::Heading;
+use nobo_core::core::org_syntax;
 
 pub const CALDAV_UID_PROPERTY: &str = "CALDAV_UID";
 
@@ -82,12 +82,7 @@ pub fn nested(tasks: &[CalDavTask]) -> Vec<(&CalDavTask, usize)> {
     out
 }
 
-fn push_with_children<'a>(
-    task: &'a CalDavTask,
-    all: &'a [CalDavTask],
-    level: usize,
-    out: &mut Vec<(&'a CalDavTask, usize)>,
-) {
+fn push_with_children<'a>(task: &'a CalDavTask, all: &'a [CalDavTask], level: usize, out: &mut Vec<(&'a CalDavTask, usize)>) {
     out.push((task, level));
     // Bounded: org has no depth limit, but a cycle in the parent links
     // (which a server can hand out) would otherwise recurse forever.
@@ -163,7 +158,11 @@ pub fn is_valid_org_tag(tag: &str) -> bool {
 /// vtodo::apply_to_raw's `rewrite_status`), so a task left alone keeps
 /// whatever finer state another client gave it.
 pub fn org_state(status: TaskStatus) -> &'static str {
-    if status.is_finished() { "DONE" } else { "TODO" }
+    if status.is_finished() {
+        "DONE"
+    } else {
+        "TODO"
+    }
 }
 
 /// The inverse, from whatever state the file happens to carry. Only
@@ -196,7 +195,6 @@ fn repeat_suffix(task: &CalDavTask) -> String {
     org_syntax::repeater_suffix(task.repeater.as_ref())
 }
 
-
 /// Reads a heading parsed out of a list file back into the task shape, so
 /// a local edit can be pushed.
 ///
@@ -211,17 +209,8 @@ pub fn task_from_heading(heading: &Heading) -> Option<CalDavTask> {
         // Unescaped, because `render_task` escaped it on the way out --
         // see org_syntax::unescape_body_line for what one-way escaping
         // cost.
-        description: Some(
-            heading
-                .content
-                .lines()
-                .map(org_syntax::unescape_body_line)
-                .collect::<Vec<_>>()
-                .join("\n")
-                .trim()
-                .to_string(),
-        )
-        .filter(|c| !c.is_empty()),
+        description: Some(heading.content.lines().map(org_syntax::unescape_body_line).collect::<Vec<_>>().join("\n").trim().to_string())
+            .filter(|c| !c.is_empty()),
         status: caldav_status(heading.state.as_deref()),
         // The server stamps its own COMPLETED when it has none; org's
         // CLOSED is a local formatting of the same moment and is parsed
@@ -276,9 +265,7 @@ pub fn uid_of(heading: &Heading) -> Option<String> {
 /// The case-insensitive lookup itself is the shared one (see
 /// models::property_value).
 fn property(heading: &Heading, name: &str) -> Option<String> {
-    nobo_core::core::models::property_value(&heading.properties, name)
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
+    nobo_core::core::models::property_value(&heading.properties, name).map(|v| v.trim().to_string()).filter(|v| !v.is_empty())
 }
 
 fn parse_closed(value: &str) -> Option<NaiveDateTime> {
@@ -288,9 +275,7 @@ fn parse_closed(value: &str) -> Option<NaiveDateTime> {
 fn task_date_from_org(ts: &nobo_core::core::models::OrgTimestamp) -> Option<TaskDate> {
     let date = NaiveDate::parse_from_str(&ts.start_date, "%Y-%m-%d").ok()?;
     match ts.start_time.as_deref() {
-        Some(time) => chrono::NaiveTime::parse_from_str(time, "%H:%M")
-            .ok()
-            .map(|t| TaskDate::At(date.and_time(t))),
+        Some(time) => chrono::NaiveTime::parse_from_str(time, "%H:%M").ok().map(|t| TaskDate::At(date.and_time(t))),
         None => Some(TaskDate::Day(date)),
     }
 }

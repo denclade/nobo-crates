@@ -81,11 +81,7 @@ pub fn messages(arrivals: &[Arrival], presence: Presence, language: &str) -> Vec
     arrivals
         .iter()
         .filter(|arrival| arrival.arrived > 0)
-        .map(|arrival| Message {
-            id: id_for(&arrival.name),
-            title: arrival.name.clone(),
-            body: body(arrival.arrived, language),
-        })
+        .map(|arrival| Message { id: id_for(&arrival.name), title: arrival.name.clone(), body: body(arrival.arrived, language) })
         .collect()
 }
 
@@ -127,9 +123,7 @@ fn id_for(name: &str) -> i32 {
 /// English for a device that has none. Shared by every delivery path,
 /// Tauri or not.
 pub fn configured_language() -> String {
-    crate::config::settings::Config::load()
-        .map(|config| config.language)
-        .unwrap_or_else(|| "en_US".to_string())
+    crate::config::settings::Config::load().map(|config| config.language).unwrap_or_else(|| "en_US".to_string())
 }
 
 #[cfg(test)]

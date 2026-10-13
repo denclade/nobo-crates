@@ -46,18 +46,12 @@ mod tests {
     /// places must still be one subscription.
     #[test]
     fn the_same_feed_under_its_two_schemes_is_one_subscription() {
-        assert_eq!(
-            subscription_id("webcal://example.com/cal/basic.ics"),
-            subscription_id("https://example.com/cal/basic.ics"),
-        );
+        assert_eq!(subscription_id("webcal://example.com/cal/basic.ics"), subscription_id("https://example.com/cal/basic.ics"),);
     }
 
     #[test]
     fn different_feeds_stay_apart() {
-        assert_ne!(
-            subscription_id("https://example.com/cal/a.ics"),
-            subscription_id("https://example.com/cal/b.ics"),
-        );
+        assert_ne!(subscription_id("https://example.com/cal/a.ics"), subscription_id("https://example.com/cal/b.ics"),);
     }
 
     #[test]

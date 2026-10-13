@@ -13,10 +13,7 @@ const TAG_WEIGHT: f32 = 20.0;
 const OCCURRENCE_WEIGHT: f32 = 2.0;
 
 pub fn parse_query_terms(query: &str) -> Vec<String> {
-    query.to_lowercase()
-        .split_whitespace()
-        .map(String::from)
-        .collect()
+    query.to_lowercase().split_whitespace().map(String::from).collect()
 }
 
 pub fn score_note(query_terms: &[String], note: &Note) -> f32 {
@@ -112,7 +109,11 @@ pub fn search_notes<'a>(notes: impl Iterator<Item = &'a Note>, base_dir: &str, q
                 return Some(build_search_result(note, 0.0, &base_dir));
             }
             let score = score_note(query_terms, note);
-            if score > 0.0 { Some(build_search_result(note, score, &base_dir)) } else { None }
+            if score > 0.0 {
+                Some(build_search_result(note, score, &base_dir))
+            } else {
+                None
+            }
         })
         .collect();
 
@@ -120,10 +121,7 @@ pub fn search_notes<'a>(notes: impl Iterator<Item = &'a Note>, base_dir: &str, q
     // "list everything" empty-query case in a stable, sensible order
     // instead of HashMap iteration order (see IndexManager::all_notes),
     // and does the same for any real query where two notes score equally.
-    results.sort_by(|a, b| {
-        b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.file.name.cmp(&b.file.name))
-    });
+    results.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal).then_with(|| a.file.name.cmp(&b.file.name)));
     results
 }
 
@@ -145,7 +143,11 @@ fn build_fulltext_result(note: &Note, score: f32, occurrences: usize, base_dir: 
 /// spellings now find it, which is what someone typing into a search box
 /// means either way.
 fn folded(ch: char) -> char {
-    if ch == 'ς' { 'σ' } else { ch }
+    if ch == 'ς' {
+        'σ'
+    } else {
+        ch
+    }
 }
 
 /// How far into a haystack a case-insensitive match starting here reaches,
@@ -266,8 +268,12 @@ where
             }
 
             let mut score = occurrences as f32 * OCCURRENCE_WEIGHT;
-            if title_hit { score += TITLE_WEIGHT; }
-            if tag_hit { score += TAG_WEIGHT; }
+            if title_hit {
+                score += TITLE_WEIGHT;
+            }
+            if tag_hit {
+                score += TAG_WEIGHT;
+            }
 
             Some(build_fulltext_result(note, score, occurrences, base_dir))
         })
@@ -285,12 +291,7 @@ mod tests {
     use crate::core::models::Note;
 
     fn make_note(title: &str, path: &str, tags: Vec<&str>) -> Note {
-        Note {
-            title: title.to_string(),
-            path: path.to_string(),
-            tags: tags.into_iter().map(String::from).collect(),
-            ..Default::default()
-        }
+        Note { title: title.to_string(), path: path.to_string(), tags: tags.into_iter().map(String::from).collect(), ..Default::default() }
     }
 
     #[test]
@@ -349,10 +350,7 @@ mod tests {
 
     #[test]
     fn search_notes_filters_by_base_dir() {
-        let notes = vec![
-            make_note("A", "/00_tests/a.org", vec![]),
-            make_note("B", "/other/b.org", vec![]),
-        ];
+        let notes = vec![make_note("A", "/00_tests/a.org", vec![]), make_note("B", "/other/b.org", vec![])];
         let terms = vec!["a".to_string()];
         let results = search_notes(notes.iter(), "/00_tests", &terms);
 
@@ -405,15 +403,17 @@ mod tests {
     /// Builds a `Note` and registers its body in `bodies`, mirroring how
     /// the index populates note bodies at scan time. Touches no disk --
     /// fulltext search reads from that map.
-    fn make_note_with_content(bodies: &mut HashMap<String, String>, dir: &Path, title: &str, filename: &str, tags: Vec<&str>, content: &str) -> Note {
+    fn make_note_with_content(
+        bodies: &mut HashMap<String, String>,
+        dir: &Path,
+        title: &str,
+        filename: &str,
+        tags: Vec<&str>,
+        content: &str,
+    ) -> Note {
         let path_str = dir.join(filename).to_string_lossy().into_owned();
         bodies.insert(path_str.clone(), content.to_string());
-        Note {
-            title: title.to_string(),
-            path: path_str,
-            tags: tags.into_iter().map(String::from).collect(),
-            ..Default::default()
-        }
+        Note { title: title.to_string(), path: path_str, tags: tags.into_iter().map(String::from).collect(), ..Default::default() }
     }
 
     #[test]
@@ -433,17 +433,9 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let mut bodies = HashMap::new();
         let title_hit = make_note_with_content(&mut bodies, tmp.path(), "Rust Notes", "a.org", vec![], "no matches here");
-        let content_hit = make_note_with_content(
-            &mut bodies, tmp.path(), "Other", "b.org", vec![],
-            &"rust ".repeat(50),
-        );
+        let content_hit = make_note_with_content(&mut bodies, tmp.path(), "Other", "b.org", vec![], &"rust ".repeat(50));
 
-        let results = search_notes_fulltext(
-            &[title_hit, content_hit],
-            &bodies,
-            tmp.path().to_str().unwrap(),
-            "rust",
-        );
+        let results = search_notes_fulltext(&[title_hit, content_hit], &bodies, tmp.path().to_str().unwrap(), "rust");
 
         assert_eq!(results[0].file.path, tmp.path().join("a.org").to_string_lossy());
     }
@@ -496,23 +488,18 @@ mod tests {
         let cases = [
             ("Rust and rust and RUST", "rust"),
             ("nothing here", "rust"),
-            ("aaaa", "aa"),                      // non-overlapping: 2, not 3
+            ("aaaa", "aa"), // non-overlapping: 2, not 3
             ("Grüße aus Zürich", "grüße"),
             ("STRASSE", "strasse"),
-            ("İstanbul im Winter", "winter"),    // dotted capital I nearby
-
+            ("İstanbul im Winter", "winter"), // dotted capital I nearby
             ("", "rust"),
-            ("rust", "rust and more"),           // needle longer than haystack
+            ("rust", "rust and more"), // needle longer than haystack
         ];
 
         for (haystack, needle) in cases {
             let needle_lower = needle.to_lowercase();
             let expected = haystack.to_lowercase().matches(&needle_lower).count();
-            assert_eq!(
-                count_matches_ci(haystack, &needle_lower),
-                expected,
-                "counting {needle:?} in {haystack:?}"
-            );
+            assert_eq!(count_matches_ci(haystack, &needle_lower), expected, "counting {needle:?} in {haystack:?}");
             assert_eq!(
                 contains_ci(haystack, &needle_lower),
                 haystack.to_lowercase().contains(&needle_lower),

@@ -1,21 +1,16 @@
 use nobo_core::core::history::record_best_effort;
-use nobo_core::core::vault_write;
 use nobo_core::core::indexer::IndexManager;
 use nobo_core::core::models::{DiffChunk, FileSnapshot, HistoryEntryKind, Note, NoteLoadResult};
+use nobo_core::core::vault_write;
+use nobo_core::utils::fs_utils::filename_of;
 use nobo_core::utils::note_utils::{FilenameSyncStatus, IdentifierChange};
-use nobo_core::utils::{diff_utils, fs_utils, note_utils, tag_utils, temp_file_utils};
 use nobo_core::utils::ToCmdResult;
+use nobo_core::utils::{diff_utils, fs_utils, note_utils, tag_utils, temp_file_utils};
 use rusqlite::Connection;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use nobo_core::utils::fs_utils::filename_of;
 
-pub fn search_tags(
-    query: String,
-    selected: Vec<String>,
-    limit: u32,
-    index_state: &IndexManager,
-) -> Vec<String> {
+pub fn search_tags(query: String, selected: Vec<String>, limit: u32, index_state: &IndexManager) -> Vec<String> {
     match index_state.index.read() {
         Ok(read_lock) => tag_utils::search(&read_lock.tag_counts, &query, &selected, limit as usize),
         Err(_) => vec![],
@@ -43,7 +38,10 @@ pub fn search_tags(
 /// commands_headings are: a test can call this, a `tauri::State` cannot be
 /// built in one.
 fn create_note_body(
-    dir: &str, title: &str, tags: &[String], author: &str,
+    dir: &str,
+    title: &str,
+    tags: &[String],
+    author: &str,
     index: &IndexManager,
 ) -> Result<(String, PathBuf, Option<String>), String> {
     let filename = note_utils::generate_note_file(dir, title, tags, author).to_cmd()?;
@@ -65,15 +63,22 @@ fn create_note_body(
 }
 
 pub fn create_note(
-    dir: String, title: String, tags: Vec<String>, author: String,
+    dir: String,
+    title: String,
+    tags: Vec<String>,
+    author: String,
     db: &Mutex<Connection>,
     index_state: &IndexManager,
 ) -> Result<String, String> {
     let (filename, path, content) = create_note_body(&dir, &title, &tags, &author, &index_state)?;
 
     if let Some(content) = content {
-        record_best_effort(&db, HistoryEntryKind::FileCreated { filename: filename.clone() }, false,
-            vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: None, after: Some(content) }]);
+        record_best_effort(
+            &db,
+            HistoryEntryKind::FileCreated { filename: filename.clone() },
+            false,
+            vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: None, after: Some(content) }],
+        );
     }
 
     Ok(filename)
@@ -99,11 +104,7 @@ pub fn autosave_note_temp(path: String, content: String) -> Result<(), String> {
 /// - Even where it does exist it now waits for the write burst to settle
 ///   (see core::indexer's SETTLE), and it would re-read the file to learn
 ///   what this command already has in hand.
-pub fn save_note_final(
-    path: String,
-    content: String,
-    index_state: &IndexManager,
-) -> Result<(), String> {
+pub fn save_note_final(path: String, content: String, index_state: &IndexManager) -> Result<(), String> {
     temp_file_utils::save_final(&path, &content)?;
     index_state.update_file_with(Path::new(&path), &content);
     Ok(())
@@ -117,11 +118,7 @@ pub fn compute_diff(original: &str, temp: &str) -> Vec<DiffChunk> {
     diff_utils::compute_word_diff(original, temp)
 }
 
-pub fn delete_note(
-    path: String,
-    index_state: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<(), String> {
+pub fn delete_note(path: String, index_state: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
     let target = Path::new(&path);
     // Before anything else: deleting projects.org from the notes view is
     // every project gone at once (see core::app_files).
@@ -129,11 +126,17 @@ pub fn delete_note(
     // The index is updated explicitly, like every other mutating command:
     // history's undo path needs it in sync without waiting for the
     // filesystem watcher round-trip.
-    vault_write::recorded(target, |_| HistoryEntryKind::FileDeleted { filename: filename_of(&path) }, index_state, db, || {
-        fs_utils::remove_file(target).to_cmd()?;
-        let _ = temp_file_utils::remove_temp_if_exists(&path);
-        Ok(())
-    })
+    vault_write::recorded(
+        target,
+        |_| HistoryEntryKind::FileDeleted { filename: filename_of(&path) },
+        index_state,
+        db,
+        || {
+            fs_utils::remove_file(target).to_cmd()?;
+            let _ = temp_file_utils::remove_temp_if_exists(&path);
+            Ok(())
+        },
+    )
 }
 
 /// Every favourited file in the vault, wherever it lives -- what the
@@ -152,11 +155,7 @@ pub fn favorite_files(index_state: &IndexManager) -> Vec<nobo_core::core::models
 /// the vault to every device -- which also means this is a normal write:
 /// the index is refreshed so the sidebar's star updates, and the sync
 /// picks it up like any other edit.
-pub fn set_favorite(
-    path: String,
-    favorite: bool,
-    index_state: &IndexManager,
-) -> Result<(), String> {
+pub fn set_favorite(path: String, favorite: bool, index_state: &IndexManager) -> Result<(), String> {
     let path = Path::new(&path);
     nobo_core::core::favorites::set(path, favorite)?;
     index_state.update_file(path);
@@ -194,12 +193,7 @@ pub fn replace_link_references(base_dir: String, old_identifier: String, new_ide
     note_utils::replace_link_references(Path::new(&base_dir), &old_identifier, &new_identifier).to_cmd()
 }
 
-pub fn rename_note(
-    old_path: String,
-    new_name: String,
-    index_state: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<String, String> {
+pub fn rename_note(old_path: String, new_name: String, index_state: &IndexManager, db: &Mutex<Connection>) -> Result<String, String> {
     let old = Path::new(&old_path);
     nobo_core::core::app_files::refuse_if_app_owned(old, "umbenennen", "renamed")?;
     let parent = old.parent().ok_or("Invalid path")?;
@@ -222,10 +216,15 @@ pub fn rename_note(
     // "renamed" pseudo-op -- undo needs to recreate the file under its OLD
     // name, not just delete the new one, so both paths need their own
     // before/after (see FileSnapshot's doc comment).
-    record_best_effort(&db, HistoryEntryKind::FileRenamed { old_filename: filename_of(&old_path), new_filename: new_name }, false, vec![
-        FileSnapshot { path: old_path, before: content.clone(), after: None },
-        FileSnapshot { path: new_path.to_string_lossy().into_owned(), before: None, after: content },
-    ]);
+    record_best_effort(
+        &db,
+        HistoryEntryKind::FileRenamed { old_filename: filename_of(&old_path), new_filename: new_name },
+        false,
+        vec![
+            FileSnapshot { path: old_path, before: content.clone(), after: None },
+            FileSnapshot { path: new_path.to_string_lossy().into_owned(), before: None, after: content },
+        ],
+    );
 
     Ok(new_path.to_string_lossy().into_owned())
 }
@@ -256,15 +255,21 @@ pub fn retitle_note(
     let after = std::fs::read_to_string(&new_path).ok();
     if new_path == path {
         // Only the header changed (the new title slugs to the old name).
-        record_best_effort(&db, HistoryEntryKind::FileEdited { filename: filename_of(&path) }, false,
-            vec![FileSnapshot { path: path.clone(), before, after }]);
+        record_best_effort(
+            &db,
+            HistoryEntryKind::FileEdited { filename: filename_of(&path) },
+            false,
+            vec![FileSnapshot { path: path.clone(), before, after }],
+        );
     } else {
         // Content and name changed together -- the rename's two snapshots
         // carry both (see rename_note on why it is two and not one).
-        record_best_effort(&db, HistoryEntryKind::FileRenamed { old_filename: filename_of(&path), new_filename: filename_of(&new_path) }, false, vec![
-            FileSnapshot { path, before, after: None },
-            FileSnapshot { path: new_path.clone(), before: None, after },
-        ]);
+        record_best_effort(
+            &db,
+            HistoryEntryKind::FileRenamed { old_filename: filename_of(&path), new_filename: filename_of(&new_path) },
+            false,
+            vec![FileSnapshot { path, before, after: None }, FileSnapshot { path: new_path.clone(), before: None, after }],
+        );
     }
 
     Ok(new_path)
@@ -288,8 +293,12 @@ pub fn duplicate_note(
     index_state.update_file(Path::new(&new_path));
 
     if let Ok(content) = std::fs::read_to_string(&new_path) {
-        record_best_effort(&db, HistoryEntryKind::FileDuplicated { source_filename: filename_of(&path), new_filename: filename_of(&new_path) }, false,
-            vec![FileSnapshot { path: new_path.clone(), before: None, after: Some(content) }]);
+        record_best_effort(
+            &db,
+            HistoryEntryKind::FileDuplicated { source_filename: filename_of(&path), new_filename: filename_of(&new_path) },
+            false,
+            vec![FileSnapshot { path: new_path.clone(), before: None, after: Some(content) }],
+        );
     }
 
     Ok(new_path)
@@ -310,9 +319,8 @@ pub fn copy_attachment_file(
     index_state: &IndexManager,
     db: &Mutex<Connection>,
 ) -> Result<String, String> {
-    let saved_path = fs_utils::place_attachment(Path::new(&target_dir), &filename, |dest| {
-        std::fs::copy(&source_path, dest).map(|_| ())
-    }).to_cmd()?;
+    let saved_path =
+        fs_utils::place_attachment(Path::new(&target_dir), &filename, |dest| std::fs::copy(&source_path, dest).map(|_| ())).to_cmd()?;
     index_state.update_file(Path::new(&saved_path));
 
     // Informational only -- binary content, no before/after text snapshot
@@ -336,9 +344,7 @@ pub fn save_attachment_bytes(
     index_state: &IndexManager,
     db: &Mutex<Connection>,
 ) -> Result<String, String> {
-    let saved_path = fs_utils::place_attachment(Path::new(&target_dir), &filename, |dest| {
-        std::fs::write(dest, &bytes)
-    }).to_cmd()?;
+    let saved_path = fs_utils::place_attachment(Path::new(&target_dir), &filename, |dest| std::fs::write(dest, &bytes)).to_cmd()?;
     index_state.update_file(Path::new(&saved_path));
 
     record_best_effort(&db, HistoryEntryKind::AttachmentAdded { filename: filename_of(&saved_path) }, false, vec![]);
@@ -372,12 +378,7 @@ pub fn decode_image_rgba(path: &Path) -> image::ImageResult<(Vec<u8>, u32, u32)>
 /// the Notes view's multi-select "move to folder" bulk action. Same
 /// rename+reindex shape as `rename_note`, just joined against `target_dir`
 /// instead of the file's current parent.
-pub fn move_note(
-    path: String,
-    target_dir: String,
-    index_state: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<String, String> {
+pub fn move_note(path: String, target_dir: String, index_state: &IndexManager, db: &Mutex<Connection>) -> Result<String, String> {
     let old = Path::new(&path);
     nobo_core::core::app_files::refuse_if_app_owned(old, "verschieben", "moved")?;
     let file_name = old.file_name().ok_or("Invalid path")?;
@@ -396,10 +397,15 @@ pub fn move_note(
     index_state.remove_file(old);
     index_state.update_file(&new_path);
 
-    record_best_effort(&db, HistoryEntryKind::FileMoved { filename: filename_of(&path), target_dir }, false, vec![
-        FileSnapshot { path, before: content.clone(), after: None },
-        FileSnapshot { path: new_path.to_string_lossy().into_owned(), before: None, after: content },
-    ]);
+    record_best_effort(
+        &db,
+        HistoryEntryKind::FileMoved { filename: filename_of(&path), target_dir },
+        false,
+        vec![
+            FileSnapshot { path, before: content.clone(), after: None },
+            FileSnapshot { path: new_path.to_string_lossy().into_owned(), before: None, after: content },
+        ],
+    );
 
     Ok(new_path.to_string_lossy().into_owned())
 }
@@ -436,9 +442,7 @@ mod editor_context_menu_tests {
         // A minimal real 1x1 white PNG, encoded via the `image` crate itself
         // rather than a hand-typed byte literal, so this test can't rot if
         // the crate's own encoder output ever shifts.
-        image::RgbaImage::from_pixel(1, 1, image::Rgba([255, 255, 255, 255]))
-            .save(&path)
-            .unwrap();
+        image::RgbaImage::from_pixel(1, 1, image::Rgba([255, 255, 255, 255])).save(&path).unwrap();
 
         let (rgba, width, height) = decode_image_rgba(&path).unwrap();
 
@@ -472,9 +476,7 @@ mod note_creation_tests {
         let index = IndexManager::new();
         index.scan_directory(dir.path());
 
-        let (filename, _, _) = create_note_body(
-            dir.path().to_str().unwrap(), "Neue Notiz", &[], "", &index,
-        ).unwrap();
+        let (filename, _, _) = create_note_body(dir.path().to_str().unwrap(), "Neue Notiz", &[], "", &index).unwrap();
 
         let listed = index.directory_contents(dir.path(), false);
         assert!(
@@ -492,14 +494,11 @@ mod note_creation_tests {
         let index = IndexManager::new();
         index.scan_directory(dir.path());
 
-        let (filename, path, content) = create_note_body(
-            dir.path().to_str().unwrap(), "Neue Notiz", &[], "", &index,
-        ).unwrap();
+        let (filename, path, content) = create_note_body(dir.path().to_str().unwrap(), "Neue Notiz", &[], "", &index).unwrap();
 
         assert!(path.exists());
         assert!(content.expect("the content was read back").contains("#+TITLE:"));
-        let entry = index.directory_contents(dir.path(), false)
-            .into_iter().find(|entry| entry.name == filename).unwrap();
+        let entry = index.directory_contents(dir.path(), false).into_iter().find(|entry| entry.name == filename).unwrap();
         assert_eq!(Path::new(&entry.path), path);
     }
 }

@@ -128,7 +128,10 @@ pub async fn login(client: &Client, base_url: &str, email: &str, auth_secret: &s
     // status code reads as a technical/internal error rather than "you
     // typed something wrong" -- worth being explicit and direct instead.
     if resp.status() == StatusCode::BAD_REQUEST {
-        return Err(nobo_core::t!("Anmeldung fehlgeschlagen: E-Mail oder Passwort ist falsch.", "Sign-in failed: wrong email or password."));
+        return Err(nobo_core::t!(
+            "Anmeldung fehlgeschlagen: E-Mail oder Passwort ist falsch.",
+            "Sign-in failed: wrong email or password."
+        ));
     }
     if !resp.status().is_success() {
         return Err(error_message(resp).await);

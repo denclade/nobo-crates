@@ -27,17 +27,16 @@ pub mod tangle_roots;
 pub mod trust;
 
 pub mod commands;
+pub mod model;
 /// The Tauri half: the same commands with Tauri's wrapping around them.
 /// Behind the feature, so a host without a webview never compiles it.
 #[cfg(feature = "tauri")]
 pub mod tauri_commands;
-pub mod model;
 
 /// Where this feature's settings live in `settings.json` (see
 /// `config::section`). Compiled in every build: a build without babel
 /// still must not drop the section when it saves.
-pub const SETTINGS: nobo_core::config::section::Section<model::Settings> =
-    nobo_core::config::section::Section::new("babel");
+pub const SETTINGS: nobo_core::config::section::Section<model::Settings> = nobo_core::config::section::Section::new("babel");
 
 // The interpreter path used to be `Config::python_interpreter_path`, a
 // core field with a feature's name on it. Moving it is one line of data
@@ -57,7 +56,6 @@ inventory::submit! {
 }
 
 pub use session::SessionRegistry;
-
 
 // This feature, as the app knows it (see nobo_core::core::features).
 //
@@ -112,11 +110,7 @@ mod sample_data_tests {
                 // button asks (see model::BabelLanguage).
                 if let Some(mapped) = BabelLanguage::from_block_language(language) {
                     runnable += 1;
-                    assert!(
-                        matches!(mapped, BabelLanguage::Bash | BabelLanguage::Python),
-                        "{}: {language}",
-                        path.display()
-                    );
+                    assert!(matches!(mapped, BabelLanguage::Bash | BabelLanguage::Python), "{}: {language}", path.display());
                 }
             }
         }
@@ -142,11 +136,7 @@ mod sample_data_tests {
         }
         // Balanced, or the editor sees one block running to the end of the
         // file and the buttons land in the wrong places.
-        assert_eq!(
-            content.matches("#+BEGIN_SRC").count(),
-            content.matches("#+END_SRC").count(),
-            "unbalanced SRC blocks"
-        );
+        assert_eq!(content.matches("#+BEGIN_SRC").count(), content.matches("#+END_SRC").count(), "unbalanced SRC blocks");
     }
 }
 
@@ -166,10 +156,7 @@ fn adopt_legacy_interpreter_path(config: &mut nobo_core::config::settings::Confi
         return Ok(false);
     };
     if !config.has_section("babel") {
-        config.set_section("babel", &model::Settings {
-            interpreter_path: legacy.as_str().map(str::to_string),
-            bash_path: None,
-        })?;
+        config.set_section("babel", &model::Settings { interpreter_path: legacy.as_str().map(str::to_string), bash_path: None })?;
     }
     Ok(true)
 }
@@ -182,9 +169,7 @@ mod settings_migration_tests {
     /// A config as it comes off disk, plus the field an older build wrote.
     fn with_legacy_path(path: &str) -> Config {
         let mut json = serde_json::to_value(Config::default()).unwrap();
-        json.as_object_mut()
-            .unwrap()
-            .insert("python_interpreter_path".to_string(), serde_json::json!(path));
+        json.as_object_mut().unwrap().insert("python_interpreter_path".to_string(), serde_json::json!(path));
         serde_json::from_value(json).unwrap()
     }
 
@@ -194,10 +179,7 @@ mod settings_migration_tests {
 
         assert!(adopt_legacy_interpreter_path(&mut config).unwrap());
 
-        assert_eq!(
-            config.section::<model::Settings>("babel").unwrap().interpreter_path.as_deref(),
-            Some("/opt/venv/bin/python")
-        );
+        assert_eq!(config.section::<model::Settings>("babel").unwrap().interpreter_path.as_deref(), Some("/opt/venv/bin/python"));
         // And the old key is gone, so the file stops carrying two truths.
         assert!(!serde_json::to_string(&config).unwrap().contains("python_interpreter_path"));
     }
@@ -238,16 +220,11 @@ mod settings_migration_tests {
     #[test]
     fn an_existing_section_is_not_overwritten() {
         let mut config = with_legacy_path("/old/python");
-        config
-            .set_section("babel", &model::Settings { interpreter_path: Some("/new/python".into()), bash_path: None })
-            .unwrap();
+        config.set_section("babel", &model::Settings { interpreter_path: Some("/new/python".into()), bash_path: None }).unwrap();
 
         adopt_legacy_interpreter_path(&mut config).unwrap();
 
-        assert_eq!(
-            config.section::<model::Settings>("babel").unwrap().interpreter_path.as_deref(),
-            Some("/new/python")
-        );
+        assert_eq!(config.section::<model::Settings>("babel").unwrap().interpreter_path.as_deref(), Some("/new/python"));
     }
 }
 
@@ -280,23 +257,21 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
 /// the bindings read it from.
 #[cfg(feature = "tauri")]
 fn specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
-    tauri_specta::Builder::<R>::new()
-        .plugin_name("nobo-babel")
-        .commands(tauri_specta::collect_commands![
-            tauri_commands::babel_settings,
-            tauri_commands::babel_save_settings,
-            tauri_commands::babel_is_trusted,
-            tauri_commands::babel_trust_file,
-            tauri_commands::babel_execute_block,
-            tauri_commands::babel_kill_session,
-            tauri_commands::babel_discover_bash,
-            tauri_commands::babel_discover_python_interpreters,
-            tauri_commands::babel_create_venv,
-            tauri_commands::babel_tangle_write,
-            tauri_commands::babel_grant_tangle_root,
-            tauri_commands::babel_tangle_roots,
-            tauri_commands::babel_revoke_tangle_root,
-        ])
+    tauri_specta::Builder::<R>::new().plugin_name("nobo-babel").commands(tauri_specta::collect_commands![
+        tauri_commands::babel_settings,
+        tauri_commands::babel_save_settings,
+        tauri_commands::babel_is_trusted,
+        tauri_commands::babel_trust_file,
+        tauri_commands::babel_execute_block,
+        tauri_commands::babel_kill_session,
+        tauri_commands::babel_discover_bash,
+        tauri_commands::babel_discover_python_interpreters,
+        tauri_commands::babel_create_venv,
+        tauri_commands::babel_tangle_write,
+        tauri_commands::babel_grant_tangle_root,
+        tauri_commands::babel_tangle_roots,
+        tauri_commands::babel_revoke_tangle_root,
+    ])
 }
 
 /// Writes this plugin's `bindings.ts` next to the frontend half that
@@ -311,10 +286,7 @@ mod bindings_export {
     #[test]
     fn export_bindings() {
         super::specta_builder::<tauri::Wry>()
-            .export(
-                specta_typescript::Typescript::default(),
-                "../../src/features/babel/bindings.ts",
-            )
+            .export(specta_typescript::Typescript::default(), "../../src/features/babel/bindings.ts")
             .expect("failed to write the org-babel bindings");
     }
 }

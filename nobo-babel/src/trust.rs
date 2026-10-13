@@ -46,10 +46,7 @@ fn store_path() -> PathBuf {
 }
 
 fn load(path: &Path) -> TrustFile {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|content| serde_json::from_str(&content).ok())
-        .unwrap_or_default()
+    fs::read_to_string(path).ok().and_then(|content| serde_json::from_str(&content).ok()).unwrap_or_default()
 }
 
 fn save(path: &Path, store: &TrustFile) -> std::io::Result<()> {
@@ -63,21 +60,14 @@ fn save(path: &Path, store: &TrustFile) -> std::io::Result<()> {
 }
 
 fn is_trusted_at(path: &Path, file_path: &str, content: &str) -> bool {
-    load(path)
-        .files
-        .get(file_path)
-        .is_some_and(|entry| entry.content_hash == content_hash(content))
+    load(path).files.get(file_path).is_some_and(|entry| entry.content_hash == content_hash(content))
 }
 
 fn trust_at(path: &Path, file_path: &str, content: &str) -> std::io::Result<()> {
     let mut store = load(path);
-    store.files.insert(
-        file_path.to_string(),
-        TrustEntry {
-            content_hash: content_hash(content),
-            trusted_at: chrono::Local::now().to_rfc3339(),
-        },
-    );
+    store
+        .files
+        .insert(file_path.to_string(), TrustEntry { content_hash: content_hash(content), trusted_at: chrono::Local::now().to_rfc3339() });
     save(path, &store)
 }
 

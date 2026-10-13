@@ -203,10 +203,10 @@ fn a_link_in_the_heading_title_survives() {
 }
 
 /* ---------------------------------------------------------------
-   Known gaps. Each of these asserts what CURRENTLY happens, so the
-   day one is fixed the test fails and says so. Documented in
-   docs/org-support.md.
-   --------------------------------------------------------------- */
+Known gaps. Each of these asserts what CURRENTLY happens, so the
+day one is fixed the test fails and says so. Documented in
+docs/org-support.md.
+--------------------------------------------------------------- */
 
 /// The priority cookie is its own field now, so it comes back where org
 /// puts it -- between the keyword and the title -- rather than as three
@@ -265,8 +265,8 @@ fn accumulating_properties_round_trip_and_read_as_one_value() {
 }
 
 /* ---------------------------------------------------------------
-   Whole files, through the real write path.
-   --------------------------------------------------------------- */
+Whole files, through the real write path.
+--------------------------------------------------------------- */
 
 /// The block-level tests above exercise the serializer. This exercises
 /// what a command actually does: open the file, change one heading, write
@@ -316,9 +316,15 @@ fn the_zeroth_section_survives_an_edit_further_down() {
 
     let out = file_round_trip(original);
 
-    for line in ["#+TITLE: Wildes Dokument", "#+AUTHOR: Jemand", "#+FILETAGS: :arbeit:privat:",
-                 "#+STARTUP: overview", "#+OPTIONS: toc:nil", ":ID: datei-eins",
-                 "Ein Absatz vor der ersten Überschrift."] {
+    for line in [
+        "#+TITLE: Wildes Dokument",
+        "#+AUTHOR: Jemand",
+        "#+FILETAGS: :arbeit:privat:",
+        "#+STARTUP: overview",
+        "#+OPTIONS: toc:nil",
+        ":ID: datei-eins",
+        "Ein Absatz vor der ersten Überschrift.",
+    ] {
         assert!(out.contains(line), "lost {line:?}\n\ngot:\n{out}");
     }
 }
@@ -427,8 +433,8 @@ fn unicode_everywhere_does_not_panic_or_truncate() {
 
     let out = file_round_trip(original);
 
-    for line in ["Größenübersicht — 日本語 — العربية", ":BESCHRÄNKUNG: höchstens fünf",
-                 "Fließtext mit ß, é, 中文 und einem Emoji 🚀."] {
+    for line in ["Größenübersicht — 日本語 — العربية", ":BESCHRÄNKUNG: höchstens fünf", "Fließtext mit ß, é, 中文 und einem Emoji 🚀."]
+    {
         assert!(out.contains(line), "lost {line:?}\n\ngot:\n{out}");
     }
     assert!(out.contains(":straße:") && out.contains("日本"), "tags survived: {out}");

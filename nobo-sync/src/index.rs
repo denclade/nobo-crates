@@ -83,11 +83,7 @@ impl SyncIndex {
     pub fn to_remote_entries(&self) -> Vec<RemoteEntry> {
         self.entries
             .iter()
-            .map(|e| RemoteEntry {
-                path: e.path.clone(),
-                content_hash: e.content_hash.clone(),
-                blob_missing: e.blob_missing,
-            })
+            .map(|e| RemoteEntry { path: e.path.clone(), content_hash: e.content_hash.clone(), blob_missing: e.blob_missing })
             .collect()
     }
 }

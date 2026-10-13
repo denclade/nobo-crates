@@ -61,35 +61,22 @@ fn count(index_manager: &IndexManager) -> Counts {
     // the index's own `get_headings_or_parse` -- but the index keeps its
     // write half, its lock and its dozen entry points to itself.
     let vault = Vault::new(index_manager, &root);
-    let open = |path: &str| -> Vec<nobo_core::core::models::Heading> {
-        vault.headings(&root.join(path))
-    };
+    let open = |path: &str| -> Vec<nobo_core::core::models::Heading> { vault.headings(&root.join(path)) };
 
     let inbox = open(&config.inbox_file_path);
     let actions = open(&config.actions_file_path);
     let projects = open(&config.projects_file_path);
     let someday = open(&config.someday_file_path);
 
-    let is_open = |heading: &&nobo_core::core::models::Heading| {
-        !task_utils::is_finished(heading.state.as_deref())
-    };
+    let is_open = |heading: &&nobo_core::core::models::Heading| !task_utils::is_finished(heading.state.as_deref());
 
     Counts {
         inbox: inbox.iter().filter(is_open).count(),
         // What is waiting for somebody else is not what is waiting for
         // me, so the two steps do not count the same task twice.
         actions: actions.iter().filter(is_open).filter(|h| !summary::is_waiting_for(h)).count(),
-        waiting: actions
-            .iter()
-            .chain(projects.iter())
-            .filter(is_open)
-            .filter(|h| summary::is_waiting_for(h))
-            .count(),
-        stalled: projects
-            .iter()
-            .filter(|heading| heading.level == 1)
-            .filter(|heading| summary::is_stalled(heading, &projects))
-            .count(),
+        waiting: actions.iter().chain(projects.iter()).filter(is_open).filter(|h| summary::is_waiting_for(h)).count(),
+        stalled: projects.iter().filter(|heading| heading.level == 1).filter(|heading| summary::is_stalled(heading, &projects)).count(),
         someday: someday.iter().filter(is_open).count(),
     }
 }

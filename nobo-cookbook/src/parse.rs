@@ -21,10 +21,8 @@ use super::outline::{self, Node};
 const INGREDIENT_HEADINGS: &[&str] = &["zutaten", "ingredients"];
 
 /// Section headings that introduce the steps, lowercased.
-pub(crate) const DIRECTION_HEADINGS: &[&str] = &[
-    "zubereitung", "schritte", "anleitung",
-    "directions", "preparation", "instructions", "steps", "method",
-];
+pub(crate) const DIRECTION_HEADINGS: &[&str] =
+    &["zubereitung", "schritte", "anleitung", "directions", "preparation", "instructions", "steps", "method"];
 
 use super::ingredients;
 
@@ -112,12 +110,10 @@ fn build(file_path: &str, flat: &[Node], index: usize, heading: &Node) -> Recipe
         match section_of(child) {
             Some(Section::Ingredients) => {
                 structured = true;
-                ingredients = groups_of(flat, child_index, child, |lines| {
-                    lines.iter().map(|line| ingredients::parse(line)).collect()
-                })
-                .into_iter()
-                .map(|(title, items)| IngredientGroup { title, items })
-                .collect();
+                ingredients = groups_of(flat, child_index, child, |lines| lines.iter().map(|line| ingredients::parse(line)).collect())
+                    .into_iter()
+                    .map(|(title, items)| IngredientGroup { title, items })
+                    .collect();
             }
             Some(Section::Directions) => {
                 structured = true;
@@ -163,11 +159,8 @@ fn build(file_path: &str, flat: &[Node], index: usize, heading: &Node) -> Recipe
 /// middle of somebody's prose is part of what they wrote.
 fn picture_of(file_path: &str, intro: &str) -> (Option<String>, String) {
     let (first, rest) = intro.split_once('\n').unwrap_or((intro, ""));
-    let target = first
-        .trim()
-        .strip_prefix("[[file:")
-        .and_then(|link| link.strip_suffix("]]"))
-        .map(|link| link.split("][").next().unwrap_or(link));
+    let target =
+        first.trim().strip_prefix("[[file:").and_then(|link| link.strip_suffix("]]")).map(|link| link.split("][").next().unwrap_or(link));
     let is_image = |path: &str| {
         let lower = path.to_lowercase();
         IMAGE_EXTENSIONS.iter().any(|extension| lower.ends_with(extension))
@@ -204,12 +197,7 @@ fn section_of(heading: &Node) -> Option<Section> {
 
 /// A section's content, split into the ungrouped part and one group per
 /// sub-heading (`*** Für den Teig`).
-fn groups_of<T>(
-    flat: &[Node],
-    index: usize,
-    section: &Node,
-    convert: impl Fn(&[String]) -> Vec<T>,
-) -> Vec<(Option<String>, Vec<T>)> {
+fn groups_of<T>(flat: &[Node], index: usize, section: &Node, convert: impl Fn(&[String]) -> Vec<T>) -> Vec<(Option<String>, Vec<T>)> {
     let mut groups = Vec::new();
     let direct = list_lines(&section.content);
     if !direct.is_empty() {
@@ -290,11 +278,7 @@ fn strip_marker(line: &str) -> Option<&str> {
 
 /// The headings directly below INDEX, i.e. its own children -- not its
 /// grandchildren, and stopping where the subtree ends.
-fn children_of(
-    flat: &[Node],
-    index: usize,
-    level: usize,
-) -> impl Iterator<Item = (usize, &Node)> {
+fn children_of(flat: &[Node], index: usize, level: usize) -> impl Iterator<Item = (usize, &Node)> {
     flat.iter()
         .enumerate()
         .skip(index + 1)

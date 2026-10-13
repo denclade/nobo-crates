@@ -17,12 +17,8 @@ use crate::parse::{self, display_title, Entry, READ_LATER};
 /// (a `-`, a space) becomes `_`. `web-dev` is `web_dev`; `:web-dev:` is no
 /// tag at all to org. `None` for what is left empty.
 pub fn org_tag(tag: &str) -> Option<String> {
-    let tag: String = tag
-        .trim()
-        .trim_matches(':')
-        .chars()
-        .map(|c| if c.is_alphanumeric() || "_@#%".contains(c) { c } else { '_' })
-        .collect();
+    let tag: String =
+        tag.trim().trim_matches(':').chars().map(|c| if c.is_alphanumeric() || "_@#%".contains(c) { c } else { '_' }).collect();
     let tag = tag.trim_matches('_').to_string();
     (!tag.is_empty()).then_some(tag)
 }
@@ -227,9 +223,8 @@ pub fn apply(text: &str, target: &Target, patch: &Patch, now: &str) -> Result<(S
     let changes_anything = patch != &Patch::default();
     if changes_anything {
         let updated = format!("{indent}{}", property_line("UPDATED", now));
-        let existing = (entry.url_line..entry.drawer_end).find(|&at| {
-            file.get(at).trim_start().get(..9).is_some_and(|key| key.eq_ignore_ascii_case(":UPDATED:"))
-        });
+        let existing = (entry.url_line..entry.drawer_end)
+            .find(|&at| file.get(at).trim_start().get(..9).is_some_and(|key| key.eq_ignore_ascii_case(":UPDATED:")));
         match existing {
             Some(at) => file.set(at, updated),
             None => file.splice(entry.drawer_end..entry.drawer_end, vec![updated]),
@@ -243,7 +238,9 @@ pub fn apply(text: &str, target: &Target, patch: &Patch, now: &str) -> Result<(S
         let mut heading = entry.heading_line.clone();
         // The title is only rewritten when it changed from what was shown:
         // a link in it (`[[url][Name]]`, shown as "Name") stays a link.
-        if let Some(title) = patch.title.as_deref().map(one_line).filter(|title| !title.is_empty() && *title != display_title(&heading.title)) {
+        if let Some(title) =
+            patch.title.as_deref().map(one_line).filter(|title| !title.is_empty() && *title != display_title(&heading.title))
+        {
             heading.title = title;
         }
         let tags = patch.tags.clone().unwrap_or_else(|| old.tags.clone());
@@ -363,12 +360,13 @@ mod tests {
 
     #[test]
     fn an_edit_changes_its_own_lines_and_nothing_else() {
-        let (out, line) = apply(FILE, &target(5, "https://docs.rs/reqwest"), &Patch {
-            title: Some("reqwest – Rust".into()),
-            read_later: Some(true),
-            note: Some("Neue Notiz.".into()),
-            ..Patch::default()
-        }, NOW).unwrap();
+        let (out, line) = apply(
+            FILE,
+            &target(5, "https://docs.rs/reqwest"),
+            &Patch { title: Some("reqwest – Rust".into()), read_later: Some(true), note: Some("Neue Notiz.".into()), ..Patch::default() },
+            NOW,
+        )
+        .unwrap();
         assert_eq!(line, 5);
         let lines: Vec<&str> = out.lines().collect();
         assert!(lines[4].starts_with("** reqwest – Rust") && lines[4].ends_with(":http:readlater:"), "{out}");
@@ -381,7 +379,13 @@ mod tests {
     #[test]
     fn an_edit_finds_its_bookmark_after_the_file_moved_on() {
         let shifted = format!("Neue Zeile oben.\n{FILE}");
-        let (out, line) = apply(&shifted, &target(5, "https://docs.rs/reqwest"), &Patch { url: Some("https://docs.rs/reqwest/0.13".into()), ..Patch::default() }, NOW).unwrap();
+        let (out, line) = apply(
+            &shifted,
+            &target(5, "https://docs.rs/reqwest"),
+            &Patch { url: Some("https://docs.rs/reqwest/0.13".into()), ..Patch::default() },
+            NOW,
+        )
+        .unwrap();
         assert_eq!(line, 6);
         assert!(out.contains(":URL:      https://docs.rs/reqwest/0.13"));
     }
@@ -406,7 +410,8 @@ mod tests {
     #[test]
     fn an_edit_keeps_todo_priority_and_cookie() {
         let text = FILE.replace("** reqwest :http:", "** TODO [#A] reqwest [1/2] :http:");
-        let (out, _) = apply(&text, &target(5, "https://docs.rs/reqwest"), &Patch { read_later: Some(true), ..Patch::default() }, NOW).unwrap();
+        let (out, _) =
+            apply(&text, &target(5, "https://docs.rs/reqwest"), &Patch { read_later: Some(true), ..Patch::default() }, NOW).unwrap();
         let heading = out.lines().nth(4).unwrap();
         assert!(heading.starts_with("** TODO [#A] reqwest [1/2]") && heading.ends_with(":http:readlater:"), "{heading}");
     }
@@ -414,7 +419,13 @@ mod tests {
     #[test]
     fn a_link_in_the_title_survives_an_edit_that_keeps_the_title() {
         let text = FILE.replace("** reqwest :http:", "** [[https://docs.rs][reqwest]] :http:");
-        let (out, _) = apply(&text, &target(5, "https://docs.rs/reqwest"), &Patch { title: Some("reqwest".into()), tags: Some(vec![]), ..Patch::default() }, NOW).unwrap();
+        let (out, _) = apply(
+            &text,
+            &target(5, "https://docs.rs/reqwest"),
+            &Patch { title: Some("reqwest".into()), tags: Some(vec![]), ..Patch::default() },
+            NOW,
+        )
+        .unwrap();
         assert!(out.lines().nth(4).unwrap().starts_with("** [[https://docs.rs][reqwest]]"), "{out}");
     }
 
@@ -423,7 +434,8 @@ mod tests {
     #[test]
     fn a_note_with_org_syntax_round_trips() {
         let note = "*wichtig* lesen\n#+begin_quote\nZitat\n#+end_quote\n* kein Kapitel";
-        let (out, _) = apply(FILE, &target(5, "https://docs.rs/reqwest"), &Patch { note: Some(note.into()), ..Patch::default() }, NOW).unwrap();
+        let (out, _) =
+            apply(FILE, &target(5, "https://docs.rs/reqwest"), &Patch { note: Some(note.into()), ..Patch::default() }, NOW).unwrap();
         let reqwest = read(&out, "https://docs.rs/reqwest");
         assert_eq!(reqwest.note, note);
         assert_eq!(reqwest.description.as_deref(), Some("An HTTP client."));
@@ -433,10 +445,14 @@ mod tests {
 
     #[test]
     fn the_description_can_be_changed_and_removed() {
-        let (out, _) = apply(FILE, &target(5, "https://docs.rs/reqwest"), &Patch { description: Some("Neu.".into()), ..Patch::default() }, NOW).unwrap();
+        let (out, _) =
+            apply(FILE, &target(5, "https://docs.rs/reqwest"), &Patch { description: Some("Neu.".into()), ..Patch::default() }, NOW)
+                .unwrap();
         let reqwest = read(&out, "https://docs.rs/reqwest");
         assert_eq!((reqwest.note.as_str(), reqwest.description.as_deref()), ("Alte Notiz.", Some("Neu.")));
-        let (out, _) = apply(&out, &target(5, "https://docs.rs/reqwest"), &Patch { description: Some(String::new()), ..Patch::default() }, NOW).unwrap();
+        let (out, _) =
+            apply(&out, &target(5, "https://docs.rs/reqwest"), &Patch { description: Some(String::new()), ..Patch::default() }, NOW)
+                .unwrap();
         assert_eq!(read(&out, "https://docs.rs/reqwest").description, None);
         assert!(!out.contains("#+begin_quote"), "{out}");
     }
@@ -469,7 +485,8 @@ mod tests {
     #[test]
     fn crlf_stays_crlf() {
         let crlf = FILE.replace('\n', "\r\n");
-        let (out, _) = apply(&crlf, &target(5, "https://docs.rs/reqwest"), &Patch { read_later: Some(true), ..Patch::default() }, NOW).unwrap();
+        let (out, _) =
+            apply(&crlf, &target(5, "https://docs.rs/reqwest"), &Patch { read_later: Some(true), ..Patch::default() }, NOW).unwrap();
         assert!(!out.replace("\r\n", "").contains('\n'));
     }
 
@@ -477,7 +494,8 @@ mod tests {
     #[test]
     fn mixed_line_endings_stay_as_they_were() {
         let mixed = FILE.replacen("* Reisen\n", "* Reisen\r\n", 1);
-        let (out, _) = apply(&mixed, &target(5, "https://docs.rs/reqwest"), &Patch { read_later: Some(true), ..Patch::default() }, NOW).unwrap();
+        let (out, _) =
+            apply(&mixed, &target(5, "https://docs.rs/reqwest"), &Patch { read_later: Some(true), ..Patch::default() }, NOW).unwrap();
         assert_eq!(out.matches("\r\n").count(), 1, "{out:?}");
     }
 
@@ -513,7 +531,9 @@ mod tests {
     #[test]
     fn a_new_collection_is_made_where_it_is_asked_for() {
         let path = ["Rust".to_string(), "Async".to_string()];
-        let (out, line) = file_under(FILE, &path, |level| entry(&Draft { title: "tokio".into(), url: "https://tokio.rs".into(), ..Draft::default() }, level, "[2026-10-12 Mo 14:30]"));
+        let (out, line) = file_under(FILE, &path, |level| {
+            entry(&Draft { title: "tokio".into(), url: "https://tokio.rs".into(), ..Draft::default() }, level, "[2026-10-12 Mo 14:30]")
+        });
         let tokio = read(&out, "https://tokio.rs");
         assert_eq!(tokio.collection, ["Rust", "Async"]);
         assert_eq!(tokio.line_no, line);
@@ -526,7 +546,9 @@ mod tests {
     #[test]
     fn a_bookmark_is_never_taken_for_a_collection() {
         let text = "* Rust\n:PROPERTIES:\n:URL: https://rust-lang.org\n:END:\n* Rust\n";
-        let (out, _) = file_under(text, &["Rust".to_string()], |level| entry(&Draft { title: "x".into(), url: "https://x".into(), ..Draft::default() }, level, NOW));
+        let (out, _) = file_under(text, &["Rust".to_string()], |level| {
+            entry(&Draft { title: "x".into(), url: "https://x".into(), ..Draft::default() }, level, NOW)
+        });
         assert_eq!(read(&out, "https://x").collection, ["Rust"]);
         assert_eq!(parse::collections_of(&out).len(), 1, "{out}");
     }
@@ -535,7 +557,8 @@ mod tests {
     fn a_skipped_level_is_found_not_made_again() {
         let text = "* A\n*** B\n";
         let path = ["A".to_string(), "B".to_string()];
-        let (out, _) = file_under(text, &path, |level| entry(&Draft { title: "x".into(), url: "https://x".into(), ..Draft::default() }, level, NOW));
+        let (out, _) =
+            file_under(text, &path, |level| entry(&Draft { title: "x".into(), url: "https://x".into(), ..Draft::default() }, level, NOW));
         assert_eq!(out.matches("B\n").count(), 1, "{out}");
         assert_eq!(read(&out, "https://x").collection, ["A", "B"]);
     }

@@ -54,12 +54,7 @@ impl Table {
 
     /// The index in `rows` of the Nth data row, skipping rules.
     pub fn data_row(&self, index: usize) -> Option<usize> {
-        self.rows
-            .iter()
-            .enumerate()
-            .filter(|(_, row)| matches!(row, Row::Cells(_)))
-            .nth(index)
-            .map(|(at, _)| at)
+        self.rows.iter().enumerate().filter(|(_, row)| matches!(row, Row::Cells(_))).nth(index).map(|(at, _)| at)
     }
 }
 
@@ -85,12 +80,7 @@ pub fn find_at(lines: &[&str], line: usize) -> Option<Table> {
         end += 1;
     }
     let indent: String = lines[start].chars().take_while(|c| c.is_whitespace()).collect();
-    Some(Table {
-        start,
-        end,
-        rows: lines[start..=end].iter().map(|line| parse_row(line)).collect(),
-        indent,
-    })
+    Some(Table { start, end, rows: lines[start..=end].iter().map(|line| parse_row(line)).collect(), indent })
 }
 
 /// The table as lines, every column as wide as its widest cell.

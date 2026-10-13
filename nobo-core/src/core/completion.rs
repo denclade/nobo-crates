@@ -90,11 +90,7 @@ pub fn at(text: &str, cursor: u32, author: &str) -> Option<Completion> {
         let trigger = before.trim_start();
         let items: Vec<Item> = expansions::matching(trigger, author)
             .into_iter()
-            .map(|expansion| Item {
-                label: expansion.trigger,
-                detail: expansion.kind,
-                insert: expansion.insert,
-            })
+            .map(|expansion| Item { label: expansion.trigger, detail: expansion.kind, insert: expansion.insert })
             .collect();
         if items.is_empty() {
             return None;
@@ -118,13 +114,7 @@ pub fn at(text: &str, cursor: u32, author: &str) -> Option<Completion> {
         if items.is_empty() {
             return None;
         }
-        return Some(Completion {
-            kind: Kind::Language,
-            from: cursor - utf16_len(&typed),
-            to: cursor,
-            prefix: typed,
-            items,
-        });
+        return Some(Completion { kind: Kind::Language, from: cursor - utf16_len(&typed), to: cursor, prefix: typed, items });
     }
 
     // A keyword, where a heading's keyword goes.
@@ -132,45 +122,23 @@ pub fn at(text: &str, cursor: u32, author: &str) -> Option<Completion> {
         let items: Vec<Item> = TODO_STATES
             .iter()
             .filter(|state| state.starts_with(&typed))
-            .map(|state| Item {
-                label: state.to_string(),
-                detail: String::new(),
-                insert: format!("{state} "),
-            })
+            .map(|state| Item { label: state.to_string(), detail: String::new(), insert: format!("{state} ") })
             .collect();
         if items.is_empty() {
             return None;
         }
-        return Some(Completion {
-            kind: Kind::TodoState,
-            from: cursor - utf16_len(&typed),
-            to: cursor,
-            prefix: typed,
-            items,
-        });
+        return Some(Completion { kind: Kind::TodoState, from: cursor - utf16_len(&typed), to: cursor, prefix: typed, items });
     }
 
     // A link. `[[` alone means "a note", and the two prefixes org uses
     // say which kind of thing is being pointed at.
     if let Some((kind, typed)) = link_prefix(&before) {
-        return Some(Completion {
-            kind,
-            from: cursor - utf16_len(&typed),
-            to: cursor,
-            prefix: typed,
-            items: Vec::new(),
-        });
+        return Some(Completion { kind, from: cursor - utf16_len(&typed), to: cursor, prefix: typed, items: Vec::new() });
     }
 
     // A tag, in a heading's tag run or in `#+FILETAGS:`.
     if let Some(typed) = tag_prefix(line, &before) {
-        return Some(Completion {
-            kind: Kind::Tag,
-            from: cursor - utf16_len(&typed),
-            to: cursor,
-            prefix: typed,
-            items: Vec::new(),
-        });
+        return Some(Completion { kind: Kind::Tag, from: cursor - utf16_len(&typed), to: cursor, prefix: typed, items: Vec::new() });
     }
 
     None

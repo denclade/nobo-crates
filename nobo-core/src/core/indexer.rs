@@ -1,8 +1,8 @@
-use crate::core::models::{DirEntry, FileEntry, Note, Heading};
+use crate::core::cost::{Heavy, Scale};
+use crate::core::models::{DirEntry, FileEntry, Heading, Note};
 use crate::core::org_parser::extract_headings_from_file;
 use crate::utils::fs_utils;
 use crate::utils::note_utils::parse_note_record;
-use crate::core::cost::{Heavy, Scale};
 use notify::{Config as NotifyConfig, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use rayon::prelude::*;
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -110,9 +110,7 @@ impl AppIndex {
     /// `tag_utils::search` does not filter on count, so a leftover entry
     /// would keep offering a tag nobody uses any more, forever.
     fn apply_tag_delta(&mut self, before: Option<&Note>, after: Option<&Note>) {
-        let tags_of = |note: Option<&Note>| -> HashSet<String> {
-            note.map(|n| n.tags.iter().cloned().collect()).unwrap_or_default()
-        };
+        let tags_of = |note: Option<&Note>| -> HashSet<String> { note.map(|n| n.tags.iter().cloned().collect()).unwrap_or_default() };
         let old = tags_of(before);
         let new = tags_of(after);
 
@@ -221,8 +219,12 @@ impl IndexManager {
 
         if let Ok(mut write_lock) = self.index.write() {
             *write_lock = new_index;
-            log::info!("Index initialized: {} files, {} notes, {} heading files",
-                     write_lock.files.len(), write_lock.notes.len(), write_lock.headings.len());
+            log::info!(
+                "Index initialized: {} files, {} notes, {} heading files",
+                write_lock.files.len(),
+                write_lock.notes.len(),
+                write_lock.headings.len()
+            );
         }
 
         // Replayed against the file system as it is NOW, which is the
@@ -347,15 +349,11 @@ impl IndexManager {
             return Some(headings.clone());
         }
 
-        guard.headings.iter()
-            .find(|(k, _)| PathBuf::from(*k) == *path)
-            .map(|(_, h)| h.clone())
+        guard.headings.iter().find(|(k, _)| PathBuf::from(*k) == *path).map(|(_, h)| h.clone())
     }
 
     pub fn get_headings_or_parse(&self, path: &Path) -> Vec<Heading> {
-        self.get_headings(path).unwrap_or_else(|| {
-            if path.exists() { extract_headings_from_file(path) } else { Vec::new() }
-        })
+        self.get_headings(path).unwrap_or_else(|| if path.exists() { extract_headings_from_file(path) } else { Vec::new() })
     }
 
     /// Filter first, clone second.
@@ -369,14 +367,20 @@ impl IndexManager {
     ///
     /// `.flatten().filter().cloned()` clones what is actually returned.
     pub fn all_headings_with_state(&self) -> Vec<Heading> {
-        let guard = match self.index.read() { Ok(i) => i, Err(_) => return Vec::new() };
+        let guard = match self.index.read() {
+            Ok(i) => i,
+            Err(_) => return Vec::new(),
+        };
         guard.headings.values().flatten().filter(|h| h.state.is_some()).cloned().collect()
     }
 
     /// Returns all headings across the vault, including those without a `TODO` state
     /// (e.g., untriaged Inbox items).
     pub fn all_headings(&self) -> Vec<Heading> {
-        let guard = match self.index.read() { Ok(i) => i, Err(_) => return Vec::new() };
+        let guard = match self.index.read() {
+            Ok(i) => i,
+            Err(_) => return Vec::new(),
+        };
         guard.headings.values().flatten().cloned().collect()
     }
 
@@ -397,12 +401,9 @@ impl IndexManager {
     /// second time (see `Vault`, the only caller).
     pub fn org_file_bodies_where(&self, keep: impl Fn(&str) -> bool) -> Vec<(String, String)> {
         match self.index.read() {
-            Ok(guard) => guard
-                .org_file_bodies
-                .iter()
-                .filter(|(_, text)| keep(text))
-                .map(|(path, text)| (path.clone(), text.clone()))
-                .collect(),
+            Ok(guard) => {
+                guard.org_file_bodies.iter().filter(|(_, text)| keep(text)).map(|(path, text)| (path.clone(), text.clone())).collect()
+            }
             Err(_) => Vec::new(),
         }
     }
@@ -420,11 +421,10 @@ impl IndexManager {
         let guard = self.index.read().ok()?;
         for (path, headings) in guard.headings.iter() {
             for heading in headings {
-                let has_open_clock = heading.clocks.iter().any(|line| {
-                    crate::utils::clock_utils::parse_clock_line(line)
-                        .map(|entry| entry.end.is_none())
-                        .unwrap_or(false)
-                });
+                let has_open_clock = heading
+                    .clocks
+                    .iter()
+                    .any(|line| crate::utils::clock_utils::parse_clock_line(line).map(|entry| entry.end.is_none()).unwrap_or(false));
                 if has_open_clock {
                     return Some((path.clone(), crate::core::heading_identity::target_of(heading)));
                 }
@@ -489,7 +489,10 @@ impl IndexManager {
     /// of them being a moment fresher than the other.
     pub fn unpromoted_org_files(&self, base_dir: &str) -> Vec<crate::core::models::UnpromotedOrgFile> {
         let base_dir = fs_utils::canonicalize_or_self(Path::new(base_dir)).to_string_lossy().into_owned();
-        let guard = match self.index.read() { Ok(i) => i, Err(_) => return Vec::new() };
+        let guard = match self.index.read() {
+            Ok(i) => i,
+            Err(_) => return Vec::new(),
+        };
         let mut files: Vec<crate::core::models::UnpromotedOrgFile> = guard
             .files
             .values()
@@ -509,10 +512,18 @@ impl IndexManager {
     }
 
     /// In-memory full-text search over all `.org` files. `extra_notes` (e.g. unpromoted notes)
-    pub fn search_notes_fulltext(&self, base_dir: &str, query: &str, extra_notes: &[Note]) -> Vec<crate::core::models::FullTextSearchResult> {
+    pub fn search_notes_fulltext(
+        &self,
+        base_dir: &str,
+        query: &str,
+        extra_notes: &[Note],
+    ) -> Vec<crate::core::models::FullTextSearchResult> {
         let _cost = crate::core::cost::timed("fulltext-search");
         let base_dir = fs_utils::canonicalize_or_self(Path::new(base_dir)).to_string_lossy().into_owned();
-        let guard = match self.index.read() { Ok(i) => i, Err(_) => return Vec::new() };
+        let guard = match self.index.read() {
+            Ok(i) => i,
+            Err(_) => return Vec::new(),
+        };
         // Chained, not collected: the vault's notes are borrowed straight
         // out of the index for the duration of the search rather than
         // cloned into a Vec first (which was hundreds of MB on a large
@@ -530,9 +541,7 @@ impl IndexManager {
             // Read off the body the index already holds -- the declaration
             // lives in the file (see core::favorites), and re-reading every
             // file to render a sidebar would defeat the point of the cache.
-            favorite: bodies
-                .get(&file.path)
-                .is_some_and(|text| crate::core::favorites::is_favorite_text(text)),
+            favorite: bodies.get(&file.path).is_some_and(|text| crate::core::favorites::is_favorite_text(text)),
         }
     }
 
@@ -540,8 +549,13 @@ impl IndexManager {
     /// Hidden files/folders are filtered out unless `show_hidden` is true.
     pub fn directory_contents(&self, dir: &Path, show_hidden: bool) -> Vec<DirEntry> {
         let dir = &fs_utils::canonicalize_or_self(dir);
-        let guard = match self.index.read() { Ok(i) => i, Err(_) => return Vec::new() };
-        guard.files.values()
+        let guard = match self.index.read() {
+            Ok(i) => i,
+            Err(_) => return Vec::new(),
+        };
+        guard
+            .files
+            .values()
             .filter(|f| Path::new(&f.path).parent() == Some(dir.as_path()))
             .filter(|f| show_hidden || (!f.is_hidden && !f.is_in_hidden_dir))
             .map(|f| Self::create_dir_entry(f, &guard.notes, &guard.org_file_bodies))
@@ -552,8 +566,13 @@ impl IndexManager {
     /// Hidden files/folders are filtered out unless `show_hidden` is true.
     pub fn directory_contents_recursive(&self, dir: &Path, show_hidden: bool) -> Vec<DirEntry> {
         let dir = &fs_utils::canonicalize_or_self(dir);
-        let guard = match self.index.read() { Ok(i) => i, Err(_) => return Vec::new() };
-        guard.files.values()
+        let guard = match self.index.read() {
+            Ok(i) => i,
+            Err(_) => return Vec::new(),
+        };
+        guard
+            .files
+            .values()
             .filter(|f| Path::new(&f.path) != dir.as_path() && Path::new(&f.path).starts_with(dir))
             .filter(|f| show_hidden || (!f.is_hidden && !f.is_in_hidden_dir))
             .map(|f| Self::create_dir_entry(f, &guard.notes, &guard.org_file_bodies))
@@ -563,8 +582,13 @@ impl IndexManager {
     /// Every favourited file in the vault, newest note first (see
     /// core::favorites for where the mark lives).
     pub fn favorite_files(&self) -> Vec<DirEntry> {
-        let guard = match self.index.read() { Ok(i) => i, Err(_) => return Vec::new() };
-        let mut entries: Vec<DirEntry> = guard.files.values()
+        let guard = match self.index.read() {
+            Ok(i) => i,
+            Err(_) => return Vec::new(),
+        };
+        let mut entries: Vec<DirEntry> = guard
+            .files
+            .values()
             .filter(|f| !f.is_dir)
             .map(|f| Self::create_dir_entry(f, &guard.notes, &guard.org_file_bodies))
             .filter(|entry| entry.favorite)
@@ -584,15 +608,17 @@ impl IndexManager {
     /// Returns all files under `base` as relative `/`-separated paths.
     pub fn files_relative_to(&self, base: &Path) -> Vec<String> {
         let base = &fs_utils::canonicalize_or_self(base);
-        let guard = match self.index.read() { Ok(i) => i, Err(_) => return Vec::new() };
-        guard.files.values()
+        let guard = match self.index.read() {
+            Ok(i) => i,
+            Err(_) => return Vec::new(),
+        };
+        guard
+            .files
+            .values()
             .filter(|f| !f.is_dir)
             .filter_map(|f| {
                 let rel = Path::new(&f.path).strip_prefix(base).ok()?;
-                Some(rel.components()
-                    .map(|c| c.as_os_str().to_string_lossy().into_owned())
-                    .collect::<Vec<_>>()
-                    .join("/"))
+                Some(rel.components().map(|c| c.as_os_str().to_string_lossy().into_owned()).collect::<Vec<_>>().join("/"))
             })
             .collect()
     }
@@ -600,9 +626,7 @@ impl IndexManager {
     /// Checks if `dir` matches the currently watched root.
     fn is_current_root(&self, dir: &Path) -> bool {
         let canonical = fs_utils::canonicalize_or_self(dir);
-        self.root.read().ok()
-            .and_then(|r| r.clone())
-            .is_some_and(|root| root == canonical)
+        self.root.read().ok().and_then(|r| r.clone()).is_some_and(|root| root == canonical)
     }
 
     /// Performs a full rescan and starts the filesystem watcher for `dir`.
@@ -714,11 +738,7 @@ mod tests {
     /* --- tag counts (see AppIndex::apply_tag_delta) --- */
 
     fn note_file(dir: &Path, id: &str, title: &str, tags: &[&str]) -> PathBuf {
-        let name = if tags.is_empty() {
-            format!("{id}--{title}.org")
-        } else {
-            format!("{id}--{title}__{}.org", tags.join("_"))
-        };
+        let name = if tags.is_empty() { format!("{id}--{title}.org") } else { format!("{id}--{title}__{}.org", tags.join("_")) };
         write_file(dir, &name, "#+TITLE: x\n")
     }
 
@@ -822,10 +842,7 @@ mod tests {
         scanning.join().unwrap();
 
         let key = fs_utils::canonicalize_or_self(&doomed).to_string_lossy().into_owned();
-        assert!(
-            !manager.index.read().unwrap().files.contains_key(&key),
-            "the deleted file must not be resurrected by the scan"
-        );
+        assert!(!manager.index.read().unwrap().files.contains_key(&key), "the deleted file must not be resurrected by the scan");
     }
 
     /* --- is_current_root (reindex_and_watch's own guard) --- */
@@ -913,8 +930,7 @@ mod tests {
         manager.scan_directory(tmp.path());
 
         let junk_path = tmp.path().join(".");
-        let names: Vec<String> =
-            manager.directory_contents(&junk_path, false).into_iter().map(|e| e.name).collect();
+        let names: Vec<String> = manager.directory_contents(&junk_path, false).into_iter().map(|e| e.name).collect();
         assert!(names.contains(&"top.txt".to_string()));
     }
 
@@ -1140,7 +1156,10 @@ mod tests {
         manager.scan_directory(tmp.path());
         let guard = manager.index.read().unwrap();
 
-        assert_eq!(guard.org_file_bodies.get(&path.to_string_lossy().into_owned()).map(String::as_str), Some("* TODO something with flour\n"));
+        assert_eq!(
+            guard.org_file_bodies.get(&path.to_string_lossy().into_owned()).map(String::as_str),
+            Some("* TODO something with flour\n")
+        );
         assert!(guard.notes.is_empty(), "still not a recognized Denote note");
     }
 
@@ -1228,7 +1247,10 @@ mod tests {
             assert_eq!(manager.index.read().unwrap().notes.len(), SYNTHETIC_FILE_COUNT);
             // Generous: a full parallel scan+parse of 3000 small files should
             // never realistically approach this on any machine running CI.
-            assert!(elapsed.as_secs() < 10, "scan_directory took {elapsed:?} for {SYNTHETIC_FILE_COUNT} files -- investigate for a complexity regression");
+            assert!(
+                elapsed.as_secs() < 10,
+                "scan_directory took {elapsed:?} for {SYNTHETIC_FILE_COUNT} files -- investigate for a complexity regression"
+            );
         }
 
         #[test]
@@ -1416,11 +1438,7 @@ pub fn start_watcher(listener: Arc<dyn IndexListener>, manager: Arc<IndexManager
 /// Only call it when something actually changed -- an empty list is
 /// nothing to tell anyone about, and a pass where every feed answered 304
 /// must not wake the app (see e.g. nobo_calendar's `wrote_anything`).
-pub fn notify_files_changed(
-    listener: &dyn IndexListener,
-    index_manager: &IndexManager,
-    paths: impl IntoIterator<Item = PathBuf>,
-) {
+pub fn notify_files_changed(listener: &dyn IndexListener, index_manager: &IndexManager, paths: impl IntoIterator<Item = PathBuf>) {
     let mut any = false;
     for path in paths {
         if path.exists() {
@@ -1436,10 +1454,6 @@ pub fn notify_files_changed(
 }
 
 /// The same for a single file, which is what most callers have.
-pub fn notify_file_changed(
-    listener: &dyn IndexListener,
-    index_manager: &IndexManager,
-    path: &Path,
-) {
+pub fn notify_file_changed(listener: &dyn IndexListener, index_manager: &IndexManager, path: &Path) {
     notify_files_changed(listener, index_manager, [path.to_path_buf()]);
 }

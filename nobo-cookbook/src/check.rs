@@ -91,10 +91,8 @@ pub fn check(file_path: &str, text: &str) -> FileCheck {
     // The keys the repair will hand back. Everything they would cause --
     // the repeats in the first drawer, the recipes with no servings -- is
     // the one collapsed finding, not three.
-    let handed_back: Vec<String> = collapsed
-        .as_ref()
-        .map(|report| report.keys.iter().map(|key| key.to_lowercase()).collect())
-        .unwrap_or_default();
+    let handed_back: Vec<String> =
+        collapsed.as_ref().map(|report| report.keys.iter().map(|key| key.to_lowercase()).collect()).unwrap_or_default();
 
     if let Some(report) = &collapsed {
         findings.push(Finding {
@@ -123,11 +121,8 @@ pub fn check(file_path: &str, text: &str) -> FileCheck {
     }
 
     let servings_handed_back = handed_back.iter().any(|key| key == "servings");
-    let without_servings: Vec<String> = recipes
-        .iter()
-        .filter(|recipe| recipe.servings.is_none() && recipe.sections.is_some())
-        .map(|recipe| recipe.title.clone())
-        .collect();
+    let without_servings: Vec<String> =
+        recipes.iter().filter(|recipe| recipe.servings.is_none() && recipe.sections.is_some()).map(|recipe| recipe.title.clone()).collect();
     if !without_servings.is_empty() && !servings_handed_back {
         findings.push(Finding {
             kind: Kind::NoServings,
@@ -138,11 +133,8 @@ pub fn check(file_path: &str, text: &str) -> FileCheck {
         });
     }
 
-    let without_sections: Vec<String> = recipes
-        .iter()
-        .filter(|recipe| recipe.sections.is_none())
-        .map(|recipe| recipe.title.clone())
-        .collect();
+    let without_sections: Vec<String> =
+        recipes.iter().filter(|recipe| recipe.sections.is_none()).map(|recipe| recipe.title.clone()).collect();
     if !without_sections.is_empty() {
         findings.push(Finding {
             kind: Kind::NoSections,

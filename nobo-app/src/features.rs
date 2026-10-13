@@ -88,4 +88,3 @@ pub fn set_feature_enabled(feature: String, enabled: bool) -> Result<Vec<Feature
     // others are built on changes their answer too.
     Ok(app_features())
 }
-

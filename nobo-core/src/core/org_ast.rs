@@ -326,14 +326,7 @@ pub fn inline_spans(text: &str) -> Vec<InlineSpan> {
             }
             match end {
                 Some(j) => {
-                    spans.push(InlineSpan {
-                        kind,
-                        from: offsets[i],
-                        to: offsets[j + 1],
-                        marker_len: 1,
-                        target: None,
-                        description: None,
-                    });
+                    spans.push(InlineSpan { kind, from: offsets[i], to: offsets[j + 1], marker_len: 1, target: None, description: None });
                     i = j + 1;
                 }
                 None => i += 1,
@@ -421,9 +414,7 @@ pub fn segments(text: &str) -> Vec<Segment> {
     let mut styles = vec![CharStyle::default(); chars.len()];
     let mut targets: Vec<String> = Vec::new();
 
-    let index_of = |offset: u32| -> usize {
-        offsets.iter().position(|o| *o == offset).unwrap_or(chars.len())
-    };
+    let index_of = |offset: u32| -> usize { offsets.iter().position(|o| *o == offset).unwrap_or(chars.len()) };
 
     for span in &spans {
         let from = index_of(span.from);
@@ -586,9 +577,7 @@ pub fn list_of(text: &str) -> Option<(String, Option<String>)> {
     }
     let body = after.trim_start();
     let checkbox = match body.as_bytes() {
-        [b'[', state @ (b' ' | b'x' | b'X' | b'-'), b']', rest @ ..]
-            if rest.first().is_none_or(|c| *c == b' ' || *c == b'\t') =>
-        {
+        [b'[', state @ (b' ' | b'x' | b'X' | b'-'), b']', rest @ ..] if rest.first().is_none_or(|c| *c == b' ' || *c == b'\t') => {
             Some(match state {
                 b'x' | b'X' => "X".to_string(),
                 b'-' => "-".to_string(),
@@ -961,13 +950,7 @@ pub fn parse(text: &str) -> Vec<Block> {
                 rows.push(table_row(lines[i].trim()));
                 i += 1;
             }
-            blocks.push(Block {
-                kind: BlockKind::Table,
-                line: start,
-                end_line: i,
-                rows,
-                ..Block::default()
-            });
+            blocks.push(Block { kind: BlockKind::Table, line: start, end_line: i, rows, ..Block::default() });
             continue;
         }
 
@@ -1137,17 +1120,7 @@ fn collect_results(lines: &[&str], start: usize) -> (Block, usize) {
     }
 
     let line_count = body.len();
-    (
-        Block {
-            kind: BlockKind::Results,
-            line: start + 1,
-            end_line: i,
-            text: body.join("\n"),
-            line_count,
-            ..Block::default()
-        },
-        i,
-    )
+    (Block { kind: BlockKind::Results, line: start + 1, end_line: i, text: body.join("\n"), line_count, ..Block::default() }, i)
 }
 
 /// Turns each list item's indent in characters into a nesting depth, so a
@@ -1373,7 +1346,11 @@ pub fn context(text: &str, cursor: u32) -> Context {
                 "block-content"
             }
         } else if in_drawer {
-            if drawer_name(trimmed).as_deref() == Some("END") { "drawer-end" } else { "property" }
+            if drawer_name(trimmed).as_deref() == Some("END") {
+                "drawer-end"
+            } else {
+                "property"
+            }
         } else {
             match classify_line(line) {
                 LineType::Empty => "empty",
@@ -1549,24 +1526,15 @@ mod tests {
         // A single missing `:END:` used to turn the rest of the file into
         // property lines, hiding real work behind one folded row.
         let blocks = parse("* One\n:PROPERTIES:\n:ID: x\n* Two\ntext");
-        assert_eq!(
-            kinds(&blocks),
-            vec![BlockKind::Heading, BlockKind::Metadata, BlockKind::Heading, BlockKind::Paragraph]
-        );
+        assert_eq!(kinds(&blocks), vec![BlockKind::Heading, BlockKind::Metadata, BlockKind::Heading, BlockKind::Paragraph]);
     }
 
     #[test]
     fn nested_list_depths_count_steps_not_spaces() {
         let blocks = parse("- [ ] parent\n    - [X] child\n    - [ ] other\n- plain");
-        let items: Vec<(usize, Option<&str>, bool)> = blocks
-            .iter()
-            .filter(|b| b.kind == BlockKind::ListItem)
-            .map(|b| (b.depth, b.checkbox.as_deref(), b.derived))
-            .collect();
-        assert_eq!(
-            items,
-            vec![(0, Some(" "), true), (1, Some("X"), false), (1, Some(" "), false), (0, None, false)]
-        );
+        let items: Vec<(usize, Option<&str>, bool)> =
+            blocks.iter().filter(|b| b.kind == BlockKind::ListItem).map(|b| (b.depth, b.checkbox.as_deref(), b.derived)).collect();
+        assert_eq!(items, vec![(0, Some(" "), true), (1, Some("X"), false), (1, Some(" "), false), (0, None, false)]);
         assert_eq!(blocks[0].text, "parent");
     }
 

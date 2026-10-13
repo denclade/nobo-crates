@@ -146,8 +146,7 @@ impl HeadingEdit {
     /// asks first -- a sibling means reordering, anything else means
     /// refiling, and the two are different commands.
     pub fn is_sibling(&self, other: usize) -> bool {
-        self.flat[other].level == self.flat[self.idx].level
-            && parent_line_of(&self.flat, other) == parent_line_of(&self.flat, self.idx)
+        self.flat[other].level == self.flat[self.idx].level && parent_line_of(&self.flat, other) == parent_line_of(&self.flat, self.idx)
     }
 
     /// The sibling following FLAT[OTHER], if any -- what "drop it after
@@ -200,7 +199,8 @@ impl HeadingEdit {
         let heading = &self.flat[self.idx];
         if heading.line_no == 0 || heading.line_no > self.lines.len() + 1 {
             return Err(crate::t!(
-                "\"{}\" liegt nicht mehr auf Zeile {} (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.", "\"{}\" is no longer at line {} (the file has {}) -- it has changed since, please reload.",
+                "\"{}\" liegt nicht mehr auf Zeile {} (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.",
+                "\"{}\" is no longer at line {} (the file has {}) -- it has changed since, please reload.",
                 heading.title,
                 heading.line_no,
                 self.lines.len()
@@ -221,7 +221,8 @@ impl HeadingEdit {
         let after = find_subtree_end_line(&self.flat, self.idx);
         if after > self.lines.len() {
             return Err(crate::t!(
-                "\"{}\" endet nicht mehr auf Zeile {after} (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.", "\"{}\" no longer ends at line {after} (the file has {}) -- it has changed since, please reload.",
+                "\"{}\" endet nicht mehr auf Zeile {after} (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.",
+                "\"{}\" no longer ends at line {after} (the file has {}) -- it has changed since, please reload.",
                 self.flat[self.idx].title,
                 self.lines.len()
             ));
@@ -276,7 +277,8 @@ impl HeadingEdit {
                 }
                 if sibling.line_no == 0 || sibling.line_no > self.lines.len() + 1 {
                     return Err(crate::t!(
-                        "\"{}\" liegt nicht mehr auf Zeile {} (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.", "\"{}\" is no longer at line {} (the file has {}) -- it has changed since, please reload.",
+                        "\"{}\" liegt nicht mehr auf Zeile {} (die Datei hat {}) -- sie wurde inzwischen geändert, bitte neu laden.",
+                        "\"{}\" is no longer at line {} (the file has {}) -- it has changed since, please reload.",
                         sibling.title,
                         sibling.line_no,
                         self.lines.len()
@@ -349,7 +351,8 @@ impl HeadingEdit {
         let current = fs_utils::read_lines(&self.path).map_err(|e| e.to_string())?;
         if fingerprint(&current) != self.read_as {
             return Err(crate::t!(
-                "\"{}\" wurde während der Bearbeitung von außen geändert -- die Änderung wurde nicht gespeichert, bitte neu laden.", "\"{}\" was changed from outside while it was being edited -- the change was not saved, please reload.",
+                "\"{}\" wurde während der Bearbeitung von außen geändert -- die Änderung wurde nicht gespeichert, bitte neu laden.",
+                "\"{}\" was changed from outside while it was being edited -- the change was not saved, please reload.",
                 self.path.display()
             ));
         }
@@ -374,8 +377,7 @@ impl HeadingEdit {
         let fresh = org_parser::parse_headings_from_lines(&self.path, &self.lines);
 
         for mut ancestor in chain {
-            ancestor.progress_stats =
-                fresh.iter().find(|h| h.line_no == ancestor.line_no).and_then(|h| h.progress_stats);
+            ancestor.progress_stats = fresh.iter().find(|h| h.line_no == ancestor.line_no).and_then(|h| h.progress_stats);
             let block = touch_last_activity(&ancestor);
             self.splice(ancestor.line_no, ancestor.last_line, block, &ancestor.title)?;
         }
@@ -400,7 +402,8 @@ impl HeadingEdit {
     fn refuse_second_mutation(&self) -> Result<(), String> {
         if self.mutated {
             return Err(crate::t!(
-                "{}: zweite Änderung an derselben Datei in einem Vorgang -- die Zeilennummern der ersten sind dadurch überholt.", "{}: a second change to the same file in one operation -- the first has made its line numbers stale.",
+                "{}: zweite Änderung an derselben Datei in einem Vorgang -- die Zeilennummern der ersten sind dadurch überholt.",
+                "{}: a second change to the same file in one operation -- the first has made its line numbers stale.",
                 self.path.display()
             ));
         }
@@ -594,11 +597,7 @@ mod tests {
 
         let text = std::fs::read_to_string(&path).unwrap();
         assert!(text.contains("*** DONE Aufgabe B"), "{text}");
-        assert_eq!(
-            text.matches("LAST_ACTIVITY").count(),
-            3,
-            "the edited heading plus both ancestors, all in the same write:\n{text}"
-        );
+        assert_eq!(text.matches("LAST_ACTIVITY").count(), 3, "the edited heading plus both ancestors, all in the same write:\n{text}");
         // The cookies come from a re-parse of the mutated lines, so they
         // describe the file after this edit rather than the parse the
         // ancestors were captured from.
@@ -721,7 +720,8 @@ mod tests {
     /// Org code quoted in a block is text: an id inside it is not an id.
     #[test]
     fn an_id_inside_a_code_block_is_left_alone() {
-        let mut lines: Vec<String> = ["** TODO X", "#+BEGIN_SRC org", ":CUSTOM_ID: h:orig", "#+END_SRC"].iter().map(|l| l.to_string()).collect();
+        let mut lines: Vec<String> =
+            ["** TODO X", "#+BEGIN_SRC org", ":CUSTOM_ID: h:orig", "#+END_SRC"].iter().map(|l| l.to_string()).collect();
         let taken: std::collections::HashSet<String> = ["h:orig".to_string()].into();
 
         renew_taken_ids(&mut lines, &taken, false);
@@ -731,11 +731,7 @@ mod tests {
 
     /* --- reordering --- */
 
-    const THREE: &str = concat!(
-        "* TODO Brot\n",
-        "* TODO Milch\n",
-        "* TODO Käse\n",
-    );
+    const THREE: &str = concat!("* TODO Brot\n", "* TODO Milch\n", "* TODO Käse\n",);
 
     fn titles(text: &str) -> Vec<&str> {
         text.lines().filter(|l| l.starts_with('*')).collect()
@@ -828,7 +824,11 @@ mod tests {
     #[test]
     fn last_among_siblings_stays_inside_the_parent() {
         let dir = TempDir::new().unwrap();
-        let path = write(&dir, "projekte.org", &format!("{PROJECT}* Anderes Projekt                                                  :project:\n"));
+        let path = write(
+            &dir,
+            "projekte.org",
+            &format!("{PROJECT}* Anderes Projekt                                                  :project:\n"),
+        );
 
         move_it(&path, "Aufgabe A", None).unwrap();
 
@@ -898,11 +898,7 @@ mod tests {
     #[test]
     fn opening_an_edit_on_a_generated_file_is_refused_up_front() {
         let dir = TempDir::new().unwrap();
-        let path = write(
-            &dir,
-            "spiegel.org",
-            &format!("#+TITLE: X\n{}\n\n* TODO Termin\n", EDIT_GENERATED.declaration()),
-        );
+        let path = write(&dir, "spiegel.org", &format!("#+TITLE: X\n{}\n\n* TODO Termin\n", EDIT_GENERATED.declaration()));
         let target = HeadingTarget { line_no: 4, custom_id: None, title: Some("Termin".into()) };
 
         let err = open_edit(&path, &target, &crate::core::errors::subject::heading()).err().unwrap();

@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::num::NonZeroU32;
-use serde::{Deserialize, Serialize};
 
 // --- Domain Models
 
@@ -253,10 +253,7 @@ pub(crate) fn has_project_tag(tags: &[String]) -> bool {
 /// disagree about which key they meant. The frontend has one counterpart
 /// for the same reason: utils/headingUtils.ts's `orgProperty`.
 pub fn property_value<'a>(properties: &'a HashMap<String, String>, name: &str) -> Option<&'a str> {
-    properties
-        .iter()
-        .find(|(key, _)| key.eq_ignore_ascii_case(name))
-        .map(|(_, value)| value.as_str())
+    properties.iter().find(|(key, _)| key.eq_ignore_ascii_case(name)).map(|(_, value)| value.as_str())
 }
 
 /// The same, with org's `:KEY+:` accumulation applied.
@@ -271,11 +268,7 @@ pub fn property_value<'a>(properties: &'a HashMap<String, String>, name: &str) -
 pub fn accumulated_property_value(properties: &HashMap<String, String>, name: &str) -> Option<String> {
     let plus = format!("{name}+");
     let base = property_value(properties, name);
-    let extra: Vec<&str> = properties
-        .iter()
-        .filter(|(key, _)| key.eq_ignore_ascii_case(&plus))
-        .map(|(_, value)| value.as_str())
-        .collect();
+    let extra: Vec<&str> = properties.iter().filter(|(key, _)| key.eq_ignore_ascii_case(&plus)).map(|(_, value)| value.as_str()).collect();
 
     match (base, extra.is_empty()) {
         (None, true) => None,
@@ -332,13 +325,7 @@ pub(crate) const ORG_STATE_LOG: &str = "- State";
 /// into the recorded state itself, and anything reading the value back
 /// gets `DONE        ` rather than `DONE`.
 pub(crate) fn state_log_line(new_state: &str, old_state: &str, timestamp: &str) -> String {
-    format!(
-        "{} {:<12} from {:<12} {}",
-        ORG_STATE_LOG,
-        format!("\"{}\"", new_state),
-        format!("\"{}\"", old_state),
-        timestamp
-    )
+    format!("{} {:<12} from {:<12} {}", ORG_STATE_LOG, format!("\"{}\"", new_state), format!("\"{}\"", old_state), timestamp)
 }
 pub(crate) const ORG_LOGBOOK_START: &str = ":LOGBOOK:";
 pub(crate) const ORG_LOGBOOK_END: &str = ":END:";
@@ -369,7 +356,6 @@ pub(crate) const DATE_FORMAT_CLOSED: &str = "%Y-%m-%d %a %H:%M";
 /// any same-minute value written since, which is exactly right.
 pub(crate) const DATE_FORMAT_ACTIVITY: &str = "%Y-%m-%d %a %H:%M:%S";
 pub(crate) const DATE_FORMAT_LOG: &str = "[%Y-%m-%d %a %H:%M]";
-
 
 /// Canonical record for one path under the notes vault
 #[derive(Debug, Clone, Serialize, specta::Type)]
@@ -631,53 +617,121 @@ pub struct FileSnapshot {
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "kind")]
 pub enum HistoryEntryKind {
-    FileCreated { filename: String },
-    FileEdited { filename: String },
-    FileDeleted { filename: String },
-    FileRenamed { old_filename: String, new_filename: String },
-    FileMoved { filename: String, target_dir: String },
-    FileDuplicated { source_filename: String, new_filename: String },
+    FileCreated {
+        filename: String,
+    },
+    FileEdited {
+        filename: String,
+    },
+    FileDeleted {
+        filename: String,
+    },
+    FileRenamed {
+        old_filename: String,
+        new_filename: String,
+    },
+    FileMoved {
+        filename: String,
+        target_dir: String,
+    },
+    FileDuplicated {
+        source_filename: String,
+        new_filename: String,
+    },
     /// No snapshot content (binary) -- see core::history's size/type limits.
-    AttachmentAdded { filename: String },
-    HeadingCreated { filename: String, title: String },
-    HeadingUpdated { filename: String, title: String },
-    HeadingDeleted { filename: String, title: String },
-    HeadingsBulkUpdated { filename: String, count: u32 },
-    HeadingsBulkDeleted { filename: String, count: u32 },
+    AttachmentAdded {
+        filename: String,
+    },
+    HeadingCreated {
+        filename: String,
+        title: String,
+    },
+    HeadingUpdated {
+        filename: String,
+        title: String,
+    },
+    HeadingDeleted {
+        filename: String,
+        title: String,
+    },
+    HeadingsBulkUpdated {
+        filename: String,
+        count: u32,
+    },
+    HeadingsBulkDeleted {
+        filename: String,
+        count: u32,
+    },
     /// A deleted heading's subtree reinserted under its original parent,
     /// or at file end if it was top-level.
-    HeadingRestored { filename: String, title: String },
+    HeadingRestored {
+        filename: String,
+        title: String,
+    },
     /// Recorded by core::history::restore::apply_bulk -- the whole-file
     /// counterpart to HeadingRestored, for a HeadingsBulkDeleted/
     /// HeadingsBulkUpdated/HeadingsBulkRefiled entry reverted back to its
     /// own before-snapshot text (COUNT carried over from the original
     /// entry's own count, so the label reads symmetrically, e.g. "7
     /// Einträge in projects.org wiederhergestellt").
-    HeadingsBulkRestored { filename: String, count: u32 },
+    HeadingsBulkRestored {
+        filename: String,
+        count: u32,
+    },
     /// Recorded by commands_headings::backfill_custom_ids -- one entry per
     /// file it actually touched, so the one-time CUSTOM_ID backfill is
     /// itself a normal, undo-able history action.
-    CustomIdsBackfilled { filename: String, count: u32 },
+    CustomIdsBackfilled {
+        filename: String,
+        count: u32,
+    },
     /// Recorded by commands_headings::remove_custom_ids -- the Maintenance
     /// section's counterpart to CustomIdsBackfilled above, one entry per
     /// file it actually touched.
-    CustomIdsRemoved { filename: String, count: u32 },
+    CustomIdsRemoved {
+        filename: String,
+        count: u32,
+    },
     /// Recorded by commands_headings::remove_empty_properties_drawers --
     /// Maintenance's "delete empty drawers" action, one entry per file it
     /// actually touched.
-    EmptyPropertiesDrawersRemoved { filename: String, count: u32 },
-    Archived { filename: String, count: u32 },
-    Refiled { title: String, target_filename: String },
-    HeadingsBulkRefiled { count: u32, target_filename: String },
-    TangleWrite { filename: String },
-    LinksReplaced { old_identifier: String, new_identifier: String, file_count: u32 },
+    EmptyPropertiesDrawersRemoved {
+        filename: String,
+        count: u32,
+    },
+    Archived {
+        filename: String,
+        count: u32,
+    },
+    Refiled {
+        title: String,
+        target_filename: String,
+    },
+    HeadingsBulkRefiled {
+        count: u32,
+        target_filename: String,
+    },
+    TangleWrite {
+        filename: String,
+    },
+    LinksReplaced {
+        old_identifier: String,
+        new_identifier: String,
+        file_count: u32,
+    },
     /// Recorded by commands_headings::clock_in -- a new open CLOCK entry
     /// started on this heading (auto-closing whatever other heading's
     /// timer, if any, was running -- see that command's own doc comment).
-    ClockStarted { filename: String, title: String },
+    ClockStarted {
+        filename: String,
+        title: String,
+    },
     /// Recorded by commands_headings::clock_out -- this heading's own open
     /// CLOCK entry closed with a duration.
-    ClockStopped { filename: String, title: String },
+    ClockStopped {
+        filename: String,
+        title: String,
+    },
 }
 
 /// Result of core::history::restore::check -- whether a single, arbitrary
@@ -794,7 +848,6 @@ pub enum RefilePosition {
     Before,
     After,
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
@@ -967,8 +1020,10 @@ mod tests {
         let stamp = set.scheduled.expect("present").expect("set");
         assert_eq!(stamp.start_date, "2026-09-23");
 
-        assert!(serde_json::from_str::<HeadingUpdatePayload>(
-            r#"{"scheduled": [{"start_date": "2026-09-23", "active": true, "raw": ""}]}"#
-        ).is_err(), "a wrapped timestamp is refused rather than half-read");
+        assert!(
+            serde_json::from_str::<HeadingUpdatePayload>(r#"{"scheduled": [{"start_date": "2026-09-23", "active": true, "raw": ""}]}"#)
+                .is_err(),
+            "a wrapped timestamp is refused rather than half-read"
+        );
     }
 }

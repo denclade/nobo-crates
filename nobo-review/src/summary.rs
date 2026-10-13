@@ -181,10 +181,7 @@ mod tests {
 
     #[test]
     fn overdue_is_the_interval_measured_from_the_last_one() {
-        let state = ReviewState {
-            last_review_completed_at: Some("2026-09-15T10:00:00Z".to_string()),
-            ..Default::default()
-        };
+        let state = ReviewState { last_review_completed_at: Some("2026-09-15T10:00:00Z".to_string()), ..Default::default() };
         let weekly = Settings::default();
         assert!(!summarize(Counts::default(), &state, &weekly, at("2026-09-21T09:00:00Z")).overdue);
         assert!(summarize(Counts::default(), &state, &weekly, at("2026-09-22T10:00:00Z")).overdue);

@@ -66,9 +66,7 @@ where
     /// What is stored, or the default. See the module doc on why this
     /// cannot fail.
     pub fn load(&self) -> T {
-        Config::load()
-            .and_then(|config| config.section(self.name))
-            .unwrap_or_default()
+        Config::load().and_then(|config| config.section(self.name)).unwrap_or_default()
     }
 
     /// The same, out of a `Config` that has already been read.
@@ -150,10 +148,7 @@ mod tests {
         from_frontend.notes_path = "/vault".into();
         from_frontend.carry_sections_from(on_disk);
 
-        assert_eq!(
-            from_frontend.section::<Probe>("probe"),
-            Some(Probe { path: Some("/usr/bin/python3".into()), count: 1 })
-        );
+        assert_eq!(from_frontend.section::<Probe>("probe"), Some(Probe { path: Some("/usr/bin/python3".into()), count: 1 }));
         assert_eq!(from_frontend.notes_path, "/vault", "the payload still wins for its own fields");
     }
 
@@ -169,10 +164,7 @@ mod tests {
         on_disk.carry_sections_from(stored_copy);
 
         assert_eq!(taken, Some(serde_json::json!("/old/python")));
-        assert!(
-            !serde_json::to_string(&on_disk).unwrap().contains("python_interpreter_path"),
-            "the migrated key came back on save"
-        );
+        assert!(!serde_json::to_string(&on_disk).unwrap().contains("python_interpreter_path"), "the migrated key came back on save");
     }
 
     /// A caller that has just written a section is not undone by what is

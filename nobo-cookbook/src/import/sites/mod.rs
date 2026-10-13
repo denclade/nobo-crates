@@ -48,8 +48,5 @@ fn regroup_ingredients(recipe: &mut ImportedRecipe, shape: Vec<(Option<String>, 
         return;
     }
     let mut rest = lines.into_iter();
-    recipe.ingredients = shape
-        .into_iter()
-        .map(|(title, count)| Group { title, lines: rest.by_ref().take(count).collect() })
-        .collect();
+    recipe.ingredients = shape.into_iter().map(|(title, count)| Group { title, lines: rest.by_ref().take(count).collect() }).collect();
 }

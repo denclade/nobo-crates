@@ -15,8 +15,8 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::core::org_ast::{self, aggregate_checkboxes, heading_level, indent_of, list_of};
 use crate::core::models::TODO_STATES;
+use crate::core::org_ast::{self, aggregate_checkboxes, heading_level, indent_of, list_of};
 use crate::core::org_sort::{self, SortKey};
 use crate::core::org_table::{self, Position, Row, Table};
 
@@ -155,10 +155,7 @@ pub fn continue_list_on_enter(text: &str, cursor: u32) -> Option<Edit> {
     let (bullet, checkbox) = list_of(source)?;
 
     let indent: String = source.chars().take(indent_of(source)).collect();
-    let body = source
-        .chars()
-        .skip(indent.chars().count() + bullet.chars().count())
-        .collect::<String>();
+    let body = source.chars().skip(indent.chars().count() + bullet.chars().count()).collect::<String>();
     let body = body.trim_start();
     let body = match checkbox {
         Some(_) => body.chars().skip(3).collect::<String>().trim_start().to_string(),
@@ -171,11 +168,7 @@ pub fn continue_list_on_enter(text: &str, cursor: u32) -> Option<Edit> {
         return Some(Edit::at(doc.start(line), doc.end(line), "", doc.start(line)));
     }
 
-    let marker = format!(
-        "\n{indent}{} {}",
-        next_bullet(&bullet),
-        if checkbox.is_some() { "[ ] " } else { "" }
-    );
+    let marker = format!("\n{indent}{} {}", next_bullet(&bullet), if checkbox.is_some() { "[ ] " } else { "" });
     let at = doc.end(line);
     let cursor = at + utf16_len(&marker);
     Some(Edit::at(at, at, marker, cursor))
@@ -192,11 +185,7 @@ pub fn insert_list_item(text: &str, cursor: u32, checkbox: bool) -> Edit {
     if let Some((bullet, existing)) = list_of(source) {
         // Already a list item: this is the next one.
         let indent: String = source.chars().take(indent_of(source)).collect();
-        let inserted = format!(
-            "\n{indent}{} {}",
-            next_bullet(&bullet),
-            if checkbox || existing.is_some() { "[ ] " } else { "" }
-        );
+        let inserted = format!("\n{indent}{} {}", next_bullet(&bullet), if checkbox || existing.is_some() { "[ ] " } else { "" });
         let at = doc.end(line);
         return Edit::at(at, at, inserted.clone(), at + utf16_len(&inserted));
     }
@@ -275,12 +264,7 @@ pub fn change_list_type(text: &str, cursor: u32, kind: BulletKind) -> Option<Edi
     for (index, number) in (first..=last).zip(0usize..) {
         let source = &doc.lines[index];
         let (bullet, checkbox) = list_of(source).expect("checked by the walk above");
-        let rest: String = source
-            .chars()
-            .skip(indent_of(source) + bullet.chars().count())
-            .collect::<String>()
-            .trim_start()
-            .to_string();
+        let rest: String = source.chars().skip(indent_of(source) + bullet.chars().count()).collect::<String>().trim_start().to_string();
         let _ = checkbox;
         let pad: String = source.chars().take(indent_of(source)).collect();
         out.push(format!("{pad}{} {rest}", bullet_for(kind, number)));
@@ -397,8 +381,7 @@ pub fn toggle_inline_markup(text: &str, from: u32, to: u32, kind: org_ast::Inlin
         return Edit { from, to, insert: inner, cursor, cursor_end: from };
     }
     let outside_before = from >= 1 && String::from_utf16_lossy(&units[from as usize - 1..from as usize]) == marker;
-    let outside_after = (to as usize) < units.len()
-        && String::from_utf16_lossy(&units[to as usize..to as usize + 1]) == marker;
+    let outside_after = (to as usize) < units.len() && String::from_utf16_lossy(&units[to as usize..to as usize + 1]) == marker;
     if outside_before && outside_after {
         let cursor = from - 1 + utf16_len(&selected);
         return Edit { from: from - 1, to: to + 1, insert: selected, cursor, cursor_end: from - 1 };
@@ -432,21 +415,9 @@ fn word_at(units: &[u16], offset: u32) -> (u32, u32) {
 /// one.
 pub fn insert_link(text: &str, from: u32, to: u32, target: &str, description: &str) -> Edit {
     let units: Vec<u16> = text.encode_utf16().collect();
-    let selected = if to > from {
-        String::from_utf16_lossy(&units[from as usize..to as usize])
-    } else {
-        String::new()
-    };
-    let label = if !description.is_empty() {
-        description.to_string()
-    } else {
-        selected
-    };
-    let inserted = if label.is_empty() {
-        format!("[[{target}]]")
-    } else {
-        format!("[[{target}][{label}]]")
-    };
+    let selected = if to > from { String::from_utf16_lossy(&units[from as usize..to as usize]) } else { String::new() };
+    let label = if !description.is_empty() { description.to_string() } else { selected };
+    let inserted = if label.is_empty() { format!("[[{target}]]") } else { format!("[[{target}][{label}]]") };
     let cursor = from + utf16_len(&inserted);
     Edit::at(from, to, inserted, cursor)
 }
@@ -577,11 +548,7 @@ pub fn table_at(text: &str, cursor: u32) -> Option<TableAt> {
     let line = doc.line_at(cursor);
     let lines: Vec<&str> = text.split('\n').collect();
     let table = org_table::find_at(&lines, line)?;
-    Some(TableAt {
-        row: line - table.start,
-        column: org_table::column_at(&doc.lines[line], cursor - doc.start(line)),
-        table,
-    })
+    Some(TableAt { row: line - table.start, column: org_table::column_at(&doc.lines[line], cursor - doc.start(line)), table })
 }
 
 /// The table under the caret replaced by ROWS, as a table editor hands
@@ -621,11 +588,7 @@ fn column_of(text: &str, cursor: u32) -> Option<usize> {
 
 /// The shape every table edit shares: read the whole table, change it,
 /// write the whole table back.
-fn with_table(
-    text: &str,
-    cursor: u32,
-    change: impl FnOnce(&mut org_table::Table, usize) -> bool,
-) -> Option<Edit> {
+fn with_table(text: &str, cursor: u32, change: impl FnOnce(&mut org_table::Table, usize) -> bool) -> Option<Edit> {
     let doc = Doc::new(text);
     let line = doc.line_at(cursor);
     let lines: Vec<&str> = text.split('\n').collect();
@@ -847,10 +810,7 @@ mod tests {
         assert_eq!(row.row, 1);
 
         let edit = set_table_row(text, 36, vec!["longer".into(), "2".into()]).expect("a table");
-        assert_eq!(
-            apply(text, &edit),
-            "| Name   | Value |\n|--------+-------|\n| longer | 2     |"
-        );
+        assert_eq!(apply(text, &edit), "| Name   | Value |\n|--------+-------|\n| longer | 2     |");
     }
 
     #[test]

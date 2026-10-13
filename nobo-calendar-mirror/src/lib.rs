@@ -49,7 +49,6 @@ pub struct CalendarEvent {
     pub repeater: Option<Repeater>,
 }
 
-
 /// The colour the calendar's entries are marked with in the agenda. In the
 /// file like everything else about a subscription, so the calendar looks
 /// the same on every device -- a colour that only one device knows is
@@ -59,7 +58,6 @@ pub struct CalendarEvent {
 /// Shared with the CalDAV calendars (see caldav::registry), which are the
 /// same thing arriving over a different protocol.
 pub const COLOR_KEYWORD: &str = "#+NOBO_CALENDAR_COLOR:";
-
 
 /// A calendar mirror: generated from a subscription and owned by the app.
 pub const MIRROR_KIND: FileKind = FileKind::new("calendar-mirror");
@@ -95,6 +93,5 @@ pub const FILE_EXTENSION: &str = "org";
 /// in fs_utils instead; this one additionally rules out a same-shaped path
 /// belonging to some other vault.
 pub fn is_mirror_file(vault_root: &Path, path: &Path) -> bool {
-    path.parent() == Some(dir(vault_root).as_path())
-        && path.extension().is_some_and(|e| e.eq_ignore_ascii_case(FILE_EXTENSION))
+    path.parent() == Some(dir(vault_root).as_path()) && path.extension().is_some_and(|e| e.eq_ignore_ascii_case(FILE_EXTENSION))
 }

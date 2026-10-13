@@ -95,8 +95,7 @@ impl CalDavTask {
     /// them, since only dragging writes the property -- puts the list in
     /// an order no other client agrees with.
     pub fn sort_key(&self) -> Option<i64> {
-        self.sort_order
-            .or_else(|| self.created.map(|c| c.and_utc().timestamp() - APPLE_EPOCH_OFFSET))
+        self.sort_order.or_else(|| self.created.map(|c| c.and_utc().timestamp() - APPLE_EPOCH_OFFSET))
     }
 }
 

@@ -12,12 +12,8 @@ use crate::url;
 /// none.
 pub fn read(page_url: &str, html: &str) -> Preview {
     let clean = |text: String| Some(collapse_whitespace(&decode_entities(&text))).filter(|text| !text.is_empty());
-    let title = meta_content(html, "og:title")
-        .and_then(clean)
-        .or_else(|| first_tag_text(html, "title").and_then(clean));
-    let description = meta_content(html, "og:description")
-        .and_then(clean)
-        .or_else(|| meta_content(html, "description").and_then(clean));
+    let title = meta_content(html, "og:title").and_then(clean).or_else(|| first_tag_text(html, "title").and_then(clean));
+    let description = meta_content(html, "og:description").and_then(clean).or_else(|| meta_content(html, "description").and_then(clean));
     Preview { url: page_url.to_string(), host: url::host(page_url), title, description }
 }
 

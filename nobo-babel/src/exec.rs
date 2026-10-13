@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 
-use nobo_core::config::settings::config_dir;
 use crate::model::{BabelLanguage, ExecutionResult};
+use nobo_core::config::settings::config_dir;
 
 fn shell_quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "'\\''"))
@@ -48,10 +48,18 @@ fn format_var_assignment(lang: BabelLanguage, key: &str, value: &str) -> String 
     let is_number = value.parse::<f64>().is_ok();
     match lang {
         BabelLanguage::Bash => {
-            if is_number { format!("{key}={value}") } else { format!("{key}={}", shell_quote(value)) }
+            if is_number {
+                format!("{key}={value}")
+            } else {
+                format!("{key}={}", shell_quote(value))
+            }
         }
         BabelLanguage::Python => {
-            if is_number { format!("{key} = {value}") } else { format!("{key} = {}", python_quote(value)) }
+            if is_number {
+                format!("{key} = {value}")
+            } else {
+                format!("{key} = {}", python_quote(value))
+            }
         }
     }
 }
@@ -189,10 +197,7 @@ fn read_all(source: &mut impl Read) -> String {
     if buffer.len() as u64 >= OUTPUT_CAP {
         // Said out loud: silently cut output is worse than none, because
         // the half that is there looks complete.
-        text.push_str(&nobo_core::t!(
-            "\n[Ausgabe nach 1 MB abgeschnitten]",
-            "\n[output truncated at 1 MB]"
-        ));
+        text.push_str(&nobo_core::t!("\n[Ausgabe nach 1 MB abgeschnitten]", "\n[output truncated at 1 MB]"));
     }
     text
 }
@@ -246,10 +251,7 @@ fn cache_key(lang: BabelLanguage, interpreter_path: Option<&str>, code: &str, wo
 }
 
 fn load_cache(path: &Path) -> CacheFile {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|content| serde_json::from_str(&content).ok())
-        .unwrap_or_default()
+    fs::read_to_string(path).ok().and_then(|content| serde_json::from_str(&content).ok()).unwrap_or_default()
 }
 
 fn save_cache(path: &Path, cache: &CacheFile) -> std::io::Result<()> {
@@ -328,22 +330,13 @@ mod tests {
     fn var_string_with_quote_is_escaped_for_bash() {
         let out = format_var_assignment(BabelLanguage::Bash, "x", "it's");
         // Round-trips through the real shell: `echo $x` must print `it's`.
-        let result = run_once(
-            BabelLanguage::Bash,
-            None,
-            &format!("{out}\necho \"$x\""),
-            None,
-        ).unwrap();
+        let result = run_once(BabelLanguage::Bash, None, &format!("{out}\necho \"$x\""), None).unwrap();
         assert_eq!(result.stdout.trim(), "it's");
     }
 
     #[test]
     fn build_code_prepends_vars_before_the_block() {
-        let code = build_code(
-            BabelLanguage::Bash,
-            &[("x".to_string(), "5".to_string())],
-            "echo $x",
-        );
+        let code = build_code(BabelLanguage::Bash, &[("x".to_string(), "5".to_string())], "echo $x");
         assert_eq!(code, "x=5\necho $x");
     }
 
@@ -445,11 +438,7 @@ mod tests {
 
     #[test]
     fn run_once_with_vars_end_to_end() {
-        let code = build_code(
-            BabelLanguage::Python,
-            &[("name".to_string(), "world".to_string())],
-            "print(f'hello {name}')",
-        );
+        let code = build_code(BabelLanguage::Python, &[("name".to_string(), "world".to_string())], "print(f'hello {name}')");
         let result = run_once(BabelLanguage::Python, None, &code, None).unwrap();
         assert_eq!(result.stdout.trim(), "hello world");
     }
@@ -486,9 +475,6 @@ mod tests {
 
     #[test]
     fn different_code_has_different_cache_key() {
-        assert_ne!(
-            cache_key(BabelLanguage::Bash, None, "echo a", None),
-            cache_key(BabelLanguage::Bash, None, "echo b", None),
-        );
+        assert_ne!(cache_key(BabelLanguage::Bash, None, "echo a", None), cache_key(BabelLanguage::Bash, None, "echo b", None),);
     }
 }

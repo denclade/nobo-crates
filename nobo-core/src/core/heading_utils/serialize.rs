@@ -1,5 +1,9 @@
 use crate::core::heading_identity;
-use crate::core::models::{is_real_structure, remove_property, set_property, state_log_line, Heading, HeadingCreatePayload, HeadingUpdatePayload, ProgressStats, DATE_FORMAT_ACTIVITY, DATE_FORMAT_CLOSED, DATE_FORMAT_LOG, ORG_CATEGORY_PROPERTY, ORG_LOGBOOK_END, ORG_LOGBOOK_START, ORG_PROPERTIES_END, ORG_PROPERTIES_START, ORG_TAGS_COLUMN, ORG_TAGS_MIN_GAP};
+use crate::core::models::{
+    is_real_structure, remove_property, set_property, state_log_line, Heading, HeadingCreatePayload, HeadingUpdatePayload, ProgressStats,
+    DATE_FORMAT_ACTIVITY, DATE_FORMAT_CLOSED, DATE_FORMAT_LOG, ORG_CATEGORY_PROPERTY, ORG_LOGBOOK_END, ORG_LOGBOOK_START,
+    ORG_PROPERTIES_END, ORG_PROPERTIES_START, ORG_TAGS_COLUMN, ORG_TAGS_MIN_GAP,
+};
 use crate::core::org_parser;
 use crate::core::task_utils;
 use crate::utils::effort_utils::ORG_EFFORT_PROPERTY;
@@ -37,10 +41,7 @@ pub fn format_new_heading_line(
     progress_stats: Option<ProgressStats>,
 ) -> String {
     let stars = "*".repeat(level);
-    let state_part = state
-        .as_deref()
-        .map(|s| format!("{} ", s))
-        .unwrap_or_default();
+    let state_part = state.as_deref().map(|s| format!("{} ", s)).unwrap_or_default();
     // Between the keyword and the title, which is where org puts it.
     let priority_part = priority.map(|p| format!("[#{p}] ")).unwrap_or_default();
     let mut prefix = format!("{} {}{}{}", stars, state_part, priority_part, title);
@@ -74,10 +75,7 @@ pub fn build_new_heading_block(payload: &HeadingCreatePayload, level: usize) -> 
     )];
 
     if let Some(ts) = &payload.scheduled {
-        lines.push(format!(
-            "SCHEDULED: {}",
-            timestamp_utils::format_timestamp(ts)
-        ));
+        lines.push(format!("SCHEDULED: {}", timestamp_utils::format_timestamp(ts)));
     }
 
     let now = Local::now().format(DATE_FORMAT_ACTIVITY).to_string();
@@ -85,19 +83,11 @@ pub fn build_new_heading_block(payload: &HeadingCreatePayload, level: usize) -> 
     // Always fresh, no consent needed -- a brand-new heading has nothing
     // pre-existing to ask about (unlike an EXISTING heading being edited,
     // see build_org_heading_block_inner's own set_custom_id parameter).
-    lines.push(format!(
-        ":{}: {}",
-        heading_identity::CUSTOM_ID_PROPERTY,
-        heading_identity::generate_custom_id()
-    ));
+    lines.push(format!(":{}: {}", heading_identity::CUSTOM_ID_PROPERTY, heading_identity::generate_custom_id()));
     lines.push(format!(":{}: {}", ORG_UPDATED_PROPERTY, now));
     lines.push(format!(":{}: {}", ORG_LAST_ACTIVITY_PROPERTY, now));
     if let Some(minutes) = payload.effort_minutes {
-        lines.push(format!(
-            ":{}: {}",
-            ORG_EFFORT_PROPERTY,
-            effort_utils::format_effort(minutes)
-        ));
+        lines.push(format!(":{}: {}", ORG_EFFORT_PROPERTY, effort_utils::format_effort(minutes)));
     }
     if let Some(category) = payload.category.as_deref().map(str::trim).filter(|c| !c.is_empty()) {
         lines.push(format!(":{}: {}", ORG_CATEGORY_PROPERTY, category));
@@ -150,25 +140,13 @@ pub fn build_org_heading_block(heading: &Heading, payload: &HeadingUpdatePayload
 /// exactly as it was. Same "no opportunistic CUSTOM_ID" reasoning as
 /// build_org_heading_block above.
 pub fn touch_last_activity(heading: &Heading) -> Vec<String> {
-    build_org_heading_block_inner(
-        heading,
-        &HeadingUpdatePayload::default(),
-        false,
-        true,
-        false,
-    )
+    build_org_heading_block_inner(heading, &HeadingUpdatePayload::default(), false, true, false)
 }
 
 /// Rewrites a heading's block unchanged except for a newly added
 /// CUSTOM_ID -- the consented backfill path for existing headings.
 pub fn stamp_custom_id_only(heading: &Heading) -> Vec<String> {
-    build_org_heading_block_inner(
-        heading,
-        &HeadingUpdatePayload::default(),
-        false,
-        false,
-        true,
-    )
+    build_org_heading_block_inner(heading, &HeadingUpdatePayload::default(), false, false, true)
 }
 
 /// Locates the 0-indexed line within HEADING's own `line_no..=last_line`
@@ -181,10 +159,14 @@ pub fn stamp_custom_id_only(heading: &Heading) -> Vec<String> {
 pub fn find_custom_id_line(lines: &[String], heading: &Heading) -> Option<usize> {
     let start = heading.line_no.saturating_sub(1);
     let end = heading.last_line.min(lines.len());
-    lines.get(start..end)?.iter().position(|line| {
-        org_parser::parse_property(line.trim_start())
-            .is_some_and(|(key, _)| key.eq_ignore_ascii_case(heading_identity::CUSTOM_ID_PROPERTY))
-    }).map(|relative| start + relative)
+    lines
+        .get(start..end)?
+        .iter()
+        .position(|line| {
+            org_parser::parse_property(line.trim_start())
+                .is_some_and(|(key, _)| key.eq_ignore_ascii_case(heading_identity::CUSTOM_ID_PROPERTY))
+        })
+        .map(|relative| start + relative)
 }
 
 /// Removes HEADING's own `:CUSTOM_ID:` line (see find_custom_id_line
@@ -199,10 +181,7 @@ pub fn remove_custom_id_and_empty_drawer(lines: &mut Vec<String>, heading: &Head
     lines.remove(idx);
 
     let is_marker = |line: &str, marker: &str| line.trim().eq_ignore_ascii_case(marker);
-    if idx > 0 && idx < lines.len()
-        && is_marker(&lines[idx - 1], ":PROPERTIES:")
-        && is_marker(&lines[idx], ":END:")
-    {
+    if idx > 0 && idx < lines.len() && is_marker(&lines[idx - 1], ":PROPERTIES:") && is_marker(&lines[idx], ":END:") {
         lines.remove(idx); // the :END: line, now sitting at idx
         lines.remove(idx - 1); // :PROPERTIES:, unaffected by the removal above
     }
@@ -244,11 +223,7 @@ fn build_org_heading_block_inner(
     let new_state = payload.state.as_deref().unwrap_or(old_state);
     let title = payload.title.as_deref().unwrap_or(&heading.title);
     let tags = payload.tags.as_ref().unwrap_or(&heading.tags);
-    let state_opt = if new_state.is_empty() {
-        None
-    } else {
-        Some(new_state.to_string())
-    };
+    let state_opt = if new_state.is_empty() { None } else { Some(new_state.to_string()) };
 
     // `Some(None)` clears it, `None` keeps whatever the heading had --
     // see HeadingUpdatePayload::priority.
@@ -257,14 +232,7 @@ fn build_org_heading_block_inner(
         None => heading.priority.as_deref(),
     };
 
-    lines.push(format_new_heading_line(
-        heading.level,
-        &state_opt,
-        priority,
-        title,
-        tags,
-        heading.progress_stats,
-    ));
+    lines.push(format_new_heading_line(heading.level, &state_opt, priority, title, tags, heading.progress_stats));
 
     // Any finished state stamps CLOSED, not just the literal DONE -- a
     // task marked "won't do" is finished too (task_utils::is_finished,
@@ -295,10 +263,7 @@ fn build_org_heading_block_inner(
         None => heading.scheduled.as_ref(),
     };
     if let Some(ts) = scheduled {
-        planning_parts.push(format!(
-            "SCHEDULED: {}",
-            timestamp_utils::format_timestamp(ts)
-        ));
+        planning_parts.push(format!("SCHEDULED: {}", timestamp_utils::format_timestamp(ts)));
     }
 
     let deadline = match &payload.deadline {
@@ -306,25 +271,21 @@ fn build_org_heading_block_inner(
         None => heading.deadline.as_ref(),
     };
     if let Some(ts) = deadline {
-        planning_parts.push(format!(
-            "DEADLINE: {}",
-            timestamp_utils::format_timestamp(ts)
-        ));
+        planning_parts.push(format!("DEADLINE: {}", timestamp_utils::format_timestamp(ts)));
     }
 
     if !planning_parts.is_empty() {
         lines.push(planning_parts.join(" "));
     }
 
-    let mut properties = payload
-        .properties
-        .clone()
-        .unwrap_or_else(|| heading.properties.clone());
+    let mut properties = payload.properties.clone().unwrap_or_else(|| heading.properties.clone());
 
     if let Some(effort) = &payload.effort_minutes {
         match effort {
             Some(minutes) => set_property(&mut properties, ORG_EFFORT_PROPERTY, effort_utils::format_effort(*minutes)),
-            None => { remove_property(&mut properties, ORG_EFFORT_PROPERTY); }
+            None => {
+                remove_property(&mut properties, ORG_EFFORT_PROPERTY);
+            }
         }
     }
 
@@ -379,15 +340,9 @@ fn build_org_heading_block_inner(
         lines.push(ORG_PROPERTIES_END.to_string());
     }
 
-    let clocks = payload
-        .clocks
-        .clone()
-        .unwrap_or_else(|| heading.clocks.clone());
+    let clocks = payload.clocks.clone().unwrap_or_else(|| heading.clocks.clone());
 
-    let mut history = payload
-        .history
-        .clone()
-        .unwrap_or_else(|| heading.history.clone());
+    let mut history = payload.history.clone().unwrap_or_else(|| heading.history.clone());
     if !old_state.is_empty() && old_state != new_state {
         let now = Local::now().format(DATE_FORMAT_LOG).to_string();
         history.insert(0, state_log_line(new_state, old_state, &now));
@@ -466,9 +421,7 @@ fn build_org_heading_block_inner(
 /// block is touched: those lines are text.
 fn with_ids_on_new_tasks(mut lines: Vec<String>) -> Vec<String> {
     let in_block = org_parser::content_block_lines(&lines);
-    let is_task = |line: &str| {
-        org_parser::parse_heading_line(line).is_some_and(|parsed| is_real_structure(&parsed.state, &parsed.tags))
-    };
+    let is_task = |line: &str| org_parser::parse_heading_line(line).is_some_and(|parsed| is_real_structure(&parsed.state, &parsed.tags));
     let is_planning = |line: &str| {
         let t = line.trim_start();
         ["SCHEDULED:", "DEADLINE:", "CLOSED:"].iter().any(|k| t.starts_with(k))
@@ -613,8 +566,7 @@ fn apply_content_heading_offset(content: &str, host_level: usize) -> Vec<String>
             // line. Uses the exact same predicate as org_parser's
             // read-side structural rule (models::is_real_structure) --
             // the two MUST stay in sync for the round trip to hold.
-            let is_real = org_parser::parse_heading_line(line)
-                .is_some_and(|parsed| is_real_structure(&parsed.state, &parsed.tags));
+            let is_real = org_parser::parse_heading_line(line).is_some_and(|parsed| is_real_structure(&parsed.state, &parsed.tags));
 
             let prepend = if is_real {
                 // Pop every ancestor at the same or a deeper typed level
@@ -731,9 +683,9 @@ pub fn read_and_parse(path: &Path) -> Result<(Vec<String>, Vec<Heading>), String
 #[cfg(test)]
 mod perf {
     use super::*;
+    use crate::core::heading_utils::tree::ancestors_of;
     use crate::core::models::HeadingCreatePayload;
     use crate::core::org_parser;
-    use crate::core::heading_utils::tree::ancestors_of;
     use std::time::Instant;
     use tempfile::TempDir;
 

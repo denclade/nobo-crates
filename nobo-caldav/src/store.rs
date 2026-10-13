@@ -103,13 +103,9 @@ pub fn init_schema(conn: &Connection) -> rusqlite::Result<()> {
 /// reports the same one, nothing changed remotely and the whole per-task
 /// round trip can be skipped.
 pub fn get_ctag(conn: &Connection, list_id: &str) -> rusqlite::Result<Option<String>> {
-    conn.query_row(
-        "SELECT ctag FROM caldav_list_state WHERE list_id = ?1",
-        params![list_id],
-        |row| row.get(0),
-    )
-    .optional()
-    .map(Option::flatten)
+    conn.query_row("SELECT ctag FROM caldav_list_state WHERE list_id = ?1", params![list_id], |row| row.get(0))
+        .optional()
+        .map(Option::flatten)
 }
 
 pub fn set_ctag(conn: &Connection, list_id: &str, ctag: Option<&str>) -> rusqlite::Result<()> {
@@ -173,7 +169,6 @@ pub fn upsert(conn: &Connection, state: &TaskState) -> rusqlite::Result<()> {
     )?;
     Ok(())
 }
-
 
 /// Drops a tombstone once both sides agree the task is gone. Called only
 /// after a successful sync, when nothing can resurrect it any more.
@@ -360,4 +355,3 @@ mod tests {
         assert_ne!(hash_block("* TODO Milch\n"), hash_block("* DONE Milch\n"));
     }
 }
-

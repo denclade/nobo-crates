@@ -30,10 +30,7 @@ static MARKER_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn next_marker() -> String {
     let n = MARKER_COUNTER.fetch_add(1, Ordering::Relaxed);
-    let nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
+    let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
     format!("__NOBO_BABEL_DONE_{nanos}_{n}__")
 }
 
@@ -71,11 +68,7 @@ impl Session {
     /// comes from the session KEY (`(file_path, session_name)`) rather
     /// than from the call: every send to this session belongs to the same
     /// note by definition.
-    fn spawn(
-        lang: BabelLanguage,
-        interpreter_path: Option<&str>,
-        working_dir: Option<&std::path::Path>,
-    ) -> std::io::Result<Self> {
+    fn spawn(lang: BabelLanguage, interpreter_path: Option<&str>, working_dir: Option<&std::path::Path>) -> std::io::Result<Self> {
         let program = match (lang, interpreter_path) {
             (_, Some(path)) => path.to_string(),
             (BabelLanguage::Bash, None) => "bash".to_string(),
@@ -98,7 +91,9 @@ impl Session {
             //     no output at all until the pipe closes; `-i` doesn't).
             //     Interactive prompts/banner this also turns on land on
             //     stderr, not stdout, so they don't pollute captured output.
-            BabelLanguage::Python => { cmd.args(["-u", "-i"]); }
+            BabelLanguage::Python => {
+                cmd.args(["-u", "-i"]);
+            }
             // bash already executes commands as complete lines arrive on
             // a piped stdin, no flag needed.
             BabelLanguage::Bash => {}
@@ -112,12 +107,7 @@ impl Session {
         let stdout = child.stdout.take().expect("piped stdout");
         let stderr = child.stderr.take().expect("piped stderr");
 
-        Ok(Self {
-            child,
-            stdin,
-            stdout_rx: spawn_reader(BufReader::new(stdout)),
-            stderr_rx: spawn_reader(BufReader::new(stderr)),
-        })
+        Ok(Self { child, stdin, stdout_rx: spawn_reader(BufReader::new(stdout)), stderr_rx: spawn_reader(BufReader::new(stderr)) })
     }
 
     fn marker_command(lang: BabelLanguage, marker: &str) -> String {
@@ -144,16 +134,10 @@ impl Session {
                 Ok(line) if line == marker => break,
                 Ok(line) => stdout_lines.push(line),
                 Err(RecvTimeoutError::Timeout) => {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::TimedOut,
-                        "babel session did not respond in time",
-                    ));
+                    return Err(std::io::Error::new(std::io::ErrorKind::TimedOut, "babel session did not respond in time"));
                 }
                 Err(RecvTimeoutError::Disconnected) => {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::BrokenPipe,
-                        "babel session process exited",
-                    ));
+                    return Err(std::io::Error::new(std::io::ErrorKind::BrokenPipe, "babel session process exited"));
                 }
             }
         }
@@ -164,12 +148,7 @@ impl Session {
             stderr_lines.push(line);
         }
 
-        Ok(ExecutionResult {
-            stdout: stdout_lines.join("\n"),
-            stderr: stderr_lines.join("\n"),
-            exit_code: 0,
-            from_cache: false,
-        })
+        Ok(ExecutionResult { stdout: stdout_lines.join("\n"), stderr: stderr_lines.join("\n"), exit_code: 0, from_cache: false })
     }
 }
 
@@ -203,10 +182,7 @@ impl SessionRegistry {
             // `parent()` of a bare filename is `Some("")`, which is not a
             // directory anything can chdir into -- that is "wherever we
             // already are", i.e. `None`.
-            let working_dir = std::path::Path::new(&key.0)
-                .parent()
-                .filter(|p| !p.as_os_str().is_empty())
-                .map(|p| p.to_path_buf());
+            let working_dir = std::path::Path::new(&key.0).parent().filter(|p| !p.as_os_str().is_empty()).map(|p| p.to_path_buf());
             sessions.insert(key.clone(), Session::spawn(lang, interpreter_path, working_dir.as_deref())?);
         }
 
@@ -284,9 +260,7 @@ mod tests {
         let registry = SessionRegistry::default();
         let key = ("test.org".to_string(), "py2".to_string());
 
-        let result = registry
-            .send(key, BabelLanguage::Python, None, "print('hello')\nprint('world')")
-            .unwrap();
+        let result = registry.send(key, BabelLanguage::Python, None, "print('hello')\nprint('world')").unwrap();
 
         assert_eq!(result.stdout, "hello\nworld");
     }

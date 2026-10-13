@@ -17,8 +17,7 @@
 fn has_strong_signal(text: &str) -> bool {
     text.lines().any(|line| {
         let trimmed = line.trim_start();
-        trimmed.starts_with("```")
-            || atx_heading(line).is_some()
+        trimmed.starts_with("```") || atx_heading(line).is_some()
     }) || has_markdown_link(text)
 }
 
@@ -175,13 +174,7 @@ fn placeholder(index: usize) -> String {
     format!("\u{0}{index}\u{0}")
 }
 
-fn replace_wrapped(
-    text: &str,
-    open: &str,
-    close: &str,
-    render: impl Fn(&str) -> String,
-    stash: &mut Vec<String>,
-) -> String {
+fn replace_wrapped(text: &str, open: &str, close: &str, render: impl Fn(&str) -> String, stash: &mut Vec<String>) -> String {
     let mut out = String::new();
     let mut rest = text;
     while let Some(start) = rest.find(open) {
@@ -247,11 +240,7 @@ pub fn markdown_to_org(markdown: &str) -> String {
                 index += 1;
             }
             index += 1; // the closing fence
-            out.push(if language.is_empty() {
-                "#+BEGIN_SRC".to_string()
-            } else {
-                format!("#+BEGIN_SRC {language}")
-            });
+            out.push(if language.is_empty() { "#+BEGIN_SRC".to_string() } else { format!("#+BEGIN_SRC {language}") });
             out.extend(body);
             out.push("#+END_SRC".to_string());
             continue;
@@ -351,9 +340,6 @@ mod tests {
 
     #[test]
     fn a_fence_keeps_its_language_and_its_body_verbatim() {
-        assert_eq!(
-            markdown_to_org("```python\nprint(\"**hi**\")\n```"),
-            "#+BEGIN_SRC python\nprint(\"**hi**\")\n#+END_SRC"
-        );
+        assert_eq!(markdown_to_org("```python\nprint(\"**hi**\")\n```"), "#+BEGIN_SRC python\nprint(\"**hi**\")\n#+END_SRC");
     }
 }

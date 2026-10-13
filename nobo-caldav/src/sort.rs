@@ -51,10 +51,8 @@ pub fn merge(base_order: &[String], server: &[ServerEntry], local_order: &[Strin
     // plus anything the file has that the server has never seen (created
     // here, not pushed yet). A task in `base` that is now in neither was
     // deleted and simply falls out.
-    let locally_new: Vec<&String> = local_order
-        .iter()
-        .filter(|u| !known_remotely.contains(u.as_str()) && !base_order.contains(u))
-        .collect();
+    let locally_new: Vec<&String> =
+        local_order.iter().filter(|u| !known_remotely.contains(u.as_str()) && !base_order.contains(u)).collect();
     let survives = |uid: &String| known_remotely.contains(uid.as_str()) || locally_new.contains(&uid);
 
     let local_live: Vec<String> = local_order.iter().filter(|u| survives(u)).cloned().collect();
@@ -63,8 +61,7 @@ pub fn merge(base_order: &[String], server: &[ServerEntry], local_order: &[Strin
     // user reordered: an addition or a deletion shifts positions without
     // anyone having dragged anything.
     let local_common: Vec<&String> = local_live.iter().filter(|u| base_order.contains(u)).collect();
-    let base_common: Vec<&String> =
-        base_order.iter().filter(|u| survives(u) && local_order.contains(u)).collect();
+    let base_common: Vec<&String> = base_order.iter().filter(|u| survives(u) && local_order.contains(u)).collect();
     let local_reordered = local_common != base_common;
 
     // `None` means the server has no opinion about where the task goes --
@@ -86,11 +83,7 @@ pub fn merge(base_order: &[String], server: &[ServerEntry], local_order: &[Strin
     // Whatever neither sequence mentioned (unplaced remotely AND absent
     // from the file) goes last, in a stable order.
     let mut order = order;
-    let mut leftover: Vec<String> = server
-        .iter()
-        .map(|e| e.uid.clone())
-        .filter(|uid| !order.contains(uid))
-        .collect();
+    let mut leftover: Vec<String> = server.iter().map(|e| e.uid.clone()).filter(|uid| !order.contains(uid)).collect();
     leftover.sort();
     order.extend(leftover);
 
@@ -127,10 +120,8 @@ fn insert_missing(into: &[String], from: &[String]) -> Vec<String> {
 /// should be one PUT, not a rewrite of the whole list. Falls back to
 /// renumbering everything when the existing values leave no room.
 fn assign_values(order: &[String], server: &[ServerEntry]) -> Vec<(String, i64)> {
-    let current: std::collections::HashMap<&str, Option<i64>> =
-        server.iter().map(|e| (e.uid.as_str(), e.sort_order)).collect();
-    let existing: Vec<Option<i64>> =
-        order.iter().map(|uid| current.get(uid.as_str()).copied().flatten()).collect();
+    let current: std::collections::HashMap<&str, Option<i64>> = server.iter().map(|e| (e.uid.as_str(), e.sort_order)).collect();
+    let existing: Vec<Option<i64>> = order.iter().map(|uid| current.get(uid.as_str()).copied().flatten()).collect();
 
     // Two ways to decide which values to leave alone, because neither wins
     // everywhere. The longest increasing run re-places exactly the entry
@@ -149,11 +140,7 @@ fn assign_values(order: &[String], server: &[ServerEntry]) -> Vec<(String, i64)>
 
 /// Values for every position not in `keep`, or `None` when one of them has
 /// nowhere to go -- then the caller renumbers instead.
-fn assign_around(
-    order: &[String],
-    existing: &[Option<i64>],
-    keep: &std::collections::HashSet<usize>,
-) -> Option<Vec<(String, i64)>> {
+fn assign_around(order: &[String], existing: &[Option<i64>], keep: &std::collections::HashSet<usize>) -> Option<Vec<(String, i64)>> {
     let mut assignments = Vec::new();
     let mut last: Option<i64> = None;
 
@@ -206,8 +193,7 @@ fn rising_prefix(values: &[Option<i64>]) -> std::collections::HashSet<usize> {
 /// Positions without a value of their own are never part of it -- they
 /// need one assigned either way.
 fn longest_increasing(values: &[Option<i64>]) -> std::collections::HashSet<usize> {
-    let candidates: Vec<(usize, i64)> =
-        values.iter().enumerate().filter_map(|(index, value)| value.map(|v| (index, v))).collect();
+    let candidates: Vec<(usize, i64)> = values.iter().enumerate().filter_map(|(index, value)| value.map(|v| (index, v))).collect();
 
     // Patience sorting: `ends[length - 1]` is the position in `candidates`
     // that ends the shortest-tailed increasing run of that length so far.
@@ -242,11 +228,7 @@ fn longest_increasing(values: &[Option<i64>]) -> std::collections::HashSet<usize
 /// another client adds later.
 fn renumber(order: &[String], server: &[ServerEntry]) -> Vec<(String, i64)> {
     let base = server.iter().filter_map(|e| e.sort_order).min().unwrap_or(STEP);
-    order
-        .iter()
-        .enumerate()
-        .map(|(index, uid)| (uid.clone(), base + index as i64 * STEP))
-        .collect()
+    order.iter().enumerate().map(|(index, uid)| (uid.clone(), base + index as i64 * STEP)).collect()
 }
 
 #[cfg(test)]

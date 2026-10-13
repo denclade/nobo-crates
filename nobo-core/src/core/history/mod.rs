@@ -2,7 +2,7 @@ pub mod restore;
 pub mod store;
 
 use rusqlite::Connection;
-use std::path::{Path};
+use std::path::Path;
 use std::sync::Mutex;
 
 use crate::core::indexer::IndexManager;
@@ -36,10 +36,8 @@ pub fn record(conn: &Connection, kind: HistoryEntryKind, is_draft: bool, snapsho
         return Ok(());
     }
 
-    let total_bytes: usize = snapshots
-        .iter()
-        .map(|s| s.before.as_deref().map_or(0, str::len) + s.after.as_deref().map_or(0, str::len))
-        .sum();
+    let total_bytes: usize =
+        snapshots.iter().map(|s| s.before.as_deref().map_or(0, str::len) + s.after.as_deref().map_or(0, str::len)).sum();
     // Drop content rather than storing a misleading `before: None` (which
     // undo would read as "this file didn't exist") -- an empty snapshot
     // list is the same "shown, not restorable" shape AttachmentAdded uses.
@@ -61,8 +59,12 @@ fn apply_restore(entry: &Option<HistoryEntry>, index_manager: &IndexManager, is_
             // reason -- but atomic: undo is what the user reaches for
             // after something already went wrong, so it is the last write
             // in the app that may leave a file half-written.
-            Some(c) => { fs_utils::write_atomic(Path::new(&target), c).to_cmd()?; }
-            None => { let _ = std::fs::remove_file(&target); }
+            Some(c) => {
+                fs_utils::write_atomic(Path::new(&target), c).to_cmd()?;
+            }
+            None => {
+                let _ = std::fs::remove_file(&target);
+            }
         }
 
         if !entry.is_draft {
@@ -188,8 +190,13 @@ mod tests {
 
         let conn = conn();
         let index = IndexManager::new();
-        record(&conn, HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            vec![FileSnapshot { path: path_str.clone(), before: Some("old content".into()), after: Some("new content".into()) }]).unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: path_str.clone(), before: Some("old content".into()), after: Some("new content".into()) }],
+        )
+        .unwrap();
 
         undo(&conn, &index).unwrap();
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "old content");
@@ -207,8 +214,13 @@ mod tests {
 
         let conn = conn();
         let index = IndexManager::new();
-        record(&conn, HistoryEntryKind::FileCreated { filename: "new.org".into() }, false,
-            vec![FileSnapshot { path: path_str, before: None, after: Some("hello".into()) }]).unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileCreated { filename: "new.org".into() },
+            false,
+            vec![FileSnapshot { path: path_str, before: None, after: Some("hello".into()) }],
+        )
+        .unwrap();
 
         undo(&conn, &index).unwrap();
         assert!(!path.exists());
@@ -223,8 +235,13 @@ mod tests {
 
         let conn = conn();
         let index = IndexManager::new();
-        record(&conn, HistoryEntryKind::FileEdited { filename: "a.org".into() }, true,
-            vec![FileSnapshot { path: path_str.clone(), before: Some("draft v1".into()), after: Some("draft v2".into()) }]).unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            true,
+            vec![FileSnapshot { path: path_str.clone(), before: Some("draft v1".into()), after: Some("draft v2".into()) }],
+        )
+        .unwrap();
 
         undo(&conn, &index).unwrap();
 
@@ -237,8 +254,13 @@ mod tests {
     fn oversized_snapshots_are_recorded_without_restorable_content() {
         let conn = conn();
         let huge = "x".repeat(MAX_SNAPSHOT_BYTES + 1);
-        record(&conn, HistoryEntryKind::FileEdited { filename: "big.org".into() }, false,
-            vec![FileSnapshot { path: "/big.org".into(), before: None, after: Some(huge) }]).unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "big.org".into() },
+            false,
+            vec![FileSnapshot { path: "/big.org".into(), before: None, after: Some(huge) }],
+        )
+        .unwrap();
 
         let entries = list(&conn, 10).unwrap();
         assert_eq!(entries.len(), 1, "still shown in the list");
@@ -253,13 +275,28 @@ mod tests {
 
         let conn = conn();
         let index = IndexManager::new();
-        record(&conn, HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            vec![FileSnapshot { path: path_str.clone(), before: None, after: Some("v1".into()) }]).unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: path_str.clone(), before: None, after: Some("v1".into()) }],
+        )
+        .unwrap();
         let target_id = list(&conn, 1).unwrap()[0].id;
-        record(&conn, HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            vec![FileSnapshot { path: path_str.clone(), before: Some("v1".into()), after: Some("v2".into()) }]).unwrap();
-        record(&conn, HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            vec![FileSnapshot { path: path_str.clone(), before: Some("v2".into()), after: Some("v3".into()) }]).unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: path_str.clone(), before: Some("v1".into()), after: Some("v2".into()) }],
+        )
+        .unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: path_str.clone(), before: Some("v2".into()), after: Some("v3".into()) }],
+        )
+        .unwrap();
 
         let touched = jump_to(&conn, &index, target_id).unwrap();
         assert_eq!(touched.len(), 2, "undid the v2->v3 and v1->v2 actions");
@@ -275,10 +312,20 @@ mod tests {
 
         let conn = conn();
         let index = IndexManager::new();
-        record(&conn, HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            vec![FileSnapshot { path: path_str.clone(), before: None, after: Some("v1".into()) }]).unwrap();
-        record(&conn, HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            vec![FileSnapshot { path: path_str.clone(), before: Some("v1".into()), after: Some("v2".into()) }]).unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: path_str.clone(), before: None, after: Some("v1".into()) }],
+        )
+        .unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: path_str.clone(), before: Some("v1".into()), after: Some("v2".into()) }],
+        )
+        .unwrap();
         let target_id = list(&conn, 1).unwrap()[0].id;
 
         undo(&conn, &index).unwrap();
@@ -294,8 +341,13 @@ mod tests {
     fn jump_to_the_current_point_is_a_no_op() {
         let conn = conn();
         let index = IndexManager::new();
-        record(&conn, HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            vec![FileSnapshot { path: "/a.org".into(), before: Some("v1".into()), after: Some("v2".into()) }]).unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: "/a.org".into(), before: Some("v1".into()), after: Some("v2".into()) }],
+        )
+        .unwrap();
         let id = list(&conn, 1).unwrap()[0].id;
 
         assert!(jump_to(&conn, &index, id).unwrap().is_empty());
@@ -304,10 +356,20 @@ mod tests {
     #[test]
     fn list_for_path_scopes_to_one_file() {
         let conn = conn();
-        record(&conn, HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            vec![FileSnapshot { path: "/a.org".into(), before: Some("v1".into()), after: Some("v2".into()) }]).unwrap();
-        record(&conn, HistoryEntryKind::FileEdited { filename: "b.org".into() }, false,
-            vec![FileSnapshot { path: "/b.org".into(), before: Some("v1".into()), after: Some("v2".into()) }]).unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: "/a.org".into(), before: Some("v1".into()), after: Some("v2".into()) }],
+        )
+        .unwrap();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "b.org".into() },
+            false,
+            vec![FileSnapshot { path: "/b.org".into(), before: Some("v1".into()), after: Some("v2".into()) }],
+        )
+        .unwrap();
 
         let entries = list_for_path(&conn, "/a.org", 10).unwrap();
         assert_eq!(entries.len(), 1);

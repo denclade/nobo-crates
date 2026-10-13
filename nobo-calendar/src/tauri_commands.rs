@@ -164,8 +164,6 @@ pub async fn calendar_set_color(
 /// business knowing where the mirrors live.
 #[tauri::command]
 #[specta::specta]
-pub async fn calendar_events(
-    index_manager: State<'_, Arc<IndexManager>>,
-) -> Result<Vec<CalendarEntry>, String> {
+pub async fn calendar_events(index_manager: State<'_, Arc<IndexManager>>) -> Result<Vec<CalendarEntry>, String> {
     commands::calendar_events(index_manager.inner()).await
 }

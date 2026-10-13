@@ -274,7 +274,11 @@ pub fn import(text: &str, json: &str, existing: &HashSet<String>) -> Result<(Str
             continue;
         }
         out = write::file_under(&out, path, |level| {
-            items.iter().map(|item| write::entry_with(&item.draft, level, &item.created, item.updated.as_deref())).collect::<Vec<_>>().join("\n")
+            items
+                .iter()
+                .map(|item| write::entry_with(&item.draft, level, &item.created, item.updated.as_deref()))
+                .collect::<Vec<_>>()
+                .join("\n")
         })
         .0;
     }

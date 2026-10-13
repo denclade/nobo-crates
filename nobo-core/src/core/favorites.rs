@@ -91,10 +91,7 @@ mod tests {
 
         set(file.path(), true).unwrap();
 
-        assert_eq!(
-            content(&file),
-            "#+TITLE: Notiz\n#+IDENTIFIER: 20240101T101010\n#+NOBO_FAVORITE: t\n\n* Erste Überschrift\nText.\n",
-        );
+        assert_eq!(content(&file), "#+TITLE: Notiz\n#+IDENTIFIER: 20240101T101010\n#+NOBO_FAVORITE: t\n\n* Erste Überschrift\nText.\n",);
     }
 
     #[test]

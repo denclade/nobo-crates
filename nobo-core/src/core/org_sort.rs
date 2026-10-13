@@ -173,9 +173,7 @@ fn locate(text: &str, cursor: u32) -> Option<Found> {
         }
         // A list line, or a line that continues one (an indented sentence
         // under an item): both are "in the list".
-        "list" | "text" if list_item_at(&lines, line).is_some() => {
-            list(&lines, list_item_at(&lines, line)?).map(Found::Blocks)
-        }
+        "list" | "text" if list_item_at(&lines, line).is_some() => list(&lines, list_item_at(&lines, line)?).map(Found::Blocks),
         "heading" => headings(&lines, Some(line)).map(Found::Blocks),
         // Above the first heading -- the title, the keywords, a blank
         // line: the top-level headings.
@@ -261,19 +259,9 @@ impl TableGroup {
     fn target(&self, table: &Table) -> SortTarget {
         let values = self.values(table);
         let (keys, suggested) = keys_for_values(&values);
-        let label = table
-            .header()
-            .and_then(|header| header.get(self.column))
-            .map(|name| name.trim().to_string())
-            .filter(|name| !name.is_empty());
-        SortTarget {
-            scope: SortScope::Table,
-            label,
-            column: Some(self.column),
-            count: values.len(),
-            keys,
-            suggested,
-        }
+        let label =
+            table.header().and_then(|header| header.get(self.column)).map(|name| name.trim().to_string()).filter(|name| !name.is_empty());
+        SortTarget { scope: SortScope::Table, label, column: Some(self.column), count: values.len(), keys, suggested }
     }
 
     fn apply(&self, table: &mut Table, key: SortKey, descending: bool) {
@@ -356,9 +344,7 @@ impl Blocks {
         let values: Vec<Value> = self.units.iter().map(|unit| unit.value.clone()).collect();
         let order = order(&values, key, descending);
         let mut lines = Vec::new();
-        let last_original = self.first + self.units.iter().map(|u| u.lines.len()).sum::<usize>()
-            + self.gaps.iter().sum::<usize>()
-            - 1;
+        let last_original = self.first + self.units.iter().map(|u| u.lines.len()).sum::<usize>() + self.gaps.iter().sum::<usize>() - 1;
         for (position, &at) in order.iter().enumerate() {
             let mut unit_lines = self.units[at].lines.clone();
             if let Some(renumber) = self.renumber {
@@ -409,9 +395,10 @@ fn list_item_at(lines: &[&str], line: usize) -> Option<usize> {
     if lines[line].trim().is_empty() || indent == 0 {
         return None;
     }
-    (0..line).rev().take_while(|&at| !lines[at].trim().is_empty() && heading_level(lines[at]).is_none()).find(|&at| {
-        blocks[at].is_none() && list_of(lines[at]).is_some() && indent_of(lines[at]) < indent
-    })
+    (0..line)
+        .rev()
+        .take_while(|&at| !lines[at].trim().is_empty() && heading_level(lines[at]).is_none())
+        .find(|&at| blocks[at].is_none() && list_of(lines[at]).is_some() && indent_of(lines[at]) < indent)
 }
 
 fn list(lines: &[&str], item: usize) -> Option<Blocks> {
@@ -606,16 +593,18 @@ fn keys_for_values(values: &[&str]) -> (Vec<SortKey>, SortKey) {
 /// goes last whichever way round.
 fn order(values: &[Value], key: SortKey, descending: bool) -> Vec<usize> {
     let mut positions: Vec<usize> = (0..values.len()).collect();
-    positions.sort_by(|&a, &b| {
-        match (rank(&values[a], key), rank(&values[b], key)) {
-            (Some(left), Some(right)) => {
-                let ordering = left.cmp(&right);
-                if descending { ordering.reverse() } else { ordering }
+    positions.sort_by(|&a, &b| match (rank(&values[a], key), rank(&values[b], key)) {
+        (Some(left), Some(right)) => {
+            let ordering = left.cmp(&right);
+            if descending {
+                ordering.reverse()
+            } else {
+                ordering
             }
-            (Some(_), None) => Ordering::Less,
-            (None, Some(_)) => Ordering::Greater,
-            (None, None) => Ordering::Equal,
         }
+        (Some(_), None) => Ordering::Less,
+        (None, Some(_)) => Ordering::Greater,
+        (None, None) => Ordering::Equal,
     });
     positions
 }
@@ -634,9 +623,10 @@ fn rank(value: &Value, key: SortKey) -> Option<Rank> {
                 _ => 2,
             })
         }),
-        SortKey::Todo => value.state.as_deref().map(|state| {
-            Rank::Index(TODO_STATES.iter().position(|known| *known == state).unwrap_or(TODO_STATES.len()))
-        }),
+        SortKey::Todo => value
+            .state
+            .as_deref()
+            .map(|state| Rank::Index(TODO_STATES.iter().position(|known| *known == state).unwrap_or(TODO_STATES.len()))),
         SortKey::Priority => value.priority.clone().map(Rank::Text),
     }
 }
@@ -770,7 +760,12 @@ fn time_of(text: &str) -> Option<String> {
 fn with_time(date: String, after: &[char]) -> String {
     let window: Vec<char> = after.iter().take(9).copied().collect();
     for slice in window.windows(5) {
-        if slice[0].is_ascii_digit() && slice[1].is_ascii_digit() && slice[2] == ':' && slice[3].is_ascii_digit() && slice[4].is_ascii_digit() {
+        if slice[0].is_ascii_digit()
+            && slice[1].is_ascii_digit()
+            && slice[2] == ':'
+            && slice[3].is_ascii_digit()
+            && slice[4].is_ascii_digit()
+        {
             return format!("{date} {}", slice.iter().collect::<String>());
         }
     }

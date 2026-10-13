@@ -48,9 +48,9 @@ pub mod rescan;
 pub mod store;
 
 pub mod commands;
+pub mod model;
 #[cfg(feature = "tauri")]
 pub mod tauri_commands;
-pub mod model;
 
 // The providers are features of their own: `sync` knows WHAT to do, a
 // provider knows where (see the feature's module doc). Both are
@@ -77,8 +77,7 @@ inventory::submit! {
 /// Where this feature's settings live in `settings.json` (see
 /// `config::section`). Compiled in every build: a build without sync
 /// still must not drop the section when it saves.
-pub const SETTINGS: nobo_core::config::section::Section<model::Settings> =
-    nobo_core::config::section::Section::new("sync");
+pub const SETTINGS: nobo_core::config::section::Section<model::Settings> = nobo_core::config::section::Section::new("sync");
 
 // Both used to be `Config` fields named after this feature.
 inventory::submit! {
@@ -99,10 +98,13 @@ fn adopt_legacy_settings(config: &mut nobo_core::config::settings::Config) -> Re
         return Ok(false);
     }
     if !config.has_section("sync") {
-        config.set_section("sync", &model::Settings {
-            remembered: remembered.and_then(|value| value.as_bool()).unwrap_or(false),
-            last_synced_at: last_synced_at.and_then(|value| value.as_str().map(str::to_string)),
-        })?;
+        config.set_section(
+            "sync",
+            &model::Settings {
+                remembered: remembered.and_then(|value| value.as_bool()).unwrap_or(false),
+                last_synced_at: last_synced_at.and_then(|value| value.as_str().map(str::to_string)),
+            },
+        )?;
     }
     Ok(true)
 }
@@ -168,27 +170,25 @@ pub fn init() -> tauri::plugin::TauriPlugin<tauri::Wry> {
 /// the bindings read it from.
 #[cfg(feature = "tauri")]
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
-    tauri_specta::Builder::<tauri::Wry>::new()
-        .plugin_name("nobo-sync")
-        .commands(tauri_specta::collect_commands![
-            tauri_commands::sync_settings,
-            tauri_commands::sync_set_last_synced_at,
-            tauri_commands::sync_register,
-            tauri_commands::sync_request_verification_email,
-            tauri_commands::sync_login_pocketbase,
-            tauri_commands::sync_login_webdav,
-            tauri_commands::sync_logout,
-            tauri_commands::sync_is_logged_in,
-            tauri_commands::sync_try_restore_session,
-            tauri_commands::sync_orphaned_credentials_available,
-            tauri_commands::sync_reconnect_orphaned_session,
-            tauri_commands::sync_discard_orphaned_session,
-            tauri_commands::sync_run,
-            tauri_commands::sync_republish_vault,
-            tauri_commands::sync_resolve_conflict,
-            tauri_commands::sync_connection_info,
-            tauri_commands::sync_fetch_conflict_remote_content,
-        ])
+    tauri_specta::Builder::<tauri::Wry>::new().plugin_name("nobo-sync").commands(tauri_specta::collect_commands![
+        tauri_commands::sync_settings,
+        tauri_commands::sync_set_last_synced_at,
+        tauri_commands::sync_register,
+        tauri_commands::sync_request_verification_email,
+        tauri_commands::sync_login_pocketbase,
+        tauri_commands::sync_login_webdav,
+        tauri_commands::sync_logout,
+        tauri_commands::sync_is_logged_in,
+        tauri_commands::sync_try_restore_session,
+        tauri_commands::sync_orphaned_credentials_available,
+        tauri_commands::sync_reconnect_orphaned_session,
+        tauri_commands::sync_discard_orphaned_session,
+        tauri_commands::sync_run,
+        tauri_commands::sync_republish_vault,
+        tauri_commands::sync_resolve_conflict,
+        tauri_commands::sync_connection_info,
+        tauri_commands::sync_fetch_conflict_remote_content,
+    ])
 }
 
 /// Writes this plugin's `bindings.ts` next to the frontend half that
@@ -202,11 +202,7 @@ mod bindings_export {
     #[test]
     fn export_bindings() {
         super::specta_builder()
-            .export(
-                specta_typescript::Typescript::default(),
-                "../../src/features/sync/bindings.ts",
-            )
+            .export(specta_typescript::Typescript::default(), "../../src/features/sync/bindings.ts")
             .expect("failed to write the bindings");
     }
 }
-

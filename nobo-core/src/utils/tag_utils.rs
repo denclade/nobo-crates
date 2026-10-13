@@ -4,7 +4,8 @@ pub fn search(tag_counts: &HashMap<String, usize>, query: &str, selected: &[Stri
     let query_lower = query.to_lowercase();
     let selected_lower: Vec<String> = selected.iter().map(|s| s.to_lowercase()).collect();
 
-    let mut matched: Vec<(String, usize)> = tag_counts.iter()
+    let mut matched: Vec<(String, usize)> = tag_counts
+        .iter()
         .filter(|(t, _)| t.to_lowercase().contains(&query_lower))
         .filter(|(t, _)| !selected_lower.contains(&t.to_lowercase()))
         .map(|(t, c)| (t.clone(), *c))

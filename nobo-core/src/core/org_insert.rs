@@ -67,11 +67,7 @@ pub fn insert_under_heading(text: &str, heading_line: Option<usize>, entry: impl
             let node = &nodes[index];
             // The end of its subtree: the next heading at its level or
             // above, or the end of the file.
-            let end = nodes[index + 1..]
-                .iter()
-                .find(|next| next.level <= node.level)
-                .map(|next| next.line_no - 1)
-                .unwrap_or(lines.len());
+            let end = nodes[index + 1..].iter().find(|next| next.level <= node.level).map(|next| next.line_no - 1).unwrap_or(lines.len());
             (end, node.level + 1)
         }
         None => (lines.len(), 1),
@@ -116,13 +112,10 @@ fn category_heading(nodes: &[Node], category: &[String]) -> Option<usize> {
                 (parent + 1, parent_level + 1, until)
             }
         };
-        found = Some(
-            (from..until).find(|&index| nodes[index].level == level && nodes[index].title.trim() == title.trim())?,
-        );
+        found = Some((from..until).find(|&index| nodes[index].level == level && nodes[index].title.trim() == title.trim())?);
     }
     found
 }
-
 
 #[cfg(test)]
 mod tests {

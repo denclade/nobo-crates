@@ -221,7 +221,11 @@ mod tests {
 
         let calls = Arc::new(AtomicUsize::new(0));
         let calls_clone = calls.clone();
-        run_once(&Client::new(), &server.uri(), &move || { calls_clone.fetch_add(1, Ordering::SeqCst); }).await.unwrap();
+        run_once(&Client::new(), &server.uri(), &move || {
+            calls_clone.fetch_add(1, Ordering::SeqCst);
+        })
+        .await
+        .unwrap();
 
         assert_eq!(calls.load(Ordering::SeqCst), 1);
     }
@@ -243,7 +247,11 @@ mod tests {
 
         let calls = Arc::new(AtomicUsize::new(0));
         let calls_clone = calls.clone();
-        run_once(&Client::new(), &server.uri(), &move || { calls_clone.fetch_add(1, Ordering::SeqCst); }).await.unwrap();
+        run_once(&Client::new(), &server.uri(), &move || {
+            calls_clone.fetch_add(1, Ordering::SeqCst);
+        })
+        .await
+        .unwrap();
 
         assert_eq!(calls.load(Ordering::SeqCst), 3);
     }
@@ -274,7 +282,11 @@ mod tests {
     #[tokio::test]
     async fn run_once_errors_when_pb_connect_has_no_client_id() {
         let server = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/realtime")).respond_with(sse_stream("event: PB_CONNECT\ndata: {}\n\n")).mount(&server).await;
+        Mock::given(method("GET"))
+            .and(path("/api/realtime"))
+            .respond_with(sse_stream("event: PB_CONNECT\ndata: {}\n\n"))
+            .mount(&server)
+            .await;
 
         let err = run_once(&Client::new(), &server.uri(), &|| {}).await.unwrap_err();
         assert!(err.contains("clientId"), "got: {err}");
@@ -303,7 +315,9 @@ mod tests {
 
         let calls = Arc::new(AtomicUsize::new(0));
         let calls_clone = calls.clone();
-        let handle = spawn(Client::new(), server.uri(), move || { calls_clone.fetch_add(1, Ordering::SeqCst); });
+        let handle = spawn(Client::new(), server.uri(), move || {
+            calls_clone.fetch_add(1, Ordering::SeqCst);
+        });
 
         // Reconnects happen immediately (INITIAL_BACKOFF only applies
         // after an actual ERROR, not a clean stream end) -- a short

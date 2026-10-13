@@ -20,20 +20,19 @@
 // first of the two, so the lint is off here rather than in 18 places.
 #![allow(clippy::needless_return)]
 
-
-use nobo_core::config::settings::Config;
+use crate::client::CalDavClient;
+use crate::identity;
 use crate::model::CalDavAccount;
 use crate::model::Settings;
-use crate::client::CalDavClient;
-use crate::model::{ListSyncOutcome, RemoteList};
-use crate::identity;
 use crate::model::{CalDavKind, CalDavSubscription};
+use crate::model::{ListSyncOutcome, RemoteList};
 use crate::registry;
 use crate::store;
 use crate::sync;
+use nobo_core::config::settings::Config;
 use nobo_core::core::indexer::IndexManager;
-use nobo_core::core::notifications;
 use nobo_core::core::indexer::{notify_file_changed, notify_files_changed, IndexListener};
+use nobo_core::core::notifications;
 use rusqlite::Connection;
 use std::sync::Mutex;
 
@@ -75,9 +74,7 @@ impl sync::ProgressSink for ListProgress<'_> {
 /// Async because the keychain read is: a locked keyring blocks its caller
 /// forever otherwise (see core::secrets).
 async fn client_for(subscription: &CalDavSubscription) -> Result<CalDavClient, String> {
-    let password = super::PASSWORDS.load(&subscription.account_id)
-        .await?
-        .ok_or(MISSING_CREDENTIALS)?;
+    let password = super::PASSWORDS.load(&subscription.account_id).await?.ok_or(MISSING_CREDENTIALS)?;
     CalDavClient::new(&subscription.url, &subscription.username, &password)
 }
 
@@ -91,8 +88,8 @@ const MISSING_CREDENTIALS: &str = "no-credentials";
 /// What "read-only on a device without the password" is decided by (see
 /// commands_fs::file_capabilities).
 pub async fn can_sync(path: &std::path::Path) -> bool {
-let Some(subscription) = registry::read(path) else { return false };
-super::PASSWORDS.load(&subscription.account_id).await.ok().flatten().is_some()
+    let Some(subscription) = registry::read(path) else { return false };
+    super::PASSWORDS.load(&subscription.account_id).await.ok().flatten().is_some()
 }
 
 /// A server this device knows, and whether it can log in to it.
@@ -161,20 +158,13 @@ fn known_accounts() -> Vec<CalDavAccount> {
 
 /// The known servers, each with whether this device can log in to it.
 pub async fn caldav_accounts() -> Result<Vec<CalDavAccountView>, String> {
-
-let mut views = Vec::new();
-for account in known_accounts() {
-    let has_credentials = super::PASSWORDS.load(&account.id).await.ok().flatten().is_some();
-    views.push(CalDavAccountView {
-        id: account.id,
-        name: account.name,
-        url: account.url,
-        username: account.username,
-        has_credentials,
-    });
-}
-views.sort_by_key(|account| account.name.to_lowercase());
-Ok(views)
+    let mut views = Vec::new();
+    for account in known_accounts() {
+        let has_credentials = super::PASSWORDS.load(&account.id).await.ok().flatten().is_some();
+        views.push(CalDavAccountView { id: account.id, name: account.name, url: account.url, username: account.username, has_credentials });
+    }
+    views.sort_by_key(|account| account.name.to_lowercase());
+    Ok(views)
 }
 
 /// Connects a server: checks the login, remembers the password on this
@@ -182,45 +172,34 @@ Ok(views)
 ///
 /// The password is stored only once the check has succeeded -- a rejected
 /// login must not leave a wrong one behind in the keychain.
-pub async fn caldav_add_account(
-    name: String,
-    server_url: String,
-    username: String,
-    password: String,
-) -> Result<CalDavAccountView, String> {
+pub async fn caldav_add_account(name: String, server_url: String, username: String, password: String) -> Result<CalDavAccountView, String> {
+    let url = server_url.trim().to_string();
+    let username = username.trim().to_string();
+    CalDavClient::new(&url, &username, &password)?.list_collections().await?;
 
-let url = server_url.trim().to_string();
-let username = username.trim().to_string();
-CalDavClient::new(&url, &username, &password)?.list_collections().await?;
+    let id = identity::account_id(&username, &url);
+    // Read before the keychain write: a settings file that cannot be
+    // parsed must stop this here, not after a password has been stored
+    // for an account that then fails to be remembered.
+    let mut settings = super::SETTINGS.load_from(&Config::load_for_update()?);
+    super::PASSWORDS.save_interactive(&id, &password).await?;
 
-let id = identity::account_id(&username, &url);
-// Read before the keychain write: a settings file that cannot be
-// parsed must stop this here, not after a password has been stored
-// for an account that then fails to be remembered.
-let mut settings = super::SETTINGS.load_from(&Config::load_for_update()?);
-super::PASSWORDS.save_interactive(&id, &password).await?;
-
-let name = match name.trim() {
-    "" => label_for(&username, &identity::server_of(&url)),
-    typed => typed.to_string(),
-};
-// Re-connecting a server already known updates it in place: two
-// entries with one id would be two rows over one keychain entry.
-match settings.accounts.iter_mut().find(|account| account.id == id) {
-    Some(existing) => {
-        existing.name.clone_from(&name);
-        existing.url.clone_from(&url);
+    let name = match name.trim() {
+        "" => label_for(&username, &identity::server_of(&url)),
+        typed => typed.to_string(),
+    };
+    // Re-connecting a server already known updates it in place: two
+    // entries with one id would be two rows over one keychain entry.
+    match settings.accounts.iter_mut().find(|account| account.id == id) {
+        Some(existing) => {
+            existing.name.clone_from(&name);
+            existing.url.clone_from(&url);
+        }
+        None => settings.accounts.push(CalDavAccount { id: id.clone(), name: name.clone(), url: url.clone(), username: username.clone() }),
     }
-    None => settings.accounts.push(CalDavAccount {
-        id: id.clone(),
-        name: name.clone(),
-        url: url.clone(),
-        username: username.clone(),
-    }),
-}
-super::SETTINGS.save(&settings)?;
+    super::SETTINGS.save(&settings)?;
 
-Ok(CalDavAccountView { id, name, url, username, has_credentials: true })
+    Ok(CalDavAccountView { id, name, url, username, has_credentials: true })
 }
 
 /// Forgets a server on this device: its password and its address.
@@ -228,35 +207,27 @@ Ok(CalDavAccountView { id, name, url, username, has_credentials: true })
 /// Subscriptions are deliberately untouched. They belong to the vault, not
 /// to this device -- they stay, and show as needing a login again.
 pub async fn caldav_forget_account(account_id: String) -> Result<(), String> {
-
-super::PASSWORDS.delete(&account_id).await?;
-super::SETTINGS.update(|settings| settings.accounts.retain(|account| account.id != account_id))
+    super::PASSWORDS.delete(&account_id).await?;
+    super::SETTINGS.update(|settings| settings.accounts.retain(|account| account.id != account_id))
 }
 
 /// Stores this device's password for a server, after checking it.
 ///
 /// What a device that only received subscriptions through the vault needs,
 /// and all it needs.
-pub async fn caldav_save_credentials(
-    account_id: String,
-    password: String,
-) -> Result<(), String> {
-
-let account = find_account(&account_id).ok_or("this server is not known here")?;
-CalDavClient::new(&account.url, &account.username, &password)?.list_collections().await?;
-super::PASSWORDS.save_interactive(&account_id, &password).await
+pub async fn caldav_save_credentials(account_id: String, password: String) -> Result<(), String> {
+    let account = find_account(&account_id).ok_or("this server is not known here")?;
+    CalDavClient::new(&account.url, &account.username, &password)?.list_collections().await?;
+    super::PASSWORDS.save_interactive(&account_id, &password).await
 }
 
 /// What a server offers, with the password already stored.
 pub async fn caldav_collections(account_id: String) -> Result<Vec<RemoteList>, String> {
-
-let account = find_account(&account_id).ok_or("this server is not known here")?;
-// The user is looking at a spinner in the subscribe dialog: worth
-// waiting for a keyring prompt over, unlike the background reads.
-let password = super::PASSWORDS.load_interactive(&account_id)
-    .await?
-    .ok_or(MISSING_CREDENTIALS)?;
-CalDavClient::new(&account.url, &account.username, &password)?.list_collections().await
+    let account = find_account(&account_id).ok_or("this server is not known here")?;
+    // The user is looking at a spinner in the subscribe dialog: worth
+    // waiting for a keyring prompt over, unlike the background reads.
+    let password = super::PASSWORDS.load_interactive(&account_id).await?.ok_or(MISSING_CREDENTIALS)?;
+    CalDavClient::new(&account.url, &account.username, &password)?.list_collections().await
 }
 
 /// One known server by id.
@@ -285,38 +256,31 @@ pub struct CalDavSubscriptionView {
 
 /// Every CalDAV subscription in the vault, with the login state of this
 /// device.
-pub async fn caldav_subscriptions(
-    index_manager: &IndexManager,
-) -> Result<Vec<CalDavSubscriptionView>, String> {
-
-let vault_root = Config::require_vault_root()?;
-let vault = nobo_core::core::vault::Vault::new(index_manager, &vault_root);
-let mut views = Vec::new();
-// One keychain read per account, not per subscription: the keyring can
-// be slow, and a server's lists all share one entry.
-let mut checked: std::collections::HashMap<String, bool> = std::collections::HashMap::new();
-for subscription in registry::list(&vault_root) {
-    let has_credentials = match checked.get(&subscription.account_id) {
-        Some(known) => *known,
-        None => {
-            let found = super::PASSWORDS.load(&subscription.account_id)
-                .await
-                .ok()
-                .flatten()
-                .is_some();
-            checked.insert(subscription.account_id.clone(), found);
-            found
-        }
-    };
-    let file = subscription.file(&vault_root);
-    views.push(CalDavSubscriptionView {
-        entry_count: vault.headings(&file).len() as u32,
-        file: file.to_string_lossy().into_owned(),
-        subscription,
-        has_credentials,
-    });
-}
-Ok(views)
+pub async fn caldav_subscriptions(index_manager: &IndexManager) -> Result<Vec<CalDavSubscriptionView>, String> {
+    let vault_root = Config::require_vault_root()?;
+    let vault = nobo_core::core::vault::Vault::new(index_manager, &vault_root);
+    let mut views = Vec::new();
+    // One keychain read per account, not per subscription: the keyring can
+    // be slow, and a server's lists all share one entry.
+    let mut checked: std::collections::HashMap<String, bool> = std::collections::HashMap::new();
+    for subscription in registry::list(&vault_root) {
+        let has_credentials = match checked.get(&subscription.account_id) {
+            Some(known) => *known,
+            None => {
+                let found = super::PASSWORDS.load(&subscription.account_id).await.ok().flatten().is_some();
+                checked.insert(subscription.account_id.clone(), found);
+                found
+            }
+        };
+        let file = subscription.file(&vault_root);
+        views.push(CalDavSubscriptionView {
+            entry_count: vault.headings(&file).len() as u32,
+            file: file.to_string_lossy().into_owned(),
+            subscription,
+            has_credentials,
+        });
+    }
+    Ok(views)
 }
 
 /// Subscribes to one collection, for one component.
@@ -331,17 +295,16 @@ pub async fn caldav_subscribe(
     listener: &dyn IndexListener,
     index_manager: &IndexManager,
 ) -> Result<CalDavSubscription, String> {
+    let vault_root = Config::require_vault_root()?;
+    let account = find_account(&account_id).ok_or("this server is not known here")?;
+    let subscription = registry::subscription_for(kind, &name, &account.username, &url);
+    if let Some(existing) = registry::find(&vault_root, &subscription.id) {
+        return Ok(existing);
+    }
 
-let vault_root = Config::require_vault_root()?;
-let account = find_account(&account_id).ok_or("this server is not known here")?;
-let subscription = registry::subscription_for(kind, &name, &account.username, &url);
-if let Some(existing) = registry::find(&vault_root, &subscription.id) {
-    return Ok(existing);
-}
-
-registry::write_empty(&vault_root, &subscription)?;
-notify_file_changed(listener, &index_manager, &subscription.file(&vault_root));
-Ok(subscription)
+    registry::write_empty(&vault_root, &subscription)?;
+    notify_file_changed(listener, &index_manager, &subscription.file(&vault_root));
+    Ok(subscription)
 }
 
 /// Unsubscribes: removes the mirror file and the local sync state.
@@ -354,17 +317,16 @@ pub async fn caldav_unsubscribe(
     db: &Mutex<Connection>,
     index_manager: &IndexManager,
 ) -> Result<(), String> {
-
-let vault_root = Config::require_vault_root()?;
-let Some(subscription) = registry::find(&vault_root, &subscription_id) else { return Ok(()) };
-{
-    let conn = db.lock().map_err(|_| "database lock poisoned".to_string())?;
-    store::forget_list(&conn, &subscription.id).map_err(|e| e.to_string())?;
-}
-let gone = subscription.file(&vault_root);
-registry::remove(&vault_root, &subscription)?;
-notify_file_changed(listener, &index_manager, &gone);
-Ok(())
+    let vault_root = Config::require_vault_root()?;
+    let Some(subscription) = registry::find(&vault_root, &subscription_id) else { return Ok(()) };
+    {
+        let conn = db.lock().map_err(|_| "database lock poisoned".to_string())?;
+        store::forget_list(&conn, &subscription.id).map_err(|e| e.to_string())?;
+    }
+    let gone = subscription.file(&vault_root);
+    registry::remove(&vault_root, &subscription)?;
+    notify_file_changed(listener, &index_manager, &gone);
+    Ok(())
 }
 
 /// One result row per subscribed list.
@@ -452,11 +414,7 @@ async fn sync_one(
 ) -> CalDavSyncResult {
     let outcome = match client {
         Ok(client) => {
-            let sink = ListProgress {
-                reporter,
-                list_id: subscription.id.clone(),
-                name: subscription.name.clone(),
-            };
+            let sink = ListProgress { reporter, list_id: subscription.id.clone(), name: subscription.name.clone() };
             crate::sync_subscription(client, db, &subscription, file, &sink).await
         }
         Err(e) => Err(e.clone()),
@@ -472,13 +430,9 @@ async fn sync_one(
     }
 
     match outcome {
-        Ok(outcome) => CalDavSyncResult {
-            list_id: subscription.id,
-            name: subscription.name,
-            outcome,
-            error: None,
-            missing_credentials: false,
-        },
+        Ok(outcome) => {
+            CalDavSyncResult { list_id: subscription.id, name: subscription.name, outcome, error: None, missing_credentials: false }
+        }
         Err(e) => CalDavSyncResult {
             list_id: subscription.id,
             name: subscription.name,
@@ -501,18 +455,17 @@ pub async fn caldav_sync_one(
     db: &Mutex<Connection>,
     index_manager: &IndexManager,
 ) -> Result<Vec<CalDavSyncResult>, String> {
+    let _cost = nobo_core::core::cost::timed_by("caldav-sync", "caldav");
 
-let _cost = nobo_core::core::cost::timed_by("caldav-sync", "caldav");
+    let vault_root = Config::require_vault_root()?;
+    let Some(subscription) = registry::find(&vault_root, &subscription_id) else { return Ok(Vec::new()) };
 
-let vault_root = Config::require_vault_root()?;
-let Some(subscription) = registry::find(&vault_root, &subscription_id) else { return Ok(Vec::new()) };
+    let file = subscription.file(&vault_root);
+    let client = client_for(&subscription).await;
+    let result = sync_one(reporter, db, &client, subscription, &file).await;
 
-let file = subscription.file(&vault_root);
-let client = client_for(&subscription).await;
-let result = sync_one(reporter, db, &client, subscription, &file).await;
-
-notify_if_changed(listener, &index_manager, &vault_root, std::slice::from_ref(&result));
-Ok(vec![result])
+    notify_if_changed(listener, &index_manager, &vault_root, std::slice::from_ref(&result));
+    Ok(vec![result])
 }
 
 /// Syncs every subscription this device has the login for.
@@ -528,53 +481,51 @@ pub async fn caldav_sync_all(
     db: &Mutex<Connection>,
     index_manager: &IndexManager,
 ) -> Result<Vec<CalDavSyncResult>, String> {
+    let _cost = nobo_core::core::cost::timed_by("caldav-sync", "caldav");
 
-let _cost = nobo_core::core::cost::timed_by("caldav-sync", "caldav");
+    // One pass at a time: a second caller wants what this one is already
+    // doing (see core::once_at_a_time). Two passes would double every
+    // request to the server AND every keychain read, and race each
+    // other's writes into the same mirror files.
+    //
+    // And "one is already running" is an ANSWER, not a failure. It used to
+    // be an `Err`, which the frontend showed as a red toast -- for the most
+    // ordinary situation there is: the Lists view polls its open list, the
+    // periodic sync ticks, a vault change triggers one, and any two of those
+    // can land in the same second. Nothing is lost either: the pass that IS
+    // running does the work and reports it through the same event.
+    let Some(_busy) = SYNCING.try_enter() else {
+        log::info!("CalDAV sync skipped: a pass is already running");
+        return Ok(Vec::new());
+    };
 
-// One pass at a time: a second caller wants what this one is already
-// doing (see core::once_at_a_time). Two passes would double every
-// request to the server AND every keychain read, and race each
-// other's writes into the same mirror files.
-//
-// And "one is already running" is an ANSWER, not a failure. It used to
-// be an `Err`, which the frontend showed as a red toast -- for the most
-// ordinary situation there is: the Lists view polls its open list, the
-// periodic sync ticks, a vault change triggers one, and any two of those
-// can land in the same second. Nothing is lost either: the pass that IS
-// running does the work and reports it through the same event.
-let Some(_busy) = SYNCING.try_enter() else {
-    log::info!("CalDAV sync skipped: a pass is already running");
-    return Ok(Vec::new());
-};
+    let vault_root = Config::require_vault_root()?;
 
-let vault_root = Config::require_vault_root()?;
+    // One keychain read and one HTTP client per ACCOUNT, not per
+    // subscription: the keyring can be slow (see core::secrets) and a
+    // fresh client per list throws away every connection to a server the
+    // next list is about to talk to again.
+    let mut clients: std::collections::HashMap<String, Result<CalDavClient, String>> = std::collections::HashMap::new();
 
-// One keychain read and one HTTP client per ACCOUNT, not per
-// subscription: the keyring can be slow (see core::secrets) and a
-// fresh client per list throws away every connection to a server the
-// next list is about to talk to again.
-let mut clients: std::collections::HashMap<String, Result<CalDavClient, String>> = std::collections::HashMap::new();
-
-let mut results = Vec::new();
-for subscription in registry::list(&vault_root) {
-    let file = subscription.file(&vault_root);
-    if !clients.contains_key(&subscription.account_id) {
-        clients.insert(subscription.account_id.clone(), client_for(&subscription).await);
+    let mut results = Vec::new();
+    for subscription in registry::list(&vault_root) {
+        let file = subscription.file(&vault_root);
+        if !clients.contains_key(&subscription.account_id) {
+            clients.insert(subscription.account_id.clone(), client_for(&subscription).await);
+        }
+        let client = clients.get(&subscription.account_id).expect("just inserted");
+        results.push(sync_one(reporter, db, client, subscription, &file).await);
     }
-    let client = clients.get(&subscription.account_id).expect("just inserted");
-    results.push(sync_one(reporter, db, client, subscription, &file).await);
-}
 
-notify_if_changed(listener, &index_manager, &vault_root, &results);
-// What somebody ELSE added is worth telling the user about -- but only
-// the host knows whether anybody is looking, so it announces (see
-// `arrivals_in` and core::notifications).
-Ok(results)
+    notify_if_changed(listener, &index_manager, &vault_root, &results);
+    // What somebody ELSE added is worth telling the user about -- but only
+    // the host knows whether anybody is looking, so it announces (see
+    // `arrivals_in` and core::notifications).
+    Ok(results)
 }
 
 /// The one sync pass, whoever asked for it.
-static SYNCING: nobo_core::core::once_at_a_time::OnceAtATime =
-    nobo_core::core::once_at_a_time::OnceAtATime::new();
+static SYNCING: nobo_core::core::once_at_a_time::OnceAtATime = nobo_core::core::once_at_a_time::OnceAtATime::new();
 
 /// What of a finished run is worth telling the user about.
 ///
@@ -591,10 +542,9 @@ pub fn arrivals_in(results: &[CalDavSyncResult]) -> Vec<notifications::Arrival> 
 
 /// Where a subscription is mirrored, so the UI can open it.
 pub fn caldav_subscription_file(subscription_id: String) -> Result<String, String> {
-
-let vault_root = Config::require_vault_root()?;
-let subscription = registry::find(&vault_root, &subscription_id).ok_or("this subscription no longer exists")?;
-Ok(subscription.file(&vault_root).to_string_lossy().into_owned())
+    let vault_root = Config::require_vault_root()?;
+    let subscription = registry::find(&vault_root, &subscription_id).ok_or("this subscription no longer exists")?;
+    Ok(subscription.file(&vault_root).to_string_lossy().into_owned())
 }
 
 /// This feature's own settings, read and written on their own (see

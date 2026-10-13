@@ -109,9 +109,7 @@ mod tests {
     #[test]
     fn is_temp_file_matches_emacs_lock_file_convention() {
         assert!(is_temp_file(".#bar.org"));
-        assert!(is_temp_file(
-            ".#20250912T110310--abteilungssitzung-12092025__konferenz_schule.org"
-        ));
+        assert!(is_temp_file(".#20250912T110310--abteilungssitzung-12092025__konferenz_schule.org"));
         assert!(!is_temp_file(".bar.org"));
         assert!(!is_temp_file(".#"));
     }

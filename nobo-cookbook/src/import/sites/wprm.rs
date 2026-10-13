@@ -46,4 +46,3 @@ impl Refiner for WpRecipeMaker {
         super::regroup_ingredients(recipe, shape);
     }
 }
-

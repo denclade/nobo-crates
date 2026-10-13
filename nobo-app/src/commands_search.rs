@@ -11,12 +11,7 @@ use nobo_core::utils::search_utils;
 /// identity, via a placeholder note. Only the Search page wants those --
 /// every other caller builds an id-based link off the result, which an
 /// empty identifier would break.
-pub fn search_files(
-    base_dir: String,
-    query: String,
-    include_unpromoted: bool,
-    index_state: &IndexManager,
-) -> Vec<SearchResult> {
+pub fn search_files(base_dir: String, query: String, include_unpromoted: bool, index_state: &IndexManager) -> Vec<SearchResult> {
     let terms = search_utils::parse_query_terms(&query);
     let mut notes = index_state.all_notes();
     if include_unpromoted {

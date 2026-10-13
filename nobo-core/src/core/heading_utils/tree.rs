@@ -1,6 +1,5 @@
 use crate::core::models::{has_project_tag, Heading, RefilePosition};
 
-
 /// Converts `flat_headings` into a hierarchical tree, based on their levels.
 ///
 /// # Visualization of the Stack (`path`)
@@ -79,10 +78,7 @@ pub fn build_heading_tree(flat_headings: Vec<Heading>) -> Vec<Heading> {
 }
 
 pub fn projects_tree(flat_headings: Vec<Heading>) -> Vec<Heading> {
-    build_heading_tree(flat_headings)
-        .into_iter()
-        .filter(|node| has_project_tag(&node.tags))
-        .collect()
+    build_heading_tree(flat_headings).into_iter().filter(|node| has_project_tag(&node.tags)).collect()
 }
 
 pub fn find_subtree_end_line(flat_headings: &[Heading], parent_idx: usize) -> usize {
@@ -98,10 +94,7 @@ pub fn find_subtree_end_line(flat_headings: &[Heading], parent_idx: usize) -> us
 }
 
 pub fn subtree_line_range(flat_headings: &[Heading], idx: usize) -> (usize, usize) {
-    (
-        flat_headings[idx].line_no,
-        find_subtree_end_line(flat_headings, idx),
-    )
+    (flat_headings[idx].line_no, find_subtree_end_line(flat_headings, idx))
 }
 
 /// Checks if LINE is inside `line` [start_line, end_line] (inclusive)
@@ -128,10 +121,8 @@ pub fn compute_insert_index(
         return Ok(total_lines);
     };
 
-    let p_idx = flat
-        .iter()
-        .position(|h| h.line_no == p_line)
-        .ok_or_else(|| crate::core::errors::not_found_at_line("Ziel-Überschrift", p_line))?;
+    let p_idx =
+        flat.iter().position(|h| h.line_no == p_line).ok_or_else(|| crate::core::errors::not_found_at_line("Ziel-Überschrift", p_line))?;
 
     Ok(match position {
         RefilePosition::Into | RefilePosition::After => find_subtree_end_line(flat, p_idx),

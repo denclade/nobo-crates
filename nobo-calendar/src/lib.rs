@@ -50,8 +50,6 @@ inventory::submit! {
     }
 }
 
-
-
 /// The mirror file's shape is shared with the CalDAV calendars (see
 /// crates/nobo-calendar-mirror, which owns the kind, the directory and
 /// what an entry looks like). Re-exported under the names this feature
@@ -61,8 +59,7 @@ pub use nobo_calendar_mirror::{dir as calendars_dir, MIRROR_KIND};
 /// This feature's own corner of settings.json: how often the feeds are
 /// refreshed on this device, and when that last happened (see
 /// model::Settings).
-pub const SETTINGS: nobo_core::config::section::Section<crate::model::Settings> =
-    nobo_core::config::section::Section::new("calendar");
+pub const SETTINGS: nobo_core::config::section::Section<crate::model::Settings> = nobo_core::config::section::Section::new("calendar");
 
 #[cfg(test)]
 mod sample_data_tests {
@@ -104,7 +101,8 @@ mod sample_data_tests {
             assert_eq!(
                 nobo_core::core::file_kind::from_lines(&content.lines().collect::<Vec<_>>()),
                 crate::MIRROR_KIND,
-                "{} is missing its kind declaration", path.display(),
+                "{} is missing its kind declaration",
+                path.display(),
             );
 
             saw_a_range |= headings.iter().any(|h| h.occurrence.as_ref().unwrap().end_date.is_some());
@@ -151,28 +149,24 @@ mod sample_data_tests {
 /// parameter on every command for a second runtime nobody has.
 #[cfg(feature = "tauri")]
 pub fn init() -> tauri::plugin::TauriPlugin<tauri::Wry> {
-    tauri::plugin::Builder::new("nobo-calendar")
-        .invoke_handler(specta_builder().invoke_handler())
-        .build()
+    tauri::plugin::Builder::new("nobo-calendar").invoke_handler(specta_builder().invoke_handler()).build()
 }
 
 /// This plugin's command surface, in the one place both the runtime and
 /// the bindings read it from.
 #[cfg(feature = "tauri")]
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
-    tauri_specta::Builder::<tauri::Wry>::new()
-        .plugin_name("nobo-calendar")
-        .commands(tauri_specta::collect_commands![
-            tauri_commands::calendar_list,
-            tauri_commands::calendar_add,
-            tauri_commands::calendar_set_enabled,
-            tauri_commands::calendar_forget,
-            tauri_commands::calendar_refresh_all,
-            tauri_commands::calendar_settings,
-            tauri_commands::calendar_set_refresh,
-            tauri_commands::calendar_events,
-            tauri_commands::calendar_set_color,
-        ])
+    tauri_specta::Builder::<tauri::Wry>::new().plugin_name("nobo-calendar").commands(tauri_specta::collect_commands![
+        tauri_commands::calendar_list,
+        tauri_commands::calendar_add,
+        tauri_commands::calendar_set_enabled,
+        tauri_commands::calendar_forget,
+        tauri_commands::calendar_refresh_all,
+        tauri_commands::calendar_settings,
+        tauri_commands::calendar_set_refresh,
+        tauri_commands::calendar_events,
+        tauri_commands::calendar_set_color,
+    ])
 }
 
 /// Writes this plugin's `bindings.ts` next to the frontend half that
@@ -186,11 +180,7 @@ mod bindings_export {
     #[test]
     fn export_bindings() {
         super::specta_builder()
-            .export(
-                specta_typescript::Typescript::default(),
-                "../../src/features/calendar/bindings.ts",
-            )
+            .export(specta_typescript::Typescript::default(), "../../src/features/calendar/bindings.ts")
             .expect("failed to write the bindings");
     }
 }
-

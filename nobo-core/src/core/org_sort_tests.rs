@@ -210,7 +210,6 @@ fn a_star_line_in_a_code_block_is_no_child() {
     assert_eq!(out, "* P\n** a\n** b\n#+BEGIN_SRC org\n** z\n#+END_SRC");
 }
 
-
 /// A `- x` inside an item's code block is code. Taken for an item, it
 /// tore the block apart: #+BEGIN_SRC under one item, #+END_SRC under
 /// another.

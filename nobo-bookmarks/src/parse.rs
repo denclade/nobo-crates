@@ -155,14 +155,14 @@ pub fn outline(path: &str, category: &str, text: &str) -> Outline {
             stack.pop();
         }
         let own_end = headings.get(position + 1).map(|(next, _)| *next).unwrap_or(lines.len());
-        let subtree_end = headings[position + 1..]
-            .iter()
-            .find(|(_, next)| next.level <= heading.level)
-            .map(|(next, _)| *next)
-            .unwrap_or(lines.len());
+        let subtree_end =
+            headings[position + 1..].iter().find(|(_, next)| next.level <= heading.level).map(|(next, _)| *next).unwrap_or(lines.len());
 
         let drawer = property_drawer(&lines, *index).filter(|drawer| drawer.end < own_end);
-        let url = drawer.as_ref().and_then(|drawer| drawer.get("URL")).and_then(|property| url_of(&property.value).map(|url| (property.line, url)));
+        let url = drawer
+            .as_ref()
+            .and_then(|drawer| drawer.get("URL"))
+            .and_then(|property| url_of(&property.value).map(|url| (property.line, url)));
         let inside_bookmark = stack.iter().any(|(.., bookmark)| *bookmark);
 
         match (url, drawer) {
@@ -198,7 +198,9 @@ pub fn outline(path: &str, category: &str, text: &str) -> Outline {
                         created: drawer.get("CREATED").map(|property| property.value.clone()),
                         updated: drawer.get("UPDATED").map(|property| property.value.clone()),
                         note: body_text(&lines[body_start.min(note_end)..note_end]),
-                        description: quote.map(|(start, end)| org_syntax::one_line(&body_text(&lines[start + 1..end]))).filter(|text| !text.is_empty()),
+                        description: quote
+                            .map(|(start, end)| org_syntax::one_line(&body_text(&lines[start + 1..end])))
+                            .filter(|text| !text.is_empty()),
                         collection: stack.iter().filter(|(.., bookmark)| !bookmark).map(|(_, title, ..)| title.clone()).collect(),
                         category: category.to_string(),
                     },

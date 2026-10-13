@@ -219,7 +219,11 @@ impl Parser {
             self.at += 1;
             branches.push(self.and());
         }
-        if branches.len() == 1 { branches.pop().expect("one branch") } else { Expr::Or(branches) }
+        if branches.len() == 1 {
+            branches.pop().expect("one branch")
+        } else {
+            Expr::Or(branches)
+        }
     }
 
     fn and(&mut self) -> Expr {
@@ -284,11 +288,7 @@ pub fn parse(query: &str) -> Expr {
 // ---------------------------------------------------------------------
 
 fn category_of(heading: &Heading) -> Option<&String> {
-    heading
-        .properties
-        .iter()
-        .find(|(key, _)| key.eq_ignore_ascii_case(ORG_CATEGORY_PROPERTY))
-        .map(|(_, value)| value)
+    heading.properties.iter().find(|(key, _)| key.eq_ignore_ascii_case(ORG_CATEGORY_PROPERTY)).map(|(_, value)| value)
 }
 
 fn matches_status(heading: &Heading, wanted: &str) -> bool {
@@ -323,9 +323,7 @@ fn matches_effort(heading: &Heading, bound: &EffortBound) -> bool {
 
 fn matches_facet(heading: &Heading, facet: &Facet) -> bool {
     match facet {
-        Facet::Context(value) | Facet::Tag(value) => {
-            heading.tags.iter().any(|tag| tag.to_lowercase() == *value)
-        }
+        Facet::Context(value) | Facet::Tag(value) => heading.tags.iter().any(|tag| tag.to_lowercase() == *value),
         Facet::Category(value) => category_of(heading).is_some_and(|c| c.to_lowercase() == *value),
         Facet::Status(value) => matches_status(heading, value),
         Facet::Effort(bound) => matches_effort(heading, bound),

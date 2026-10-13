@@ -39,27 +39,17 @@ pub fn history_entry(
 /// "Restore to this point" in the history modal -- see core::history::jump_to
 /// for why this can take several undo/redo steps and may touch files beyond
 /// the one the modal is scoped to.
-pub fn history_jump_to(
-    id: u32,
-    db: &Mutex<Connection>,
-    index_manager: &IndexManager,
-) -> Result<Vec<HistoryEntry>, String> {
+pub fn history_jump_to(id: u32, db: &Mutex<Connection>, index_manager: &IndexManager) -> Result<Vec<HistoryEntry>, String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
     history::jump_to(&conn, &index_manager, id as i64)
 }
 
-pub fn history_undo(
-    db: &Mutex<Connection>,
-    index_manager: &IndexManager,
-) -> Result<Option<HistoryEntry>, String> {
+pub fn history_undo(db: &Mutex<Connection>, index_manager: &IndexManager) -> Result<Option<HistoryEntry>, String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
     history::undo(&conn, &index_manager)
 }
 
-pub fn history_redo(
-    db: &Mutex<Connection>,
-    index_manager: &IndexManager,
-) -> Result<Option<HistoryEntry>, String> {
+pub fn history_redo(db: &Mutex<Connection>, index_manager: &IndexManager) -> Result<Option<HistoryEntry>, String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
     history::redo(&conn, &index_manager)
 }
@@ -70,10 +60,7 @@ pub fn history_redo(
 /// exists -- and if so builds a before/after preview. Read-only, powers
 /// RestoreEntryModal.tsx's diff+raw-text preview in Settings > History
 /// (SettingsHistory.tsx). See core::history::restore for the full "why".
-pub fn history_check_heading_restore(
-    id: u32,
-    db: &Mutex<Connection>,
-) -> Result<HeadingRestoreCheck, String> {
+pub fn history_check_heading_restore(id: u32, db: &Mutex<Connection>) -> Result<HeadingRestoreCheck, String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
     history::restore::check(&conn, id as i64)
 }
@@ -81,11 +68,7 @@ pub fn history_check_heading_restore(
 /// Actually performs the restore checked by history_check_heading_restore
 /// above -- reruns the same feasibility computation rather than trusting a
 /// possibly-stale earlier check (the file may have changed since).
-pub fn history_apply_heading_restore(
-    id: u32,
-    db: &Mutex<Connection>,
-    index_manager: &IndexManager,
-) -> Result<(), String> {
+pub fn history_apply_heading_restore(id: u32, db: &Mutex<Connection>, index_manager: &IndexManager) -> Result<(), String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
     history::restore::apply(&conn, &index_manager, id as i64)
 }

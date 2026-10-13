@@ -26,18 +26,14 @@ impl WebDavProvider {
 
         let mut headers = HeaderMap::new();
         let credentials = nobo_webdav::basic_auth_header(&username, &password);
-        let mut auth_value =
-            HeaderValue::from_str(&credentials).map_err(|e| format!("invalid credentials: {e}"))?;
+        let mut auth_value = HeaderValue::from_str(&credentials).map_err(|e| format!("invalid credentials: {e}"))?;
         auth_value.set_sensitive(true);
         headers.insert(AUTHORIZATION, auth_value);
 
         // No whole-request timeout: this client carries file transfers,
         // and the connect timeout it brings from nobo_http is what catches
         // an unreachable server.
-        let client = nobo_http::builder()
-            .default_headers(headers)
-            .build()
-            .map_err(|e| nobo_http::describe_error(&e))?;
+        let client = nobo_http::builder().default_headers(headers).build().map_err(|e| nobo_http::describe_error(&e))?;
 
         Ok(Self { client, root: root.trim_end_matches('/').to_string(), username })
     }
@@ -97,10 +93,8 @@ impl SyncProvider for WebDavProvider {
             .get(reqwest::header::ETAG)
             .and_then(|v| v.to_str().ok())
             .filter(|etag| !etag.trim_start().starts_with("W/") && !etag.trim().is_empty());
-        let last_modified = headers
-            .get(reqwest::header::LAST_MODIFIED)
-            .and_then(|v| v.to_str().ok())
-            .filter(|value| !value.trim().is_empty());
+        let last_modified =
+            headers.get(reqwest::header::LAST_MODIFIED).and_then(|v| v.to_str().ok()).filter(|value| !value.trim().is_empty());
         let version = match (strong_etag, last_modified) {
             (Some(etag), _) => IndexVersion::At(etag.to_string()),
             (None, Some(date)) => IndexVersion::LastModified(date.to_string()),
@@ -129,9 +123,7 @@ impl SyncProvider for WebDavProvider {
             // write is still conditional, just on a coarser validator.
             // Echoed back exactly as it arrived: an HTTP-date compares as
             // the string the server chose to print.
-            IndexVersion::LastModified(date) => {
-                req.header(reqwest::header::IF_UNMODIFIED_SINCE, date.as_str())
-            }
+            IndexVersion::LastModified(date) => req.header(reqwest::header::IF_UNMODIFIED_SINCE, date.as_str()),
             // The index exists and the server offered nothing at all --
             // no usable ETag and no Last-Modified either. `If-None-Match:
             // *` here is simply wrong (it asserts the index does not
@@ -428,10 +420,7 @@ mod tests {
         // a 404, which is what the old `Option<String>` shape forced them
         // to share and what made every later upload send `If-None-Match:
         // *` and 412 forever.
-        assert_eq!(
-            provider.download_index().await.unwrap(),
-            Some((b"encrypted-bytes".to_vec(), IndexVersion::Unversioned))
-        );
+        assert_eq!(provider.download_index().await.unwrap(), Some((b"encrypted-bytes".to_vec(), IndexVersion::Unversioned)));
     }
 
     /// `If-Match` compares strongly, so a weak validator can never match
@@ -442,11 +431,7 @@ mod tests {
         let server = MockServer::start().await;
         Mock::given(method("GET"))
             .and(path("/index.enc"))
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .insert_header("etag", "W/\"abc123\"")
-                    .set_body_bytes(b"encrypted-bytes".to_vec()),
-            )
+            .respond_with(ResponseTemplate::new(200).insert_header("etag", "W/\"abc123\"").set_body_bytes(b"encrypted-bytes".to_vec()))
             .mount(&server)
             .await;
 
@@ -535,10 +520,7 @@ mod tests {
             .await;
 
         let provider = provider(&server).await;
-        provider
-            .upload_index(b"new content", &IndexVersion::LastModified("Wed, 03 Sep 2026 10:11:12 GMT".to_string()))
-            .await
-            .unwrap();
+        provider.upload_index(b"new content", &IndexVersion::LastModified("Wed, 03 Sep 2026 10:11:12 GMT".to_string())).await.unwrap();
 
         // Matched on presence above and on the value here: wiremock's own
         // header matcher reads a comma as a list separator, and every
@@ -550,10 +532,7 @@ mod tests {
             .into_iter()
             .find(|r| r.method == wiremock::http::Method::PUT)
             .expect("the index was written");
-        assert_eq!(
-            put.headers.get("if-unmodified-since").unwrap(),
-            "Wed, 03 Sep 2026 10:11:12 GMT"
-        );
+        assert_eq!(put.headers.get("if-unmodified-since").unwrap(), "Wed, 03 Sep 2026 10:11:12 GMT");
     }
 
     /// The other device got there first, and the server says so.

@@ -40,7 +40,9 @@ pub struct CalendarSubscription {
     pub refresh: RefreshInterval,
 }
 
-fn enabled_by_default() -> bool { true }
+fn enabled_by_default() -> bool {
+    true
+}
 
 /// What an entry is, and what marks a calendar's colour, both belong to
 /// the mirror format rather than to subscriptions (see
@@ -63,7 +65,6 @@ pub struct CalendarRefreshResult {
     /// `None` on success.
     pub error: Option<String>,
 }
-
 
 /// How often the ICS subscriptions are refreshed on this device.
 ///

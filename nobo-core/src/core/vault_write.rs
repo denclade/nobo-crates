@@ -334,7 +334,9 @@ mod tests {
     fn a_file_of_another_kind_is_refused() {
         let (dir, index, db) = setup(&[("a.org", "* A\n")]);
         let path = dir.path().join("a.org");
-        let err = edit_files_in(dir.path(), &[&path], Some(FileKind::new("vault-write-test")), &index, &db, |texts| Ok((texts.to_vec(), ()))).unwrap_err();
+        let err =
+            edit_files_in(dir.path(), &[&path], Some(FileKind::new("vault-write-test")), &index, &db, |texts| Ok((texts.to_vec(), ())))
+                .unwrap_err();
         assert!(err.contains("a.org"), "{err}");
     }
 
@@ -345,10 +347,16 @@ mod tests {
     fn a_nested_write_of_the_same_file_does_not_deadlock() {
         let (dir, index, db) = setup(&[("a.org", "a\n")]);
         let path = dir.path().join("a.org");
-        let out = recorded(&path, |_| HistoryEntryKind::FileEdited { filename: "a.org".into() }, &index, &db, || {
-            edit_files_in(dir.path(), &[&path], None, &index, &db, |_| Ok((vec!["b\n".into()], ())))?;
-            Ok(())
-        });
+        let out = recorded(
+            &path,
+            |_| HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            &index,
+            &db,
+            || {
+                edit_files_in(dir.path(), &[&path], None, &index, &db, |_| Ok((vec!["b\n".into()], ())))?;
+                Ok(())
+            },
+        );
         assert!(out.is_ok());
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "b\n");
     }

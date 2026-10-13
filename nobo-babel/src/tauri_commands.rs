@@ -28,9 +28,7 @@ where
     F: FnOnce() -> Result<T, String> + Send + 'static,
     T: Send + 'static,
 {
-    tauri::async_runtime::spawn_blocking(work)
-        .await
-        .map_err(|e| format!("the interpreter could not be run: {e}"))?
+    tauri::async_runtime::spawn_blocking(work).await.map_err(|e| format!("the interpreter could not be run: {e}"))?
 }
 
 #[tauri::command]
@@ -70,11 +68,7 @@ pub async fn babel_execute_block(
 
 #[tauri::command]
 #[specta::specta]
-pub fn babel_kill_session(
-    file_path: String,
-    session_name: String,
-    session_registry: State<'_, Arc<SessionRegistry>>,
-) {
+pub fn babel_kill_session(file_path: String, session_name: String, session_registry: State<'_, Arc<SessionRegistry>>) {
     commands::babel_kill_session(file_path, session_name, &session_registry)
 }
 

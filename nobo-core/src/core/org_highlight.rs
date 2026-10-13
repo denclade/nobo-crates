@@ -59,8 +59,8 @@ fn grammar(language: &str) -> Option<Grammar> {
             block_comment: None,
             quotes: &['"', '\'', '`'],
             keywords: &[
-                "if", "then", "else", "elif", "fi", "for", "while", "until", "do", "done", "case", "esac",
-                "function", "in", "return", "local", "export", "source", "echo", "cd", "set", "read", "exit",
+                "if", "then", "else", "elif", "fi", "for", "while", "until", "do", "done", "case", "esac", "function", "in", "return",
+                "local", "export", "source", "echo", "cd", "set", "read", "exit",
             ],
         },
         "python" => Grammar {
@@ -68,9 +68,9 @@ fn grammar(language: &str) -> Option<Grammar> {
             block_comment: None,
             quotes: &['"', '\''],
             keywords: &[
-                "def", "class", "return", "if", "elif", "else", "for", "while", "in", "not", "and", "or",
-                "import", "from", "as", "with", "try", "except", "finally", "raise", "lambda", "yield",
-                "pass", "break", "continue", "None", "True", "False", "self", "async", "await", "global",
+                "def", "class", "return", "if", "elif", "else", "for", "while", "in", "not", "and", "or", "import", "from", "as", "with",
+                "try", "except", "finally", "raise", "lambda", "yield", "pass", "break", "continue", "None", "True", "False", "self",
+                "async", "await", "global",
             ],
         },
         "javascript" | "typescript" => Grammar {
@@ -78,10 +78,45 @@ fn grammar(language: &str) -> Option<Grammar> {
             block_comment: C_LIKE,
             quotes: &['"', '\'', '`'],
             keywords: &[
-                "const", "let", "var", "function", "return", "if", "else", "for", "while", "do", "switch",
-                "case", "break", "continue", "new", "class", "extends", "import", "export", "from", "default",
-                "async", "await", "try", "catch", "finally", "throw", "typeof", "instanceof", "null",
-                "undefined", "true", "false", "this", "interface", "type", "enum", "public", "private",
+                "const",
+                "let",
+                "var",
+                "function",
+                "return",
+                "if",
+                "else",
+                "for",
+                "while",
+                "do",
+                "switch",
+                "case",
+                "break",
+                "continue",
+                "new",
+                "class",
+                "extends",
+                "import",
+                "export",
+                "from",
+                "default",
+                "async",
+                "await",
+                "try",
+                "catch",
+                "finally",
+                "throw",
+                "typeof",
+                "instanceof",
+                "null",
+                "undefined",
+                "true",
+                "false",
+                "this",
+                "interface",
+                "type",
+                "enum",
+                "public",
+                "private",
             ],
         },
         "rust" => Grammar {
@@ -89,10 +124,9 @@ fn grammar(language: &str) -> Option<Grammar> {
             block_comment: C_LIKE,
             quotes: &['"'],
             keywords: &[
-                "fn", "let", "mut", "const", "static", "struct", "enum", "impl", "trait", "for", "while",
-                "loop", "if", "else", "match", "return", "pub", "use", "mod", "crate", "self", "super",
-                "where", "async", "await", "move", "ref", "dyn", "as", "in", "break", "continue", "true",
-                "false", "Some", "None", "Ok", "Err",
+                "fn", "let", "mut", "const", "static", "struct", "enum", "impl", "trait", "for", "while", "loop", "if", "else", "match",
+                "return", "pub", "use", "mod", "crate", "self", "super", "where", "async", "await", "move", "ref", "dyn", "as", "in",
+                "break", "continue", "true", "false", "Some", "None", "Ok", "Err",
             ],
         },
         "c" => Grammar {
@@ -100,10 +134,44 @@ fn grammar(language: &str) -> Option<Grammar> {
             block_comment: C_LIKE,
             quotes: &['"', '\''],
             keywords: &[
-                "int", "char", "void", "float", "double", "long", "short", "unsigned", "signed", "struct",
-                "enum", "union", "typedef", "const", "static", "return", "if", "else", "for", "while", "do",
-                "switch", "case", "break", "continue", "sizeof", "class", "public", "private", "namespace",
-                "template", "auto", "bool", "true", "false", "nullptr", "new", "delete",
+                "int",
+                "char",
+                "void",
+                "float",
+                "double",
+                "long",
+                "short",
+                "unsigned",
+                "signed",
+                "struct",
+                "enum",
+                "union",
+                "typedef",
+                "const",
+                "static",
+                "return",
+                "if",
+                "else",
+                "for",
+                "while",
+                "do",
+                "switch",
+                "case",
+                "break",
+                "continue",
+                "sizeof",
+                "class",
+                "public",
+                "private",
+                "namespace",
+                "template",
+                "auto",
+                "bool",
+                "true",
+                "false",
+                "nullptr",
+                "new",
+                "delete",
             ],
         },
         "sql" => Grammar {
@@ -111,13 +179,15 @@ fn grammar(language: &str) -> Option<Grammar> {
             block_comment: C_LIKE,
             quotes: &['"', '\''],
             keywords: &[
-                "select", "from", "where", "insert", "into", "values", "update", "set", "delete", "create",
-                "table", "index", "drop", "alter", "join", "left", "right", "inner", "outer", "on", "group",
-                "order", "by", "having", "limit", "offset", "and", "or", "not", "null", "as", "distinct",
+                "select", "from", "where", "insert", "into", "values", "update", "set", "delete", "create", "table", "index", "drop",
+                "alter", "join", "left", "right", "inner", "outer", "on", "group", "order", "by", "having", "limit", "offset", "and", "or",
+                "not", "null", "as", "distinct",
             ],
         },
         "json" => Grammar { line_comments: &[], block_comment: None, quotes: &['"'], keywords: &["true", "false", "null"] },
-        "yaml" => Grammar { line_comments: &["#"], block_comment: None, quotes: &['"', '\''], keywords: &["true", "false", "null", "yes", "no"] },
+        "yaml" => {
+            Grammar { line_comments: &["#"], block_comment: None, quotes: &['"', '\''], keywords: &["true", "false", "null", "yes", "no"] }
+        }
         "css" => Grammar {
             line_comments: &[],
             block_comment: C_LIKE,
@@ -125,7 +195,9 @@ fn grammar(language: &str) -> Option<Grammar> {
             keywords: &["important", "media", "import", "keyframes", "supports", "font-face", "root"],
         },
         "html" => Grammar { line_comments: &[], block_comment: Some(("<!--", "-->")), quotes: &['"', '\''], keywords: &[] },
-        "toml" | "ini" | "conf" => Grammar { line_comments: &["#", ";"], block_comment: None, quotes: &['"', '\''], keywords: &["true", "false"] },
+        "toml" | "ini" | "conf" => {
+            Grammar { line_comments: &["#", ";"], block_comment: None, quotes: &['"', '\''], keywords: &["true", "false"] }
+        }
         _ => return None,
     })
 }
@@ -160,9 +232,7 @@ pub fn highlight(language: &str, code: &str) -> Vec<Token> {
         }
         if let Some((open, close)) = grammar.block_comment {
             if rest(i).starts_with(open) {
-                let end = find_from(&chars, i + open.chars().count(), close)
-                    .map(|j| j + close.chars().count())
-                    .unwrap_or(chars.len());
+                let end = find_from(&chars, i + open.chars().count(), close).map(|j| j + close.chars().count()).unwrap_or(chars.len());
                 tokens.push(Token { kind: TokenKind::Comment, from: offsets[i], to: offsets[end] });
                 i = end;
                 continue;
@@ -238,7 +308,6 @@ fn find_from(chars: &[char], from: usize, needle: &str) -> Option<usize> {
     (from..chars.len().saturating_sub(needle.len() - 1)).find(|i| chars[*i..*i + needle.len()] == needle[..])
 }
 
-
 // ---------------------------------------------------------------------
 // Colouring the org source itself
 // ---------------------------------------------------------------------
@@ -306,8 +375,8 @@ fn utf16_len(text: &str) -> u32 {
 /// the state of the one before it, and re-parsing the whole note on every
 /// keystroke is exactly what makes an editor feel slow.
 pub fn highlight_line(line: &str, state: i32) -> LineHighlight {
-    use crate::core::org_ast::{classify_line, drawer_name, heading_level, indent_of, list_of, LineType};
     use crate::core::models::TODO_STATES;
+    use crate::core::org_ast::{classify_line, drawer_name, heading_level, indent_of, list_of, LineType};
 
     let (mode, language) = decode_state(state);
     let trimmed = line.trim();
@@ -348,10 +417,7 @@ pub fn highlight_line(line: &str, state: i32) -> LineHighlight {
             let (kind, params) = split_begin(trimmed);
             let verbatim = matches!(kind.as_str(), "SRC" | "EXAMPLE" | "EXPORT" | "COMMENT" | "ASCII" | "LATEX");
             let language = params.split_whitespace().next().filter(|token| !token.starts_with(':'));
-            return LineHighlight {
-                spans,
-                state: encode_state(if verbatim { MODE_VERBATIM } else { MODE_PROSE }, language),
-            };
+            return LineHighlight { spans, state: encode_state(if verbatim { MODE_VERBATIM } else { MODE_PROSE }, language) };
         }
         LineType::BlockEnd | LineType::Keyword => {
             spans.push(span("blockDelimiter", 0, length));
@@ -385,11 +451,7 @@ pub fn highlight_line(line: &str, state: i32) -> LineHighlight {
                 let bullet_len = utf16_len(&bullet);
                 spans.push(span("bullet", indent, indent + bullet_len));
                 if checkbox.is_some() {
-                    let gap = line
-                        .chars()
-                        .skip(indent as usize + bullet.chars().count())
-                        .take_while(|c| c.is_whitespace())
-                        .count() as u32;
+                    let gap = line.chars().skip(indent as usize + bullet.chars().count()).take_while(|c| c.is_whitespace()).count() as u32;
                     let from = indent + bullet_len + gap;
                     spans.push(span("checkbox", from, from + 3));
                 }
@@ -479,9 +541,7 @@ mod tests {
         let units: Vec<u16> = code.encode_utf16().collect();
         highlight(language, code)
             .into_iter()
-            .map(|token| {
-                (token.kind, String::from_utf16_lossy(&units[token.from as usize..token.to as usize]))
-            })
+            .map(|token| (token.kind, String::from_utf16_lossy(&units[token.from as usize..token.to as usize])))
             .collect()
     }
 

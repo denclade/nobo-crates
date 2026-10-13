@@ -37,10 +37,7 @@ fn event_from_vevent(event: &IcalEvent) -> Option<CalendarEvent> {
     let when = nobo_ical::when(find(event, "DTSTART")?)?;
     let (start, all_day) = (when.naive(), when.is_all_day());
 
-    let end = find(event, "DTEND")
-        .and_then(nobo_ical::when)
-        .map(When::naive)
-        .or_else(|| duration_end(event, start));
+    let end = find(event, "DTEND").and_then(nobo_ical::when).map(When::naive).or_else(|| duration_end(event, start));
 
     Some(CalendarEvent {
         uid,
@@ -128,8 +125,9 @@ pub fn repeater_from_rrule(rrule: &str) -> Option<Repeater> {
             "INTERVAL" => interval = value.parse().ok()?,
             // Anything that narrows or bounds the recurrence has no org
             // counterpart -- see this function's own doc comment.
-            "BYDAY" | "BYMONTHDAY" | "BYMONTH" | "BYSETPOS" | "BYHOUR" | "BYMINUTE"
-            | "UNTIL" | "COUNT" | "BYWEEKNO" | "BYYEARDAY" => return None,
+            "BYDAY" | "BYMONTHDAY" | "BYMONTH" | "BYSETPOS" | "BYHOUR" | "BYMINUTE" | "UNTIL" | "COUNT" | "BYWEEKNO" | "BYYEARDAY" => {
+                return None
+            }
             _ => {}
         }
     }
@@ -184,11 +182,7 @@ mod tests {
     fn a_utc_stamp_is_converted_to_local_time() {
         let event = one("BEGIN:VEVENT\r\nUID:b\r\nSUMMARY:Zahnarzt\r\nDTSTART:20260821T120000Z\r\nEND:VEVENT");
 
-        let expected = Utc
-            .with_ymd_and_hms(2026, 8, 21, 12, 0, 0)
-            .unwrap()
-            .with_timezone(&Local)
-            .naive_local();
+        let expected = Utc.with_ymd_and_hms(2026, 8, 21, 12, 0, 0).unwrap().with_timezone(&Local).naive_local();
         assert_eq!(event.start, expected);
     }
 
@@ -196,13 +190,8 @@ mod tests {
     fn a_tzid_stamp_is_converted_from_that_zone() {
         let event = one("BEGIN:VEVENT\r\nUID:c\r\nSUMMARY:Call\r\nDTSTART;TZID=America/New_York:20260821T090000\r\nEND:VEVENT");
 
-        let expected = "America/New_York"
-            .parse::<Tz>()
-            .unwrap()
-            .with_ymd_and_hms(2026, 8, 21, 9, 0, 0)
-            .unwrap()
-            .with_timezone(&Local)
-            .naive_local();
+        let expected =
+            "America/New_York".parse::<Tz>().unwrap().with_ymd_and_hms(2026, 8, 21, 9, 0, 0).unwrap().with_timezone(&Local).naive_local();
         assert_eq!(event.start, expected);
     }
 
@@ -215,7 +204,8 @@ mod tests {
 
     #[test]
     fn a_whole_day_event_carries_no_time() {
-        let event = one("BEGIN:VEVENT\r\nUID:e\r\nSUMMARY:Urlaub\r\nDTSTART;VALUE=DATE:20260821\r\nDTEND;VALUE=DATE:20260822\r\nEND:VEVENT");
+        let event =
+            one("BEGIN:VEVENT\r\nUID:e\r\nSUMMARY:Urlaub\r\nDTSTART;VALUE=DATE:20260821\r\nDTEND;VALUE=DATE:20260822\r\nEND:VEVENT");
 
         assert!(event.all_day);
         assert_eq!(event.start.to_string(), "2026-08-21 00:00:00");
@@ -230,7 +220,8 @@ mod tests {
 
     #[test]
     fn escaped_newlines_and_commas_come_back_as_real_characters() {
-        let event = one("BEGIN:VEVENT\r\nUID:g\r\nSUMMARY:X\r\nDTSTART:20260821T140000\r\nDESCRIPTION:Zoom: https://x\\ny\\, dann z\r\nEND:VEVENT");
+        let event =
+            one("BEGIN:VEVENT\r\nUID:g\r\nSUMMARY:X\r\nDTSTART:20260821T140000\r\nDESCRIPTION:Zoom: https://x\\ny\\, dann z\r\nEND:VEVENT");
 
         assert_eq!(event.description.unwrap(), "Zoom: https://x\ny, dann z");
     }
@@ -270,8 +261,14 @@ mod tests {
 
     #[test]
     fn plain_frequencies_become_org_repeaters() {
-        assert_eq!(repeater_from_rrule("FREQ=WEEKLY").unwrap(), Repeater { kind: RepeaterKind::Cumulative, value: 1, unit: 'w', habit_max: None });
-        assert_eq!(repeater_from_rrule("FREQ=DAILY;INTERVAL=2").unwrap(), Repeater { kind: RepeaterKind::Cumulative, value: 2, unit: 'd', habit_max: None });
+        assert_eq!(
+            repeater_from_rrule("FREQ=WEEKLY").unwrap(),
+            Repeater { kind: RepeaterKind::Cumulative, value: 1, unit: 'w', habit_max: None }
+        );
+        assert_eq!(
+            repeater_from_rrule("FREQ=DAILY;INTERVAL=2").unwrap(),
+            Repeater { kind: RepeaterKind::Cumulative, value: 2, unit: 'd', habit_max: None }
+        );
         assert_eq!(repeater_from_rrule("FREQ=MONTHLY").unwrap().unit, 'm');
         assert_eq!(repeater_from_rrule("FREQ=YEARLY").unwrap().unit, 'y');
     }

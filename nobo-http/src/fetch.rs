@@ -33,9 +33,7 @@ pub async fn page(url: &str, user_agent: &str) -> Result<String, String> {
         return Err(t!("Die Seite antwortete mit {status}", "The page answered {status}"));
     }
     let content_type = header(&response, "content-type");
-    let body = body_within(response, PAGE_LIMIT)
-        .await?
-        .ok_or_else(|| t!("Die Seite ist zu groß", "The page is too large"))?;
+    let body = body_within(response, PAGE_LIMIT).await?.ok_or_else(|| t!("Die Seite ist zu groß", "The page is too large"))?;
     Ok(decode_page(&body, content_type.as_deref()))
 }
 
@@ -62,9 +60,7 @@ pub async fn image(url: &str, user_agent: &str) -> Result<(Vec<u8>, &'static str
         "image/gif" => "gif",
         other => return Err(t!("Kein Bild, das sich anzeigen ließe ({other})", "Not a picture that can be shown ({other})")),
     };
-    let bytes = body_within(response, IMAGE_LIMIT)
-        .await?
-        .ok_or_else(|| t!("Das Bild ist zu groß", "The picture is too large"))?;
+    let bytes = body_within(response, IMAGE_LIMIT).await?.ok_or_else(|| t!("Das Bild ist zu groß", "The picture is too large"))?;
     Ok((bytes, extension))
 }
 
@@ -105,12 +101,8 @@ fn append_within(body: &mut Vec<u8>, chunk: &[u8], limit: usize) -> bool {
 /// Reading every page as UTF-8 turned a Latin-1 page's "Müller" into
 /// "M\u{fffd}ller" in a recipe title or a bookmark's.
 pub fn decode_page(body: &[u8], content_type: Option<&str>) -> String {
-    let declared = content_type
-        .and_then(charset_param)
-        .or_else(|| meta_charset(&body[..body.len().min(4096)]));
-    let encoding = declared
-        .and_then(|label| encoding_rs::Encoding::for_label(label.trim().as_bytes()))
-        .unwrap_or(encoding_rs::UTF_8);
+    let declared = content_type.and_then(charset_param).or_else(|| meta_charset(&body[..body.len().min(4096)]));
+    let encoding = declared.and_then(|label| encoding_rs::Encoding::for_label(label.trim().as_bytes())).unwrap_or(encoding_rs::UTF_8);
     let (text, _, _) = encoding.decode(body);
     text.into_owned()
 }
@@ -128,11 +120,8 @@ fn charset_param(content_type: &str) -> Option<String> {
 fn meta_charset(head: &[u8]) -> Option<String> {
     let text = String::from_utf8_lossy(head).to_ascii_lowercase();
     let at = text.find("charset=")? + "charset=".len();
-    let value: String = text[at..]
-        .trim_start_matches(['"', '\''])
-        .chars()
-        .take_while(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
-        .collect();
+    let value: String =
+        text[at..].trim_start_matches(['"', '\'']).chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_').collect();
     (!value.is_empty()).then_some(value)
 }
 

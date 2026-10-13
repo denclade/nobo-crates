@@ -51,10 +51,7 @@ impl OnceAtATime {
     /// `Some` for the one caller that gets to run, `None` for everyone
     /// arriving while it does.
     pub fn try_enter(&self) -> Option<Busy<'_>> {
-        self.running
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .ok()
-            .map(|_| Busy(&self.running))
+        self.running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).ok().map(|_| Busy(&self.running))
     }
 
     /// Whether a run is in flight right now. For a caller that wants to
@@ -155,8 +152,7 @@ impl OncePerKey {
         // A poisoned lock means a panic while holding it, not a state
         // worth refusing over -- the set is a set of strings.
         let mut set = running.lock().unwrap_or_else(|e| e.into_inner());
-        set.insert(key.to_string())
-            .then(|| BusyKey { owner: self, key: key.to_string() })
+        set.insert(key.to_string()).then(|| BusyKey { owner: self, key: key.to_string() })
     }
 }
 

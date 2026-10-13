@@ -113,7 +113,10 @@ fn describe_request_error(e: &reqwest::Error) -> String {
     let prefix = if e.is_timeout() {
         nobo_core::t!("Zeitüberschreitung -- der Server antwortet nicht", "Timed out -- the server is not responding")
     } else if e.is_connect() {
-        nobo_core::t!("Server nicht erreichbar -- URL und Internetverbindung prüfen", "Server unreachable -- check the URL and your connection")
+        nobo_core::t!(
+            "Server nicht erreichbar -- URL und Internetverbindung prüfen",
+            "Server unreachable -- check the URL and your connection"
+        )
     } else {
         nobo_core::t!("Netzwerkfehler", "Network error")
     };
@@ -148,15 +151,9 @@ mod tests {
     /// line that cannot tell those apart is a log line nobody can act on.
     #[test]
     fn a_description_carries_every_cause_not_just_the_wrapper() {
-        let error = Layered(
-            "error sending request",
-            Some(Box::new(Layered("dns error", Some(Box::new(Layered("no such host", None)))))),
-        );
+        let error = Layered("error sending request", Some(Box::new(Layered("dns error", Some(Box::new(Layered("no such host", None)))))));
 
-        assert_eq!(
-            describe_error(&error),
-            "error sending request -- caused by: dns error -- caused by: no such host",
-        );
+        assert_eq!(describe_error(&error), "error sending request -- caused by: dns error -- caused by: no such host",);
     }
 
     #[test]

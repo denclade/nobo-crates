@@ -14,13 +14,13 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use super::client::{self, CalDavClient, Precondition, RemoteObject, CONFLICT_MARKER};
 use super::model::CalDavTask;
+use super::model::ListSyncOutcome;
 use super::org;
 use super::plan::{self, LocalTask, RemoteTask, TaskAction};
 use super::sort::{self, ServerEntry};
 use super::store::{self, TaskState};
 use super::vtodo;
 use nobo_core::core::models::Heading;
-use super::model::ListSyncOutcome;
 
 /// What a run has to be able to ask of a server.
 #[async_trait]
@@ -58,11 +58,7 @@ impl CalDavTransport for CalDavClient {
     }
 
     async fn get_objects(&self, list_url: &str, urls: &[String]) -> Result<Vec<(String, String)>, String> {
-        Ok(CalDavClient::get_objects(self, list_url, urls)
-            .await?
-            .into_iter()
-            .map(|object| (object.url, object.body))
-            .collect())
+        Ok(CalDavClient::get_objects(self, list_url, urls).await?.into_iter().map(|object| (object.url, object.body)).collect())
     }
     async fn put_object(&self, url: &str, ics: &str, precondition: Precondition<'_>) -> Result<Option<String>, String> {
         CalDavClient::put_object(self, url, ics, precondition).await
@@ -87,9 +83,13 @@ pub struct ListTarget<'a> {
 
 impl ListTarget<'_> {
     /// Stable id of the subscription; keys the local state.
-    fn id(&self) -> &str { &self.subscription.id }
+    fn id(&self) -> &str {
+        &self.subscription.id
+    }
     /// Collection URL on the server.
-    fn url(&self) -> &str { &self.subscription.url }
+    fn url(&self) -> &str {
+        &self.subscription.url
+    }
 }
 
 /// How far a list sync has got.
@@ -180,10 +180,7 @@ pub async fn sync_list(
     progress.emit();
     let (state, known_ctag) = {
         let conn = lock(db)?;
-        (
-            store::get_all(&conn, target.id()).map_err(|e| e.to_string())?,
-            store::get_ctag(&conn, target.id()).map_err(|e| e.to_string())?,
-        )
+        (store::get_all(&conn, target.id()).map_err(|e| e.to_string())?, store::get_ctag(&conn, target.id()).map_err(|e| e.to_string())?)
     };
     // No readable mirror is NOT an empty list (see read_local). Planning
     // against a state that remembers tasks the file can no longer show
@@ -228,8 +225,7 @@ pub async fn sync_list(
     progress.expect(unknown_objects(&state, &objects));
     let (remote, mut fetched) = resolve_remote(transport, target.url(), &state, &objects, &progress).await?;
 
-    let local_tasks: Vec<LocalTask> =
-        local.iter().map(|l| LocalTask { uid: l.uid.clone(), hash: l.hash.clone() }).collect();
+    let local_tasks: Vec<LocalTask> = local.iter().map(|l| LocalTask { uid: l.uid.clone(), hash: l.hash.clone() }).collect();
     // Forgetting the etags is what turns "nothing changed" into "every
     // task changed remotely": with the file unchanged, the plan then reads
     // each one back from the server rather than pushing anything.
@@ -269,10 +265,7 @@ pub async fn sync_list(
     // Where the merged file's content comes from, keyed by uid. Starts as
     // the local copy of everything and is replaced per task by whatever
     // the run decides wins.
-    let mut resolved: HashMap<String, CalDavTask> = local
-        .iter()
-        .filter_map(|l| l.uid.clone().map(|uid| (uid, l.task.clone())))
-        .collect();
+    let mut resolved: HashMap<String, CalDavTask> = local.iter().filter_map(|l| l.uid.clone().map(|uid| (uid, l.task.clone()))).collect();
     let mut etags: HashMap<String, String> = state.iter().map(|s| (s.uid.clone(), s.etag.clone())).collect();
     let mut urls: HashMap<String, String> = state.iter().map(|s| (s.uid.clone(), s.url.clone())).collect();
     let mut dropped: Vec<String> = Vec::new();
@@ -324,8 +317,7 @@ pub async fn sync_list(
     }
 
     for action in actions {
-        let result =
-            apply(transport, target, &action, &local, &state, &local_uids, &mut fetched, &placements).await;
+        let result = apply(transport, target, &action, &local, &state, &local_uids, &mut fetched, &placements).await;
         match result {
             Ok(Applied::Replaced { uid, task, url, etag }) => {
                 if let Some(etag) = etag {
@@ -416,11 +408,7 @@ fn lock(db: &std::sync::Mutex<Connection>) -> Result<std::sync::MutexGuard<'_, C
 /// subtask out from under its parent produces the same hash as before and
 /// the change is invisible to both the fast path and the planner.
 fn task_hash(task: &CalDavTask) -> String {
-    store::hash_block(&format!(
-        "{}\n{}",
-        task.parent_uid.as_deref().unwrap_or(""),
-        org::render_task(task)
-    ))
+    store::hash_block(&format!("{}\n{}", task.parent_uid.as_deref().unwrap_or(""), org::render_task(task)))
 }
 
 /// Stands in for the uid of a heading the user typed by hand, until the
@@ -500,10 +488,7 @@ fn task_from(heading: &Heading, uid: Option<String>) -> CalDavTask {
             // treats a blank uid as no uid at all and would hand back
             // None again. The planner replaces it with a generated one.
             let mut placeholder = heading.clone();
-            placeholder.properties.insert(
-                org::CALDAV_UID_PROPERTY.to_string(),
-                uid.unwrap_or_else(|| PENDING_UID.to_string()),
-            );
+            placeholder.properties.insert(org::CALDAV_UID_PROPERTY.to_string(), uid.unwrap_or_else(|| PENDING_UID.to_string()));
             org::task_from_heading(&placeholder).expect("a uid was just inserted")
         }
     }
@@ -526,8 +511,7 @@ fn local_has_changes(state: &[TaskState], local: &[LocalHeading]) -> bool {
         let uid = l.uid.as_deref().unwrap_or_default();
         !live.iter().any(|s| s.uid == uid && s.local_hash == l.hash)
     });
-    let local_order: Vec<String> =
-        local.iter().filter_map(|l| l.uid.clone()).collect();
+    let local_order: Vec<String> = local.iter().filter_map(|l| l.uid.clone()).collect();
     let order_changed = recorded_order(state).is_some_and(|known| local_order != known);
     content_changed || order_changed
 }
@@ -555,11 +539,8 @@ async fn resolve_remote(
     let mut remote = Vec::new();
     let mut fetched: HashMap<String, CalDavTask> = HashMap::new();
 
-    let unknown: Vec<String> = objects
-        .iter()
-        .filter(|o| !state.iter().any(|s| s.url == o.url && !s.deleted))
-        .map(|o| o.url.clone())
-        .collect();
+    let unknown: Vec<String> =
+        objects.iter().filter(|o| !state.iter().any(|s| s.url == o.url && !s.deleted)).map(|o| o.url.clone()).collect();
     // Chunked, like the pull loop in sync_list and for the same reason:
     // this is the whole collection on a first sync, and one request for
     // all of it leaves the ring still while the slowest part of the run
@@ -572,11 +553,7 @@ async fn resolve_remote(
 
     for object in objects {
         match state.iter().find(|s| s.url == object.url && !s.deleted) {
-            Some(known) => remote.push(RemoteTask {
-                uid: known.uid.clone(),
-                url: object.url.clone(),
-                etag: object.etag.clone(),
-            }),
+            Some(known) => remote.push(RemoteTask { uid: known.uid.clone(), url: object.url.clone(), etag: object.etag.clone() }),
             None => {
                 // A server that answered the multiget with fewer entries
                 // than asked for is not a reason to lose an object.
@@ -585,11 +562,7 @@ async fn resolve_remote(
                     None => transport.get_object(&object.url).await?,
                 };
                 for task in vtodo::parse_tasks(&body)? {
-                    remote.push(RemoteTask {
-                        uid: task.uid.clone(),
-                        url: object.url.clone(),
-                        etag: object.etag.clone(),
-                    });
+                    remote.push(RemoteTask { uid: task.uid.clone(), url: object.url.clone(), etag: object.etag.clone() });
                     fetched.insert(task.uid.clone(), task);
                 }
             }
@@ -624,12 +597,7 @@ async fn apply(
                 Some(task) => task,
                 None => task_of(&transport.get_object(url).await?, uid)?,
             };
-            Ok(Applied::Replaced {
-                uid: uid.clone(),
-                task: Box::new(task),
-                url: url.clone(),
-                etag: Some(etag.clone()),
-            })
+            Ok(Applied::Replaced { uid: uid.clone(), task: Box::new(task), url: url.clone(), etag: Some(etag.clone()) })
         }
 
         TaskAction::Push { uid, url, etag } | TaskAction::PushOverRemoteChange { uid, url, etag } => {
@@ -642,17 +610,12 @@ async fn apply(
             let merged = merge_for_push(&local_task, &remote_task, state, uid, local_uids);
             let status_changed = local_task.status.is_finished() != remote_task.status.is_finished();
             let body = vtodo::apply_to_raw(&raw, &merged, Utc::now(), status_changed);
-            let new_etag =
-                transport.put_object(url, &body, Precondition::Version(etag)).await.map_err(|e| describe(e, uid))?;
+            let new_etag = transport.put_object(url, &body, Precondition::Version(etag)).await.map_err(|e| describe(e, uid))?;
             Ok(Applied::Replaced { uid: uid.clone(), task: Box::new(merged), url: url.clone(), etag: new_etag })
         }
 
         TaskAction::Create { uid, local_index } => {
-            let mut task = local
-                .get(*local_index)
-                .ok_or_else(|| format!("task {uid} vanished from the file mid-run"))?
-                .task
-                .clone();
+            let mut task = local.get(*local_index).ok_or_else(|| format!("task {uid} vanished from the file mid-run"))?.task.clone();
             task.uid = uid.clone();
             // Placed explicitly, from where the user put it in the file.
             // Without this the task has no sort order of its own, and
@@ -661,8 +624,7 @@ async fn apply(
             task.sort_order = placements.get(local_index).copied();
             let url = transport.object_url(target.url(), uid);
             let body = vtodo::render_new(&task, Utc::now());
-            let etag =
-                transport.put_object(&url, &body, Precondition::New).await.map_err(|e| describe(e, uid))?;
+            let etag = transport.put_object(&url, &body, Precondition::New).await.map_err(|e| describe(e, uid))?;
             Ok(Applied::Replaced { uid: uid.clone(), task: Box::new(task), url, etag })
         }
 
@@ -670,8 +632,7 @@ async fn apply(
             let task = local_task(local, uid)?;
             let url = transport.object_url(target.url(), uid);
             let body = vtodo::render_new(&task, Utc::now());
-            let etag =
-                transport.put_object(&url, &body, Precondition::New).await.map_err(|e| describe(e, uid))?;
+            let etag = transport.put_object(&url, &body, Precondition::New).await.map_err(|e| describe(e, uid))?;
             Ok(Applied::Replaced { uid: uid.clone(), task: Box::new(task), url, etag })
         }
 
@@ -711,11 +672,7 @@ fn merge_for_push(
         }
     }
     merged.unmappable_categories = if remote.unmappable_categories.is_empty() {
-        state
-            .iter()
-            .find(|s| s.uid == uid)
-            .map(|s| s.unmappable_categories.clone())
-            .unwrap_or_default()
+        state.iter().find(|s| s.uid == uid).map(|s| s.unmappable_categories.clone()).unwrap_or_default()
     } else {
         remote.unmappable_categories.clone()
     };
@@ -740,8 +697,7 @@ impl<'a> Recorded<'a> {
     fn of(state: &'a [TaskState]) -> Self {
         let live = || state.iter().filter(|s| !s.deleted);
         let positions: HashMap<&str, i64> = live().map(|s| (s.uid.as_str(), s.position)).collect();
-        let sort_orders: HashMap<&str, i64> =
-            live().filter_map(|s| s.sort_order.map(|value| (s.uid.as_str(), value))).collect();
+        let sort_orders: HashMap<&str, i64> = live().filter_map(|s| s.sort_order.map(|value| (s.uid.as_str(), value))).collect();
         let first_free = positions.values().max().map_or(0, |highest| highest + 1);
         Recorded { positions, sort_orders, first_free }
     }
@@ -811,9 +767,7 @@ fn place_new_tasks(local: &[LocalHeading], state: &[TaskState], creating: &HashS
             let value = match (above, below) {
                 // Share the gap: the room for one more each side of every
                 // new entry, so none of them collide.
-                (Some(above), Some(below)) if below - above > count => {
-                    Some(above + step * (below - above) / (count + 1))
-                }
+                (Some(above), Some(below)) if below - above > count => Some(above + step * (below - above) / (count + 1)),
                 (Some(above), Some(_)) => Some(above + step),
                 (Some(above), None) => Some(above + step * STEP),
                 (None, Some(below)) => Some(below - (count - offset as i64) * STEP),
@@ -943,10 +897,7 @@ fn local_task(local: &[LocalHeading], uid: &str) -> Result<CalDavTask, String> {
 }
 
 fn task_of(ics: &str, uid: &str) -> Result<CalDavTask, String> {
-    vtodo::parse_tasks(ics)?
-        .into_iter()
-        .find(|t| t.uid == uid)
-        .ok_or_else(|| format!("the server's copy of {uid} has no matching VTODO"))
+    vtodo::parse_tasks(ics)?.into_iter().find(|t| t.uid == uid).ok_or_else(|| format!("the server's copy of {uid} has no matching VTODO"))
 }
 
 fn describe(error: String, uid: &str) -> String {
@@ -1064,9 +1015,7 @@ async fn reconcile_order(
     // task and overwrites whatever was really there.
     let unknown_order: Vec<String> = resolved
         .keys()
-        .filter(|uid| {
-            resolved.get(*uid).and_then(|t| t.sort_key()).is_none() && sort_order_of(state, uid).is_none()
-        })
+        .filter(|uid| resolved.get(*uid).and_then(|t| t.sort_key()).is_none() && sort_order_of(state, uid).is_none())
         .cloned()
         .collect();
     let read_keys = read_missing_keys(transport, target.url(), &unknown_order, urls).await;
@@ -1091,13 +1040,11 @@ async fn reconcile_order(
         .collect();
     let merged = sort::merge(&base_order, &server_entries, &local_order);
 
-    let merged_tasks: Vec<CalDavTask> =
-        merged.order.iter().filter_map(|uid| resolved.get(uid).cloned()).collect();
+    let merged_tasks: Vec<CalDavTask> = merged.order.iter().filter_map(|uid| resolved.get(uid).cloned()).collect();
     // The file is written as a tree, so THIS is the sequence the next run
     // will read back -- and therefore the one whose positions have to be
     // remembered.
-    let ordered: Vec<CalDavTask> =
-        org::nested(&merged_tasks).into_iter().map(|(task, _)| task.clone()).collect();
+    let ordered: Vec<CalDavTask> = org::nested(&merged_tasks).into_iter().map(|(task, _)| task.clone()).collect();
     let file_written = write_file(target, &merged_tasks, read_as)?;
 
     progress.expect_more(merged.assignments.len());
@@ -1276,7 +1223,7 @@ mod tests {
     struct FakeServer {
         objects: Mutex<HashMap<String, (String, String)>>, // url -> (ics, etag)
         ctag: Mutex<Option<String>>,
-        puts: Mutex<Vec<(String, String)>>,               // url, body
+        puts: Mutex<Vec<(String, String)>>, // url, body
         deletes: Mutex<Vec<String>>,
         gets: Mutex<usize>,
         multigets: Mutex<usize>,
@@ -1313,13 +1260,8 @@ mod tests {
             if let Some((path, content)) = self.edit_during_run.lock().unwrap().take() {
                 std::fs::write(path, content).unwrap();
             }
-            let mut objects: Vec<RemoteObject> = self
-                .objects
-                .lock()
-                .unwrap()
-                .iter()
-                .map(|(url, (_, etag))| RemoteObject { url: url.clone(), etag: etag.clone() })
-                .collect();
+            let mut objects: Vec<RemoteObject> =
+                self.objects.lock().unwrap().iter().map(|(url, (_, etag))| RemoteObject { url: url.clone(), etag: etag.clone() }).collect();
             objects.sort_by(|a, b| a.url.cmp(&b.url));
             Ok(objects)
         }
@@ -1330,12 +1272,7 @@ mod tests {
 
         async fn get_object(&self, url: &str) -> Result<String, String> {
             *self.gets.lock().unwrap() += 1;
-            self.objects
-                .lock()
-                .unwrap()
-                .get(url)
-                .map(|(ics, _)| ics.clone())
-                .ok_or_else(|| format!("no such object {url}"))
+            self.objects.lock().unwrap().get(url).map(|(ics, _)| ics.clone()).ok_or_else(|| format!("no such object {url}"))
         }
         async fn put_object(&self, url: &str, ics: &str, precondition: Precondition<'_>) -> Result<Option<String>, String> {
             if std::mem::take(&mut *self.reject_next_put.lock().unwrap()) {
@@ -1396,12 +1333,8 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
         fn new() -> Self {
             let dir = TempDir::new().unwrap();
             let file = dir.path().join("einkauf.org");
-            let subscription = super::super::registry::subscription_for(
-                super::super::model::CalDavKind::Tasks,
-                "Einkauf",
-                "dennis",
-                LIST_URL,
-            );
+            let subscription =
+                super::super::registry::subscription_for(super::super::model::CalDavKind::Tasks, "Einkauf", "dennis", LIST_URL);
             Fixture { _dir: dir, file, conn: std::sync::Mutex::new(db()), subscription }
         }
 
@@ -1465,10 +1398,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
         assert!(content.contains("* TODO Brot"), "{content}");
         // The file declares its kind, which is what makes the app treat it
         // as a list rather than an ordinary note.
-        assert_eq!(
-            nobo_core::core::file_kind::from_lines(&content.lines().collect::<Vec<_>>()),
-            crate::LIST_KIND
-        );
+        assert_eq!(nobo_core::core::file_kind::from_lines(&content.lines().collect::<Vec<_>>()), crate::LIST_KIND);
     }
 
     /// The whole point of the CTag: a run with nothing to do must not
@@ -1476,11 +1406,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn an_unchanged_list_does_no_per_object_work_at_all() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
         let after_first = *server.gets.lock().unwrap();
 
@@ -1496,11 +1422,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn a_local_edit_is_pushed_even_when_the_ctag_is_unchanged() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
 
         let edited = fixture.content().replace("* TODO Milch", "* DONE Milch");
@@ -1516,17 +1438,14 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn a_remote_change_is_pulled_into_the_file() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
 
-        server.objects.lock().unwrap().insert(
-            "https://cloud.example.com/dav/einkauf/a.ics".into(),
-            (vtodo("a", "Hafermilch", ""), "\"v2\"".into()),
-        );
+        server
+            .objects
+            .lock()
+            .unwrap()
+            .insert("https://cloud.example.com/dav/einkauf/a.ics".into(), (vtodo("a", "Hafermilch", ""), "\"v2\"".into()));
         *server.ctag.lock().unwrap() = Some("ctag-2".into());
         let outcome = fixture.sync(&server).await;
 
@@ -1577,18 +1496,15 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn when_both_sides_changed_the_local_edit_wins_and_is_reported() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
 
         std::fs::write(&fixture.file, fixture.content().replace("* TODO Milch", "* DONE Milch")).unwrap();
-        server.objects.lock().unwrap().insert(
-            "https://cloud.example.com/dav/einkauf/a.ics".into(),
-            (vtodo("a", "Vollmilch", ""), "\"v2\"".into()),
-        );
+        server
+            .objects
+            .lock()
+            .unwrap()
+            .insert("https://cloud.example.com/dav/einkauf/a.ics".into(), (vtodo("a", "Vollmilch", ""), "\"v2\"".into()));
         *server.ctag.lock().unwrap() = Some("ctag-2".into());
 
         let outcome = fixture.sync(&server).await;
@@ -1604,11 +1520,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     async fn a_push_preserves_properties_the_app_knows_nothing_about() {
         let fixture = Fixture::new();
         let extras = "RELATED-TO;RELTYPE=PARENT:parent-uid\r\nBEGIN:VALARM\r\nTRIGGER:-PT15M\r\nEND:VALARM\r\n";
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", extras),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", extras), "\"v1\"")]);
         fixture.sync(&server).await;
 
         std::fs::write(&fixture.file, fixture.content().replace("* TODO Milch", "* TODO Hafermilch")).unwrap();
@@ -1673,11 +1585,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn a_file_that_no_longer_declares_itself_the_mirror_deletes_nothing_either() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
 
         std::fs::write(&fixture.file, "").unwrap();
@@ -1694,11 +1602,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn clearing_a_mirror_that_is_still_intact_does_delete_remotely() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
 
         let (header, _) = fixture.blocks();
@@ -1712,11 +1616,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn a_task_deleted_on_the_server_leaves_the_file() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
 
         server.objects.lock().unwrap().clear();
@@ -1732,11 +1632,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn a_deletion_is_not_undone_by_the_next_sync() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
         server.objects.lock().unwrap().clear();
         *server.ctag.lock().unwrap() = Some("ctag-2".into());
@@ -1752,11 +1648,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn a_remote_deletion_does_not_discard_a_local_edit() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
 
         std::fs::write(&fixture.file, fixture.content().replace("* TODO Milch", "* TODO Hafermilch dringend")).unwrap();
@@ -1775,7 +1667,11 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
         let fixture = Fixture::new();
         let server = FakeServer::with(&[
             ("https://cloud.example.com/dav/einkauf/p.ics", &vtodo("p", "Einkauf planen", "X-APPLE-SORT-ORDER:1000\r\n"), "\"v1\""),
-            ("https://cloud.example.com/dav/einkauf/c.ics", &vtodo("c", "Milch", "X-APPLE-SORT-ORDER:2000\r\nRELATED-TO;RELTYPE=PARENT:p\r\n"), "\"v1\""),
+            (
+                "https://cloud.example.com/dav/einkauf/c.ics",
+                &vtodo("c", "Milch", "X-APPLE-SORT-ORDER:2000\r\nRELATED-TO;RELTYPE=PARENT:p\r\n"),
+                "\"v1\"",
+            ),
         ]);
 
         fixture.sync(&server).await;
@@ -1792,7 +1688,11 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
         let fixture = Fixture::new();
         let server = FakeServer::with(&[
             ("https://cloud.example.com/dav/einkauf/p.ics", &vtodo("p", "Planen", "X-APPLE-SORT-ORDER:1000\r\n"), "\"v1\""),
-            ("https://cloud.example.com/dav/einkauf/c.ics", &vtodo("c", "Milch", "X-APPLE-SORT-ORDER:2000\r\nRELATED-TO;RELTYPE=PARENT:p\r\n"), "\"v1\""),
+            (
+                "https://cloud.example.com/dav/einkauf/c.ics",
+                &vtodo("c", "Milch", "X-APPLE-SORT-ORDER:2000\r\nRELATED-TO;RELTYPE=PARENT:p\r\n"),
+                "\"v1\"",
+            ),
         ]);
         fixture.sync(&server).await;
 
@@ -1856,11 +1756,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn a_rejected_write_is_reported_without_failing_the_whole_run() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
 
         std::fs::write(&fixture.file, fixture.content().replace("* TODO Milch", "* DONE Milch")).unwrap();
@@ -1884,11 +1780,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn a_rejected_write_is_retried_on_the_next_run() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
 
         std::fs::write(&fixture.file, fixture.content().replace("* TODO Milch", "* DONE Milch")).unwrap();
@@ -1915,30 +1807,23 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn an_edit_made_during_the_run_is_not_overwritten() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
 
         // The user ticks the box while the run is listing the collection.
         let edited = fixture.content().replace("* TODO Milch", "* DONE Milch");
         *server.edit_during_run.lock().unwrap() = Some((fixture.file.clone(), edited.clone()));
         // Something has to make the run reach the write at all.
-        server.objects.lock().unwrap().insert(
-            "https://cloud.example.com/dav/einkauf/b.ics".to_string(),
-            (vtodo("b", "Brot", ""), "\"v1\"".to_string()),
-        );
+        server
+            .objects
+            .lock()
+            .unwrap()
+            .insert("https://cloud.example.com/dav/einkauf/b.ics".to_string(), (vtodo("b", "Brot", ""), "\"v1\"".to_string()));
         *server.ctag.lock().unwrap() = Some("ctag-2".into());
 
         fixture.sync(&server).await;
 
-        assert!(
-            fixture.content().contains("* DONE Milch"),
-            "the edit made during the run survived:\n{}",
-            fixture.content()
-        );
+        assert!(fixture.content().contains("* DONE Milch"), "the edit made during the run survived:\n{}", fixture.content());
 
         // And the next run picks it up rather than treating it as settled.
         let next = fixture.sync(&server).await;
@@ -1959,7 +1844,11 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
         // The child sorts BEFORE its parent on the server, so flat order
         // and tree order genuinely differ.
         let server = FakeServer::with(&[
-            ("https://cloud.example.com/dav/einkauf/c.ics", &vtodo("c", "Milch", "X-APPLE-SORT-ORDER:1000\r\nRELATED-TO;RELTYPE=PARENT:p\r\n"), "\"v1\""),
+            (
+                "https://cloud.example.com/dav/einkauf/c.ics",
+                &vtodo("c", "Milch", "X-APPLE-SORT-ORDER:1000\r\nRELATED-TO;RELTYPE=PARENT:p\r\n"),
+                "\"v1\"",
+            ),
             ("https://cloud.example.com/dav/einkauf/p.ics", &vtodo("p", "Planen", "X-APPLE-SORT-ORDER:2000\r\n"), "\"v1\""),
         ]);
         fixture.sync(&server).await;
@@ -2013,16 +1902,10 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
                     Some(value) => format!("CREATED:{created}\r\nX-APPLE-SORT-ORDER:{value}\r\n"),
                     None => format!("CREATED:{created}\r\n"),
                 };
-                (
-                    format!("https://cloud.example.com/dav/einkauf/{uid}.ics"),
-                    vtodo(uid, summary, &extra),
-                    "\"v1\"".to_string(),
-                )
+                (format!("https://cloud.example.com/dav/einkauf/{uid}.ics"), vtodo(uid, summary, &extra), "\"v1\"".to_string())
             })
             .collect();
-        let server = FakeServer::with(
-            &objects.iter().map(|(u, b, e)| (u.as_str(), b.as_str(), e.as_str())).collect::<Vec<_>>(),
-        );
+        let server = FakeServer::with(&objects.iter().map(|(u, b, e)| (u.as_str(), b.as_str(), e.as_str())).collect::<Vec<_>>());
 
         fixture.sync(&server).await;
 
@@ -2137,9 +2020,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
                 )
             })
             .collect();
-        let server = FakeServer::with(
-            &objects.iter().map(|(u, b, e)| (u.as_str(), b.as_str(), e.as_str())).collect::<Vec<_>>(),
-        );
+        let server = FakeServer::with(&objects.iter().map(|(u, b, e)| (u.as_str(), b.as_str(), e.as_str())).collect::<Vec<_>>());
         fixture.sync(&server).await;
 
         // The state an older build left behind: the tasks are known, their
@@ -2237,9 +2118,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
 
         let recorded = |fixture: &Fixture| -> Vec<Option<i64>> {
             let conn = fixture.conn.lock().unwrap();
-            let mut statement = conn
-                .prepare("SELECT sort_order FROM caldav_state WHERE deleted = 0 ORDER BY position")
-                .unwrap();
+            let mut statement = conn.prepare("SELECT sort_order FROM caldav_state WHERE deleted = 0 ORDER BY position").unwrap();
             let values = statement.query_map([], |row| row.get(0)).unwrap();
             values.collect::<Result<_, _>>().unwrap()
         };
@@ -2274,9 +2153,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
                 )
             })
             .collect();
-        let server = FakeServer::with(
-            &objects.iter().map(|(u, b, e)| (u.as_str(), b.as_str(), e.as_str())).collect::<Vec<_>>(),
-        );
+        let server = FakeServer::with(&objects.iter().map(|(u, b, e)| (u.as_str(), b.as_str(), e.as_str())).collect::<Vec<_>>());
         fixture.sync(&server).await;
 
         // Last entry dragged to the middle.
@@ -2388,11 +2265,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
         // reorder to notice.
         let retried = fixture.sync(&server).await;
 
-        assert!(
-            !server.puts.lock().unwrap().is_empty(),
-            "the reorder was tried again: {:?}",
-            retried.errors
-        );
+        assert!(!server.puts.lock().unwrap().is_empty(), "the reorder was tried again: {:?}", retried.errors);
     }
 
     /// The ring said "0 of 1" and then sat there while the reorder went
@@ -2427,10 +2300,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
         assert!(!server.puts.lock().unwrap().is_empty(), "the new order reached the server");
         let steps = recorder.0.lock().unwrap().clone();
         let last = steps.last().unwrap();
-        assert!(
-            last.total > 1,
-            "the pushes are counted, not hidden behind a total of 1: {steps:?}"
-        );
+        assert!(last.total > 1, "the pushes are counted, not hidden behind a total of 1: {steps:?}");
         assert_eq!(last.done, last.total, "and it ends full: {last:?}");
     }
 
@@ -2474,11 +2344,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
             let conn = fixture.conn.lock().unwrap();
             conn.execute("UPDATE caldav_state SET position = 0", []).unwrap();
             for (uid, value) in [("a", 3000), ("b", 2000), ("c", 1000)] {
-                conn.execute(
-                    "UPDATE caldav_state SET sort_order = ?1 WHERE uid = ?2",
-                    rusqlite::params![value, uid],
-                )
-                .unwrap();
+                conn.execute("UPDATE caldav_state SET sort_order = ?1 WHERE uid = ?2", rusqlite::params![value, uid]).unwrap();
             }
         }
         let (header, blocks) = fixture.blocks();
@@ -2592,11 +2458,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn a_run_that_changes_nothing_leaves_the_file_alone() {
         let fixture = Fixture::new();
-        let server = FakeServer::with(&[(
-            "https://cloud.example.com/dav/einkauf/a.ics",
-            &vtodo("a", "Milch", ""),
-            "\"v1\"",
-        )]);
+        let server = FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")]);
         fixture.sync(&server).await;
         let before = std::fs::metadata(&fixture.file).unwrap().modified().unwrap();
 
@@ -2645,13 +2507,8 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn only_tasks_this_device_never_saw_count_as_arrived() {
         let fixture = Fixture::new();
-        let first = fixture
-            .sync(&FakeServer::with(&[(
-                "https://cloud.example.com/dav/einkauf/a.ics",
-                &vtodo("a", "Milch", ""),
-                "\"v1\"",
-            )]))
-            .await;
+        let first =
+            fixture.sync(&FakeServer::with(&[("https://cloud.example.com/dav/einkauf/a.ics", &vtodo("a", "Milch", ""), "\"v1\"")])).await;
         assert_eq!(first.arrived, 0, "everything is new on a first sync");
 
         // Somebody adds one on the server, and the one we already have

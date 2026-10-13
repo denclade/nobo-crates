@@ -113,10 +113,7 @@ fn image(page_url: &str, value: Option<&Value>, graph: &HashMap<&str, &Value>) -
             // A reference: the object itself sits elsewhere in the graph.
             (None, Some(Value::String(id))) => graph.get(id.as_str()).and_then(|object| {
                 // Only a full object -- a reference to itself would loop.
-                object
-                    .get("url")
-                    .or_else(|| object.get("contentUrl"))
-                    .and_then(|url| image(page_url, Some(url), graph))
+                object.get("url").or_else(|| object.get("contentUrl")).and_then(|url| image(page_url, Some(url), graph))
             }),
             _ => None,
         },
@@ -242,9 +239,10 @@ fn instructions(value: Option<&Value>) -> Vec<Group> {
     // One section called "Zubereitung" (Chefkoch) is no section: under
     // `** Directions` it would only say the same word a second time.
     if let [only] = groups.as_mut_slice() {
-        let named_like_its_heading = only.title.as_deref().is_some_and(|title| {
-            crate::parse::DIRECTION_HEADINGS.contains(&title.trim().trim_end_matches(':').to_lowercase().as_str())
-        });
+        let named_like_its_heading = only
+            .title
+            .as_deref()
+            .is_some_and(|title| crate::parse::DIRECTION_HEADINGS.contains(&title.trim().trim_end_matches(':').to_lowercase().as_str()));
         if named_like_its_heading {
             only.title = None;
         }
@@ -265,9 +263,7 @@ fn step_lines(step: &Value) -> Vec<String> {
 /// One string holding all the steps: split where the page split them --
 /// paragraphs, list items, line breaks.
 fn split_block(block: &str) -> Vec<String> {
-    let marked = ["</p>", "</li>", "<br>", "<br/>", "<br />"]
-        .iter()
-        .fold(block.to_string(), |text, tag| text.replace(tag, "\n"));
+    let marked = ["</p>", "</li>", "<br>", "<br/>", "<br />"].iter().fold(block.to_string(), |text, tag| text.replace(tag, "\n"));
     marked.lines().map(clean).filter(|line| !line.is_empty()).collect()
 }
 
@@ -301,7 +297,8 @@ mod tests {
 
     #[test]
     fn a_recipe_is_found_inside_a_graph_with_a_list_type() {
-        let block = r#"{"@graph":[{"@type":"WebPage"},{"@type":["Recipe"],"name":"Suppe","recipeInstructions":"<p>Kochen.</p><p>Essen.</p>"}]}"#;
+        let block =
+            r#"{"@graph":[{"@type":"WebPage"},{"@type":["Recipe"],"name":"Suppe","recipeInstructions":"<p>Kochen.</p><p>Essen.</p>"}]}"#;
         let recipe = read("https://example.org/suppe", &[block]).expect("a recipe");
         assert_eq!(recipe.title, "Suppe");
         assert_eq!(recipe.steps[0].lines, ["Kochen.", "Essen."]);
@@ -316,7 +313,9 @@ mod tests {
 
     #[test]
     fn a_lone_section_named_like_the_heading_is_no_section() {
-        let groups = instructions(Some(&json!([{"@type":"HowToSection","name":"Zubereitung","itemListElement":[{"@type":"HowToStep","text":"Kochen."}]}])));
+        let groups = instructions(Some(
+            &json!([{"@type":"HowToSection","name":"Zubereitung","itemListElement":[{"@type":"HowToStep","text":"Kochen."}]}]),
+        ));
         assert_eq!(groups.len(), 1);
         assert_eq!(groups[0].title, None);
         // Two of them are real sections, whatever they are called.

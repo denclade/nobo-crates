@@ -23,14 +23,25 @@ fn a_wprm_page_gets_its_ingredient_groups_back() {
 
     assert_eq!(recipe.title, "Vegane Poke Bowl mit Tahini-Sauce");
     assert_eq!(recipe.servings.as_deref(), Some("4 Portionen"));
-    assert_eq!((recipe.prep_time.as_deref(), recipe.cook_time.as_deref(), recipe.ready_in.as_deref()), (Some("20"), Some("25"), Some("45")));
+    assert_eq!(
+        (recipe.prep_time.as_deref(), recipe.cook_time.as_deref(), recipe.ready_in.as_deref()),
+        (Some("20"), Some("25"), Some("45"))
+    );
     assert_eq!(
         titles(&recipe.ingredients),
         [Some("Reis"), Some("Tofu"), Some("Gemüse (nach Belieben)"), Some("Tahini-Sauce"), Some("Zum Garnieren (optional)")]
     );
     // The salt goes into the rice, which is the whole point of the groups.
     assert_eq!(recipe.ingredients[0].lines.last().map(String::as_str), Some("½ TL Salz"));
-    assert_eq!(recipe.ingredients[4].lines, ["Sesam", "frische Zitronen (oder Limetten)", "Jalapeños (in Scheiben geschnitten)", "frische Kräuter (z.B. Koriander oder Thai-Basilikum)"]);
+    assert_eq!(
+        recipe.ingredients[4].lines,
+        [
+            "Sesam",
+            "frische Zitronen (oder Limetten)",
+            "Jalapeños (in Scheiben geschnitten)",
+            "frische Kräuter (z.B. Koriander oder Thai-Basilikum)"
+        ]
+    );
     // The sections of steps come from the JSON-LD itself.
     assert!(titles(&recipe.steps).contains(&Some("Tahini-Sauce")));
     assert_eq!(
@@ -61,7 +72,10 @@ fn plain_schema_org_data_is_enough_and_colon_lines_become_groups() {
     assert_eq!(recipe.title, "Vegane Blätterteig-Hasen mit Zwiebel-Pilz-Füllung");
     assert_eq!(recipe.servings.as_deref(), Some("15–20 Stück"));
     assert_eq!(recipe.ready_in.as_deref(), Some("50"));
-    assert_eq!(titles(&recipe.ingredients), [Some("Für die Blätterteig-Hasen"), Some("Für die Zwiebel-Pilz-Füllung"), Some("Zum Servieren")]);
+    assert_eq!(
+        titles(&recipe.ingredients),
+        [Some("Für die Blätterteig-Hasen"), Some("Für die Zwiebel-Pilz-Füllung"), Some("Zum Servieren")]
+    );
     assert_eq!(recipe.steps.len(), 1);
     assert!(recipe.steps[0].lines.len() >= 5);
     assert!(recipe.image_url.as_deref().unwrap_or("").contains("zuckerjagdwurst"));
@@ -120,7 +134,10 @@ fn an_imported_recipe_reads_back_as_the_recipe_it_was() {
     assert!(!back.intro.contains("[[file:"), "the picture is not prose: {}", back.intro);
     let sections = back.sections.as_ref().expect("structured");
     assert_eq!(sections.ingredients.len(), 5);
-    assert_eq!(sections.ingredients[0].items[0].text, "180 g Jasminreis (ungekocht, oder eine andere Reissorte oder Reisnudeln oder Quinoa (*siehe Anmerkungen))");
+    assert_eq!(
+        sections.ingredients[0].items[0].text,
+        "180 g Jasminreis (ungekocht, oder eine andere Reissorte oder Reisnudeln oder Quinoa (*siehe Anmerkungen))"
+    );
     assert_eq!(sections.steps.iter().map(|g| g.steps.len()).sum::<usize>(), recipe.steps.iter().map(|g| g.lines.len()).sum::<usize>());
 }
 
@@ -173,7 +190,10 @@ fn a_description_cannot_turn_into_a_heading() {
 
 #[test]
 fn image_names_are_safe_and_readable() {
-    assert_eq!(image_filename("Vegane Blätterteig-Hasen mit Zwiebel-Pilz-Füllung", "jpg"), "vegane-blaetterteig-hasen-mit-zwiebel-pilz-fuellung.jpg");
+    assert_eq!(
+        image_filename("Vegane Blätterteig-Hasen mit Zwiebel-Pilz-Füllung", "jpg"),
+        "vegane-blaetterteig-hasen-mit-zwiebel-pilz-fuellung.jpg"
+    );
     assert_eq!(image_filename("??", "png"), "recipe.png");
 }
 

@@ -32,10 +32,7 @@ fn store_path(vault_root: &Path) -> PathBuf {
 /// rather than an error -- a fresh vault, or one that hasn't synced this
 /// file down yet, is exactly that state, not a failure.
 pub fn load(vault_root: &Path) -> ReviewState {
-    fs::read_to_string(store_path(vault_root))
-        .ok()
-        .and_then(|content| serde_json::from_str(&content).ok())
-        .unwrap_or_default()
+    fs::read_to_string(store_path(vault_root)).ok().and_then(|content| serde_json::from_str(&content).ok()).unwrap_or_default()
 }
 
 pub fn save(vault_root: &Path, state: &ReviewState) -> Result<(), String> {

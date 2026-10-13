@@ -4,10 +4,7 @@ use crate::t;
 /// commands wherever a LINE_NO lookup can fail because the underlying
 /// heading has meanwhile moved, been deleted, or was never there.
 pub fn not_found_at_line(subject: &str, line_no: usize) -> String {
-    t!(
-        "{subject} bei Zeile {line_no} nicht (mehr) gefunden",
-        "{subject} is no longer at line {line_no}"
-    )
+    t!("{subject} bei Zeile {line_no} nicht (mehr) gefunden", "{subject} is no longer at line {line_no}")
 }
 
 /// What a write is about, for the messages that name it.

@@ -1,12 +1,14 @@
-use std::collections::{HashMap, HashSet};
-use std::io;
 use crate::core::heading_identity;
-use crate::core::models::{EmptyPropertiesDrawer, Heading, HeadingLocation, Note, OrphanedCustomId, UnpromotedOrgFile, ORG_PROPERTIES_END, ORG_PROPERTIES_START};
+use crate::core::models::{
+    EmptyPropertiesDrawer, Heading, HeadingLocation, Note, OrphanedCustomId, UnpromotedOrgFile, ORG_PROPERTIES_END, ORG_PROPERTIES_START,
+};
 use crate::core::org_parser::parse_property;
 use crate::utils::fs_utils;
 use crate::utils::string_utils::count_leading_stars;
 use chrono::{Datelike, Local, Timelike, Weekday};
 use serde::Serialize;
+use std::collections::{HashMap, HashSet};
+use std::io;
 use std::path::{Path, PathBuf};
 use unicode_normalization::UnicodeNormalization;
 
@@ -31,21 +33,11 @@ pub fn parse_note_record(path: &Path) -> Option<Note> {
 
     let title = title_part.replace('-', " ");
 
-    let tags = if tags_part.is_empty() {
-        Vec::new()
-    } else {
-        tags_part.split('_').map(|s| s.to_string()).collect()
-    };
+    let tags = if tags_part.is_empty() { Vec::new() } else { tags_part.split('_').map(|s| s.to_string()).collect() };
 
     let date_str = denote_identifier_date(id_part).unwrap_or_default();
 
-    Some(Note {
-        path: path.to_string_lossy().into_owned(),
-        identifier: id_part.to_string(),
-        title,
-        date_str,
-        tags,
-    })
+    Some(Note { path: path.to_string_lossy().into_owned(), identifier: id_part.to_string(), title, date_str, tags })
 }
 
 /// The `DD.MM.YYYY HH:MM` a Denote identifier names, or `None` when the
@@ -118,11 +110,7 @@ pub fn build_denote_filename(identifier: &str, title: &str, tags: &[String], ext
     let safe_title = safe_title.trim_matches('-').to_string();
 
     // Format tags (__tag1_tag2)
-    let tag_string = if tags.is_empty() {
-        String::new()
-    } else {
-        format!("__{}", tags.join("_"))
-    };
+    let tag_string = if tags.is_empty() { String::new() } else { format!("__{}", tags.join("_")) };
 
     format!("{}--{}{}.{}", identifier, safe_title, tag_string, extension)
 }
@@ -149,14 +137,7 @@ pub fn generate_note_file(dir: &str, title: &str, tags: &[String], author: &str)
 ///
 /// Never replaces a file: one already at that name -- the same title in
 /// the same second -- is an error, not something to write over.
-pub fn create_note_file(
-    dir: &str,
-    title: &str,
-    tags: &[String],
-    author: &str,
-    keywords: &[String],
-    body: &str,
-) -> io::Result<String> {
+pub fn create_note_file(dir: &str, title: &str, tags: &[String], author: &str, keywords: &[String], body: &str) -> io::Result<String> {
     use std::io::Write;
     let now = Local::now();
     let id = format_identifier(now);
@@ -174,8 +155,12 @@ pub fn create_note_file(
 /// as everywhere the app writes a date.
 pub fn inactive_timestamp(now: chrono::DateTime<Local>) -> String {
     let weekday_de = match now.weekday() {
-        Weekday::Mon => "Mo", Weekday::Tue => "Di", Weekday::Wed => "Mi",
-        Weekday::Thu => "Do", Weekday::Fri => "Fr", Weekday::Sat => "Sa",
+        Weekday::Mon => "Mo",
+        Weekday::Tue => "Di",
+        Weekday::Wed => "Mi",
+        Weekday::Thu => "Do",
+        Weekday::Fri => "Fr",
+        Weekday::Sat => "Sa",
         Weekday::Sun => "So",
     };
     format!("[{} {} {:02}:{:02}]", now.format("%Y-%m-%d"), weekday_de, now.hour(), now.minute())
@@ -270,7 +255,8 @@ fn duplicate_denote_note(path: &Path, overrides: DuplicateOverrides) -> io::Resu
 pub fn retitle_note(path: &Path, title: &str, tags: &[String]) -> io::Result<String> {
     let lines = fs_utils::read_lines(path)?;
     let header = parse_header(&lines);
-    let identifier = header.identifier.ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "not a Denote note: no #+IDENTIFIER: line"))?;
+    let identifier =
+        header.identifier.ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "not a Denote note: no #+IDENTIFIER: line"))?;
 
     let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("org");
     let new_filename = build_denote_filename(&identifier, title, tags, extension);
@@ -314,7 +300,10 @@ fn rewrite_header(lines: &[String], new_title: &str, new_tags: &[String], new_id
         if let Some(rest) = trimmed.strip_prefix("#+") {
             if let Some((key, _)) = rest.split_once(':') {
                 match key.trim().to_uppercase().as_str() {
-                    "TITLE" => { new_lines.push(format!("#+TITLE:      {}", new_title)); continue; }
+                    "TITLE" => {
+                        new_lines.push(format!("#+TITLE:      {}", new_title));
+                        continue;
+                    }
                     "IDENTIFIER" => {
                         new_lines.push(format!("#+IDENTIFIER: {}", new_id));
                         identifier_line_idx = Some(new_lines.len() - 1);
@@ -467,12 +456,7 @@ pub fn check_filename_sync(path: &Path) -> Option<FilenameSyncStatus> {
     // trigger the rename prompt on every open/save.
     let normalized_match = current_name.nfc().eq(expected_name.nfc());
 
-    Some(FilenameSyncStatus {
-        in_sync: normalized_match,
-        ignored: header.ignored,
-        current_name,
-        expected_name,
-    })
+    Some(FilenameSyncStatus { in_sync: normalized_match, ignored: header.ignored, current_name, expected_name })
 }
 
 /// Marks a note as "don't ask to rename again" by writing `:FILENAME_SYNC:
@@ -489,9 +473,9 @@ pub fn set_filename_sync_ignored(path: &Path) -> io::Result<()> {
         let end = lines[start..heading_idx].iter().position(|l| l.trim().eq_ignore_ascii_case(ORG_PROPERTIES_END)).map(|i| start + i);
         let Some(end) = end else { return Ok(()) };
 
-        let already_set = lines[start + 1..end].iter().any(|l| {
-            parse_property(l.trim()).map_or(false, |(k, _)| k.eq_ignore_ascii_case(FILENAME_SYNC_PROPERTY))
-        });
+        let already_set = lines[start + 1..end]
+            .iter()
+            .any(|l| parse_property(l.trim()).map_or(false, |(k, _)| k.eq_ignore_ascii_case(FILENAME_SYNC_PROPERTY)));
 
         if !already_set {
             lines.insert(end, format!(":{}: {}", FILENAME_SYNC_PROPERTY, FILENAME_SYNC_IGNORE_VALUE));
@@ -575,10 +559,7 @@ fn referenced_heading_ids(body: &str) -> impl Iterator<Item = &str> {
 /// covers files with a Denote header -- a link could just as well sit in a
 /// GTD file, which has none), same reasoning replace_link_references's own
 /// `dir: &Path` disk scan above already applies to identifier rewrites.
-pub fn find_orphaned_custom_ids(
-    dir: &Path,
-    headings_by_file: &HashMap<String, Vec<Heading>>,
-) -> io::Result<Vec<OrphanedCustomId>> {
+pub fn find_orphaned_custom_ids(dir: &Path, headings_by_file: &HashMap<String, Vec<Heading>>) -> io::Result<Vec<OrphanedCustomId>> {
     let mut referenced: HashSet<String> = HashSet::new();
     for path in fs_utils::get_files_by_extension(dir, "org") {
         let content = std::fs::read_to_string(&path)?;
@@ -601,7 +582,8 @@ pub fn find_orphaned_custom_ids(
         })
         .collect();
 
-    orphaned.sort_by(|a, b| a.location.file_path.cmp(&b.location.file_path).then(a.location.target.line_no.cmp(&b.location.target.line_no)));
+    orphaned
+        .sort_by(|a, b| a.location.file_path.cmp(&b.location.file_path).then(a.location.target.line_no.cmp(&b.location.target.line_no)));
     Ok(orphaned)
 }
 
@@ -694,8 +676,16 @@ pub fn promote_org_file_to_note(path: &Path) -> io::Result<Note> {
         if let Some(rest) = trimmed.strip_prefix("#+") {
             if let Some((key, _)) = rest.split_once(':') {
                 match key.trim().to_uppercase().as_str() {
-                    "TITLE" => { new_lines.push(format!("#+TITLE:      {}", title)); title_written = true; continue; }
-                    "IDENTIFIER" => { new_lines.push(format!("#+IDENTIFIER: {}", id)); identifier_written = true; continue; }
+                    "TITLE" => {
+                        new_lines.push(format!("#+TITLE:      {}", title));
+                        title_written = true;
+                        continue;
+                    }
+                    "IDENTIFIER" => {
+                        new_lines.push(format!("#+IDENTIFIER: {}", id));
+                        identifier_written = true;
+                        continue;
+                    }
                     _ => {}
                 }
             }
@@ -722,8 +712,7 @@ pub fn promote_org_file_to_note(path: &Path) -> io::Result<Note> {
     let new_path = path.parent().unwrap_or_else(|| Path::new("")).join(&new_filename);
     std::fs::rename(path, &new_path)?;
 
-    parse_note_record(&new_path)
-        .ok_or_else(|| io::Error::other("promoted file still not recognized as a note"))
+    parse_note_record(&new_path).ok_or_else(|| io::Error::other("promoted file still not recognized as a note"))
 }
 
 /// Every heading anywhere in HEADINGS_BY_FILE whose own `:PROPERTIES:...
@@ -740,8 +729,12 @@ pub fn find_empty_properties_drawers(headings_by_file: &HashMap<String, Vec<Head
             // 0-indexed line right after the (1-indexed) heading line.
             let start = heading.line_no;
             let (Some(properties_line), Some(end_line)) = (lines.get(start), lines.get(start + 1)) else { continue };
-            if !properties_line.trim().eq_ignore_ascii_case(ORG_PROPERTIES_START) { continue; }
-            if !end_line.trim().eq_ignore_ascii_case(ORG_PROPERTIES_END) { continue; }
+            if !properties_line.trim().eq_ignore_ascii_case(ORG_PROPERTIES_START) {
+                continue;
+            }
+            if !end_line.trim().eq_ignore_ascii_case(ORG_PROPERTIES_END) {
+                continue;
+            }
 
             found.push(EmptyPropertiesDrawer {
                 location: HeadingLocation { file_path: heading.file_path.clone(), target: heading_identity::target_of(heading) },
@@ -764,10 +757,9 @@ mod tests {
     #[test]
     fn a_new_note_with_keywords_carries_them_after_its_header() {
         let dir = tempfile::tempdir().unwrap();
-        let name = super::create_note_file(
-            dir.path().to_str().unwrap(), "Kochbuch", &[], "Dennis",
-            &["#+NOBO_TYPE: cookbook".to_string()], "",
-        ).unwrap();
+        let name =
+            super::create_note_file(dir.path().to_str().unwrap(), "Kochbuch", &[], "Dennis", &["#+NOBO_TYPE: cookbook".to_string()], "")
+                .unwrap();
 
         assert!(name.ends_with("--kochbuch.org"), "{name}");
         let text = std::fs::read_to_string(dir.path().join(&name)).unwrap();
@@ -873,8 +865,11 @@ mod tests {
     #[test]
     fn in_sync_when_filename_matches_header() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook__essen.org",
-            "#+TITLE:      Cookbook\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* \n");
+        let path = write_file(
+            tmp.path(),
+            "20250718T140125--cookbook__essen.org",
+            "#+TITLE:      Cookbook\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* \n",
+        );
 
         let status = check_filename_sync(&path).unwrap();
         assert!(status.in_sync);
@@ -890,8 +885,11 @@ mod tests {
     #[test]
     fn out_of_sync_after_title_change() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook__essen.org",
-            "#+TITLE:      Kochbuch\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* \n");
+        let path = write_file(
+            tmp.path(),
+            "20250718T140125--cookbook__essen.org",
+            "#+TITLE:      Kochbuch\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* \n",
+        );
 
         let status = check_filename_sync(&path).unwrap();
         assert!(!status.in_sync);
@@ -901,8 +899,11 @@ mod tests {
     #[test]
     fn out_of_sync_after_tag_added() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook__essen.org",
-            "#+TITLE:      Cookbook\n#+FILETAGS:   :essen:kochen:\n#+IDENTIFIER: 20250718T140125\n\n* \n");
+        let path = write_file(
+            tmp.path(),
+            "20250718T140125--cookbook__essen.org",
+            "#+TITLE:      Cookbook\n#+FILETAGS:   :essen:kochen:\n#+IDENTIFIER: 20250718T140125\n\n* \n",
+        );
 
         let status = check_filename_sync(&path).unwrap();
         assert!(!status.in_sync);
@@ -917,8 +918,11 @@ mod tests {
         // precomposed "ä" (U+00E4) used in the #+TITLE below. Same rendered
         // name, different bytes; must still compare as in sync.
         let decomposed_name = "20260707T224500--gera\u{0308}t__essen.org";
-        let path = write_file(tmp.path(), decomposed_name,
-            "#+TITLE:      Ger\u{00e4}t\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20260707T224500\n\n* \n");
+        let path = write_file(
+            tmp.path(),
+            decomposed_name,
+            "#+TITLE:      Ger\u{00e4}t\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20260707T224500\n\n* \n",
+        );
 
         let status = check_filename_sync(&path).unwrap();
         assert!(status.in_sync);
@@ -945,8 +949,11 @@ mod tests {
     #[test]
     fn duplicate_denote_note_without_overrides_keeps_title_gets_fresh_identifier() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook__essen.org",
-            "#+TITLE:      Cookbook\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* Erste Aufgabe\nInhalt\n");
+        let path = write_file(
+            tmp.path(),
+            "20250718T140125--cookbook__essen.org",
+            "#+TITLE:      Cookbook\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* Erste Aufgabe\nInhalt\n",
+        );
 
         let new_path_str = duplicate_file(&path, DuplicateOverrides::default()).unwrap();
         let new_path = Path::new(&new_path_str);
@@ -966,8 +973,11 @@ mod tests {
     #[test]
     fn duplicate_denote_note_applies_title_tags_and_identifier_overrides() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook__essen.org",
-            "#+TITLE:      Cookbook\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* \n");
+        let path = write_file(
+            tmp.path(),
+            "20250718T140125--cookbook__essen.org",
+            "#+TITLE:      Cookbook\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* \n",
+        );
 
         let overrides = DuplicateOverrides {
             title: Some("Kochbuch 2".to_string()),
@@ -987,8 +997,7 @@ mod tests {
     #[test]
     fn duplicate_denote_note_adds_filetags_line_when_source_had_none() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook.org",
-            "#+TITLE:      Cookbook\n#+IDENTIFIER: 20250718T140125\n\n* \n");
+        let path = write_file(tmp.path(), "20250718T140125--cookbook.org", "#+TITLE:      Cookbook\n#+IDENTIFIER: 20250718T140125\n\n* \n");
 
         let overrides = DuplicateOverrides { tags: Some(vec!["neu".to_string()]), ..Default::default() };
         let new_path_str = duplicate_file(&path, overrides).unwrap();
@@ -1000,8 +1009,7 @@ mod tests {
     #[test]
     fn duplicate_denote_note_twice_gets_two_distinct_files() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook.org",
-            "#+TITLE:      Cookbook\n#+IDENTIFIER: 20250718T140125\n\n* \n");
+        let path = write_file(tmp.path(), "20250718T140125--cookbook.org", "#+TITLE:      Cookbook\n#+IDENTIFIER: 20250718T140125\n\n* \n");
 
         let first = duplicate_file(&path, DuplicateOverrides::default()).unwrap();
         // Denote identifiers are second-granularity -- force a distinct one
@@ -1017,8 +1025,11 @@ mod tests {
     #[test]
     fn retitle_rewrites_header_and_renames_keeping_the_identifier() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook__essen.org",
-            "#+TITLE:      Cookbook\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* Erste Aufgabe\nInhalt\n");
+        let path = write_file(
+            tmp.path(),
+            "20250718T140125--cookbook__essen.org",
+            "#+TITLE:      Cookbook\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* Erste Aufgabe\nInhalt\n",
+        );
 
         let new_path = retitle_note(&path, "Kochbuch", &["kochen".to_string(), "essen".to_string()]).unwrap();
 
@@ -1035,8 +1046,7 @@ mod tests {
     #[test]
     fn retitle_to_the_same_filename_only_rewrites_the_header() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook.org",
-            "#+TITLE:      cookbook\n#+IDENTIFIER: 20250718T140125\n\n* \n");
+        let path = write_file(tmp.path(), "20250718T140125--cookbook.org", "#+TITLE:      cookbook\n#+IDENTIFIER: 20250718T140125\n\n* \n");
 
         // Slugs to the name the file already has -- a case change only.
         let new_path = retitle_note(&path, "Cookbook", &[]).unwrap();
@@ -1048,8 +1058,7 @@ mod tests {
     #[test]
     fn retitle_refuses_to_replace_an_existing_note() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook.org",
-            "#+TITLE:      Cookbook\n#+IDENTIFIER: 20250718T140125\n\n* \n");
+        let path = write_file(tmp.path(), "20250718T140125--cookbook.org", "#+TITLE:      Cookbook\n#+IDENTIFIER: 20250718T140125\n\n* \n");
         write_file(tmp.path(), "20250718T140125--kochbuch.org", "#+TITLE: Kochbuch\n");
 
         let err = retitle_note(&path, "Kochbuch", &[]).unwrap_err();
@@ -1094,8 +1103,11 @@ mod tests {
     #[test]
     fn ignoring_creates_drawer_and_suppresses_future_prompts() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook__essen.org",
-            "#+TITLE:      Kochbuch\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* \n");
+        let path = write_file(
+            tmp.path(),
+            "20250718T140125--cookbook__essen.org",
+            "#+TITLE:      Kochbuch\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n\n* \n",
+        );
 
         set_filename_sync_ignored(&path).unwrap();
 
@@ -1107,8 +1119,11 @@ mod tests {
     #[test]
     fn ignoring_reuses_existing_drawer_instead_of_duplicating() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "20250718T140125--cookbook__essen.org",
-            "#+TITLE:      Kochbuch\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n:PROPERTIES:\n:CUSTOM_ID: abc\n:END:\n\n* \n");
+        let path = write_file(
+            tmp.path(),
+            "20250718T140125--cookbook__essen.org",
+            "#+TITLE:      Kochbuch\n#+FILETAGS:   :essen:\n#+IDENTIFIER: 20250718T140125\n:PROPERTIES:\n:CUSTOM_ID: abc\n:END:\n\n* \n",
+        );
 
         set_filename_sync_ignored(&path).unwrap();
         set_filename_sync_ignored(&path).unwrap();
@@ -1199,8 +1214,7 @@ mod tests {
     #[test]
     fn find_orphaned_custom_ids_ignores_a_referenced_heading() {
         let tmp = TempDir::new().unwrap();
-        write_file(tmp.path(), "a.org",
-            "See [[denote:20240118T060608::#h:eed0fb8e-4cc7-478f][Some test::Heading text]].\n");
+        write_file(tmp.path(), "a.org", "See [[denote:20240118T060608::#h:eed0fb8e-4cc7-478f][Some test::Heading text]].\n");
 
         let mut by_file = HashMap::new();
         // The `h:` lives on the id's own value (see generate_custom_id) --
@@ -1347,15 +1361,14 @@ mod tests {
     #[test]
     fn find_empty_properties_drawers_finds_an_empty_one_but_not_a_populated_one() {
         let tmp = TempDir::new().unwrap();
-        let path = write_file(tmp.path(), "a.org",
-            "* Empty\n:PROPERTIES:\n:END:\n* Populated\n:PROPERTIES:\n:EFFORT: 0:30\n:END:\n");
+        let path = write_file(tmp.path(), "a.org", "* Empty\n:PROPERTIES:\n:END:\n* Populated\n:PROPERTIES:\n:EFFORT: 0:30\n:END:\n");
         let path_str = path.to_string_lossy().into_owned();
 
         let mut by_file = HashMap::new();
-        by_file.insert(path_str.clone(), vec![
-            make_heading_for_drawer_test(&path_str, 1, "Empty"),
-            make_heading_for_drawer_test(&path_str, 4, "Populated"),
-        ]);
+        by_file.insert(
+            path_str.clone(),
+            vec![make_heading_for_drawer_test(&path_str, 1, "Empty"), make_heading_for_drawer_test(&path_str, 4, "Populated")],
+        );
 
         let found = find_empty_properties_drawers(&by_file).unwrap();
         assert_eq!(found.len(), 1);

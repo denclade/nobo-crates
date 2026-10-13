@@ -1,5 +1,5 @@
-use chrono::{Datelike, NaiveDate};
 use crate::core::models::{OrgTimestamp, Repeater, RepeaterKind};
+use chrono::{Datelike, NaiveDate};
 
 const DAY_NAMES: [&str; 7] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -42,16 +42,7 @@ fn parse_single(inner: &str, active: bool) -> Option<OrgTimestamp> {
         }
     }
 
-    Some(OrgTimestamp {
-        start_date,
-        start_time,
-        end_date: None,
-        end_time,
-        active,
-        repeater,
-        extras,
-        raw: inner.trim().to_string(),
-    })
+    Some(OrgTimestamp { start_date, start_time, end_date: None, end_time, active, repeater, extras, raw: inner.trim().to_string() })
 }
 
 fn is_iso_date(s: &str) -> bool {
@@ -64,9 +55,7 @@ fn is_iso_date(s: &str) -> bool {
 fn is_clock(s: &str) -> bool {
     match s.split_once(':') {
         Some((h, m)) => {
-            !h.is_empty() && h.len() <= 2 && m.len() == 2
-                && h.chars().all(|c| c.is_ascii_digit())
-                && m.chars().all(|c| c.is_ascii_digit())
+            !h.is_empty() && h.len() <= 2 && m.len() == 2 && h.chars().all(|c| c.is_ascii_digit()) && m.chars().all(|c| c.is_ascii_digit())
         }
         None => false,
     }
@@ -74,11 +63,7 @@ fn is_clock(s: &str) -> bool {
 
 /// Non-englisch weekdays (e.g. Mo, Di in german)
 fn is_localized_day(s: &str) -> bool {
-    !s.is_empty()
-        && !s.chars().next().unwrap().is_ascii_digit()
-        && !s.starts_with('+')
-        && !s.starts_with('-')
-        && !s.starts_with('.')
+    !s.is_empty() && !s.chars().next().unwrap().is_ascii_digit() && !s.starts_with('+') && !s.starts_with('-') && !s.starts_with('.')
 }
 
 fn parse_repeater(token: &str) -> Option<Repeater> {

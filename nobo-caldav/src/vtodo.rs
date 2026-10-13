@@ -22,9 +22,7 @@ use super::model::{CalDavTask, TaskDate, TaskStatus};
 /// Properties this app owns. A push replaces exactly these lines and
 /// leaves everything else untouched; anything added here starts being
 /// overwritten on the server, so the list is deliberately short.
-const OWNED_PROPERTIES: &[&str] = &[
-    "SUMMARY", "DESCRIPTION", "CATEGORIES", "LAST-MODIFIED", "DTSTAMP",
-];
+const OWNED_PROPERTIES: &[&str] = &["SUMMARY", "DESCRIPTION", "CATEGORIES", "LAST-MODIFIED", "DTSTAMP"];
 
 /// The planning dates, owned only for a task that does NOT recur. A
 /// recurring VTODO's dates belong to its RRULE: the server works out when
@@ -70,17 +68,13 @@ fn task_from_todo(todo: &IcalTodo, raw: &str) -> Option<CalDavTask> {
         due: find(todo, "DUE").and_then(task_date_of),
         categories: Vec::new(),
         parent_uid: parent_of(todo),
-        repeater: find(todo, "RRULE")
-            .and_then(|p| p.value.as_deref())
-            .and_then(nobo_calendar_mirror::ics::repeater_from_rrule),
+        repeater: find(todo, "RRULE").and_then(|p| p.value.as_deref()).and_then(nobo_calendar_mirror::ics::repeater_from_rrule),
         unmappable_categories: find(todo, "CATEGORIES")
             .and_then(|p| p.value.clone())
             .map(|v| nobo_ical::split_list(&v))
             .unwrap_or_default(),
         created: find(todo, "CREATED").and_then(date_time_of),
-        sort_order: find(todo, "X-APPLE-SORT-ORDER")
-            .and_then(|p| p.value.as_ref())
-            .and_then(|v| v.trim().parse().ok()),
+        sort_order: find(todo, "X-APPLE-SORT-ORDER").and_then(|p| p.value.as_ref()).and_then(|v| v.trim().parse().ok()),
         raw: Some(raw.to_string()),
     };
     // Split once, here, so nothing downstream has to remember that only
@@ -311,11 +305,8 @@ pub fn render_new(task: &CalDavTask, now: DateTime<Utc>) -> String {
 }
 
 fn owned_lines(task: &CalDavTask, now: DateTime<Utc>, rewrite_status: bool, owns_dates: bool) -> Vec<String> {
-    let mut lines = vec![
-        format!("SUMMARY:{}", escape(&task.summary)),
-        format!("DTSTAMP:{}", stamp(now)),
-        format!("LAST-MODIFIED:{}", stamp(now)),
-    ];
+    let mut lines =
+        vec![format!("SUMMARY:{}", escape(&task.summary)), format!("DTSTAMP:{}", stamp(now)), format!("LAST-MODIFIED:{}", stamp(now))];
     if rewrite_status {
         lines.push(format!("STATUS:{}", task.status.as_ics()));
     }
@@ -388,11 +379,7 @@ fn date_value(date: TaskDate) -> String {
 }
 
 fn to_utc(naive: NaiveDateTime) -> DateTime<Utc> {
-    Local
-        .from_local_datetime(&naive)
-        .earliest()
-        .map(|dt| dt.with_timezone(&Utc))
-        .unwrap_or_else(|| Utc.from_utc_datetime(&naive))
+    Local.from_local_datetime(&naive).earliest().map(|dt| dt.with_timezone(&Utc)).unwrap_or_else(|| Utc.from_utc_datetime(&naive))
 }
 
 fn stamp(dt: DateTime<Utc>) -> String {
@@ -451,11 +438,7 @@ END:VTODO\r\nEND:VCALENDAR\r\n";
 DUE;TZID=Europe/Berlin:20260825T090000\r\nEND:VTODO\r\nEND:VCALENDAR\r\n",
         );
 
-        let expected = chrono_tz::Europe::Berlin
-            .with_ymd_and_hms(2026, 8, 25, 9, 0, 0)
-            .unwrap()
-            .with_timezone(&Local)
-            .naive_local();
+        let expected = chrono_tz::Europe::Berlin.with_ymd_and_hms(2026, 8, 25, 9, 0, 0).unwrap().with_timezone(&Local).naive_local();
         assert_eq!(task.due, Some(TaskDate::At(expected)));
     }
 
@@ -463,7 +446,8 @@ DUE;TZID=Europe/Berlin:20260825T090000\r\nEND:VTODO\r\nEND:VCALENDAR\r\n",
     /// task ticked off there comes back open and gets pushed back as open.
     #[test]
     fn a_missing_status_is_inferred_rather_than_assumed_open() {
-        let completed = parse_one("BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nCOMPLETED:20260820T100000Z\r\nEND:VTODO\r\nEND:VCALENDAR\r\n");
+        let completed =
+            parse_one("BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nCOMPLETED:20260820T100000Z\r\nEND:VTODO\r\nEND:VCALENDAR\r\n");
         assert_eq!(completed.status, TaskStatus::Completed);
 
         let started = parse_one("BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:b\r\nPERCENT-COMPLETE:40\r\nEND:VTODO\r\nEND:VCALENDAR\r\n");
@@ -486,7 +470,8 @@ DUE;TZID=Europe/Berlin:20260825T090000\r\nEND:VTODO\r\nEND:VCALENDAR\r\n",
     /// two-way sync quietly destroying data it merely could not display.
     #[test]
     fn a_category_with_no_org_tag_form_survives_a_push() {
-        let ics = "BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nSUMMARY:X\r\nCATEGORIES:Haus\\, Garten,Arbeit\r\nEND:VTODO\r\nEND:VCALENDAR\r\n";
+        let ics =
+            "BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nSUMMARY:X\r\nCATEGORIES:Haus\\, Garten,Arbeit\r\nEND:VTODO\r\nEND:VCALENDAR\r\n";
         let task = parse_one(ics);
         assert_eq!(task.categories, vec!["Arbeit"], "only this one has a tag form");
         assert_eq!(task.unmappable_categories, vec!["Haus, Garten"]);
@@ -500,7 +485,8 @@ DUE;TZID=Europe/Berlin:20260825T090000\r\nEND:VTODO\r\nEND:VCALENDAR\r\n",
 
     #[test]
     fn an_escaped_comma_stays_inside_one_category() {
-        let task = parse_one("BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nCATEGORIES:Haus\\, Garten,Arbeit\r\nEND:VTODO\r\nEND:VCALENDAR\r\n");
+        let task =
+            parse_one("BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nCATEGORIES:Haus\\, Garten,Arbeit\r\nEND:VTODO\r\nEND:VCALENDAR\r\n");
 
         assert_eq!(task.unmappable_categories, vec!["Haus, Garten"]);
         assert_eq!(task.categories, vec!["Arbeit"]);
@@ -542,10 +528,14 @@ BEGIN:VTODO\r\nUID:a\r\nRECURRENCE-ID:20260901T090000Z\r\nSUMMARY:Override\r\nEN
     /// scale, seconds since 2001-01-01.
     #[test]
     fn the_sort_key_falls_back_to_created_because_only_dragging_writes_the_property() {
-        let dragged = parse_one("BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nSUMMARY:Ofenkäse\r\n\
-CREATED:20260823T160042Z\r\nX-APPLE-SORT-ORDER:809193116\r\nEND:VTODO\r\nEND:VCALENDAR\r\n");
-        let untouched = parse_one("BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:b\r\nSUMMARY:3-4 becher\r\n\
-CREATED:20260823T155155Z\r\nEND:VTODO\r\nEND:VCALENDAR\r\n");
+        let dragged = parse_one(
+            "BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nSUMMARY:Ofenkäse\r\n\
+CREATED:20260823T160042Z\r\nX-APPLE-SORT-ORDER:809193116\r\nEND:VTODO\r\nEND:VCALENDAR\r\n",
+        );
+        let untouched = parse_one(
+            "BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:b\r\nSUMMARY:3-4 becher\r\n\
+CREATED:20260823T155155Z\r\nEND:VTODO\r\nEND:VCALENDAR\r\n",
+        );
 
         // The dragged one keeps the value it was given...
         assert_eq!(dragged.sort_key(), Some(809193116));

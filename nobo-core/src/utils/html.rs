@@ -323,12 +323,7 @@ fn open_tag(at: &str) -> Option<OpenTag<'_>> {
 }
 
 fn tag_name(inside: &str) -> String {
-    inside
-        .trim_start_matches('/')
-        .chars()
-        .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
-        .collect::<String>()
-        .to_ascii_lowercase()
+    inside.trim_start_matches('/').chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '-').collect::<String>().to_ascii_lowercase()
 }
 
 fn has_class(attributes: &str, class: &str) -> bool {
@@ -389,10 +384,7 @@ fn find_tag(haystack: &str, tag: &str) -> Option<usize> {
 }
 
 fn is_block(name: &str) -> bool {
-    matches!(
-        name,
-        "br" | "p" | "div" | "li" | "ul" | "ol" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "tr" | "td" | "section"
-    )
+    matches!(name, "br" | "p" | "div" | "li" | "ul" | "ol" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "tr" | "td" | "section")
 }
 
 fn find_ascii_ci(haystack: &str, needle: &str) -> Option<usize> {
@@ -459,7 +451,10 @@ mod tests {
 
     #[test]
     fn the_first_heading_is_found_without_a_class() {
-        assert_eq!(first_tag_text("<header><h1 data-v-1>Bihun-Suppe <small>x</small></h1></header>", "h1").as_deref(), Some("Bihun-Suppe x"));
+        assert_eq!(
+            first_tag_text("<header><h1 data-v-1>Bihun-Suppe <small>x</small></h1></header>", "h1").as_deref(),
+            Some("Bihun-Suppe x")
+        );
         assert_eq!(first_tag_text("<h2>no</h2>", "h1"), None);
     }
 

@@ -216,11 +216,8 @@ mod tests {
     #[test]
     fn a_file_without_a_url_is_not_a_subscription() {
         let vault = vault();
-        std::fs::write(
-            calendars_dir(vault.path()).join("something.org"),
-            "#+TITLE: Alt\n#+NOBO_TYPE: calendar-mirror\n\n* Termin\n",
-        )
-        .unwrap();
+        std::fs::write(calendars_dir(vault.path()).join("something.org"), "#+TITLE: Alt\n#+NOBO_TYPE: calendar-mirror\n\n* Termin\n")
+            .unwrap();
 
         assert!(list(vault.path()).is_empty());
     }
@@ -266,8 +263,7 @@ mod tests {
         let subscription = subscription_for("Feiertage", "https://example.com/cal.ics");
         let path = file_for(vault.path(), &subscription.id);
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        std::fs::write(&path, format!("{}* Neujahr\n", super::super::org::render_calendar(&subscription, &[])))
-            .unwrap();
+        std::fs::write(&path, format!("{}* Neujahr\n", super::super::org::render_calendar(&subscription, &[]))).unwrap();
 
         set_keyword(&path, COLOR_KEYWORD, Some("#4f9d69")).unwrap();
 

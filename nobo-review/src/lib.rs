@@ -58,8 +58,7 @@ impl Default for Settings {
 
 /// This feature's own corner of settings.json (see
 /// nobo_core::config::section).
-pub const SETTINGS: nobo_core::config::section::Section<Settings> =
-    nobo_core::config::section::Section::new("review");
+pub const SETTINGS: nobo_core::config::section::Section<Settings> = nobo_core::config::section::Section::new("review");
 
 inventory::submit! {
     nobo_core::core::features::FeatureSpec {
@@ -111,21 +110,17 @@ fn adopt_legacy_settings(config: &mut nobo_core::config::settings::Config) -> Re
 /// what a feature crate is and why the app knows nothing else about it).
 #[cfg(feature = "tauri")]
 pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
-    tauri::plugin::Builder::new("nobo-review")
-        .invoke_handler(specta_builder::<R>().invoke_handler())
-        .build()
+    tauri::plugin::Builder::new("nobo-review").invoke_handler(specta_builder::<R>().invoke_handler()).build()
 }
 
 #[cfg(feature = "tauri")]
 fn specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {
-    tauri_specta::Builder::<R>::new()
-        .plugin_name("nobo-review")
-        .commands(tauri_specta::collect_commands![
-            tauri_commands::review_state,
-            tauri_commands::review_save_state,
-            tauri_commands::review_settings,
-            tauri_commands::review_save_settings,
-        ])
+    tauri_specta::Builder::<R>::new().plugin_name("nobo-review").commands(tauri_specta::collect_commands![
+        tauri_commands::review_state,
+        tauri_commands::review_save_state,
+        tauri_commands::review_settings,
+        tauri_commands::review_save_settings,
+    ])
 }
 
 #[cfg(all(test, feature = "tauri"))]
@@ -148,9 +143,7 @@ mod settings_migration_tests {
 
     fn with_legacy(days: u64, weekday: Option<u64>) -> Config {
         let mut config = Config::default();
-        config
-            .set_section("review_interval_days", &serde_json::json!(days))
-            .expect("a plain number");
+        config.set_section("review_interval_days", &serde_json::json!(days)).expect("a plain number");
         if let Some(weekday) = weekday {
             config.set_section("review_reminder_weekday", &serde_json::json!(weekday)).expect("a plain number");
         }

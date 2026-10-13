@@ -342,7 +342,8 @@ mod drawer_tests {
 
     #[test]
     fn a_drawer_is_found_under_its_heading_and_planning() {
-        let lines = ["* H", "SCHEDULED: <2026-10-12 Mon>", "  :properties:", "  :URL:  https://x", ":Created: [2026-10-12 Mon]", "  :END:", "Text"];
+        let lines =
+            ["* H", "SCHEDULED: <2026-10-12 Mon>", "  :properties:", "  :URL:  https://x", ":Created: [2026-10-12 Mon]", "  :END:", "Text"];
         let drawer = property_drawer(&lines, 0).expect("a drawer");
         assert_eq!((drawer.start, drawer.end), (2, 5));
         assert_eq!(drawer.get("url").map(|p| p.value.as_str()), Some("https://x"));
@@ -354,7 +355,10 @@ mod drawer_tests {
     fn a_drawer_never_reaches_past_the_next_heading() {
         assert!(property_drawer(&["* A", ":PROPERTIES:", ":X: 1", "* B", ":END:"], 0).is_none());
         assert!(property_drawer(&["* A", "Text", ":PROPERTIES:", ":END:"], 0).is_none());
-        assert!(property_drawer(&["* A", "SCHEDULED: <2026-10-12>", "DEADLINE: <2026-10-13>", ":PROPERTIES:", ":END:"], 0).is_none(), "one planning line, as org reads it");
+        assert!(
+            property_drawer(&["* A", "SCHEDULED: <2026-10-12>", "DEADLINE: <2026-10-13>", ":PROPERTIES:", ":END:"], 0).is_none(),
+            "one planning line, as org reads it"
+        );
     }
 
     #[test]

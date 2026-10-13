@@ -45,9 +45,7 @@ pub struct Link {
 
 fn split_heading_anchor(target: &str) -> (String, Option<String>) {
     match target.split_once("::#") {
-        Some((identifier, heading)) if !heading.is_empty() => {
-            (identifier.to_string(), Some(heading.to_string()))
-        }
+        Some((identifier, heading)) if !heading.is_empty() => (identifier.to_string(), Some(heading.to_string())),
         _ => (target.to_string(), None),
     }
 }

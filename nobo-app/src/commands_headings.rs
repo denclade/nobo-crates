@@ -1,23 +1,25 @@
 use nobo_core::config::settings::Config;
+use nobo_core::core::edna;
 use nobo_core::core::history::record_best_effort;
-use nobo_core::core::vault_write;
 use nobo_core::core::indexer::IndexManager;
-use nobo_core::core::models::{BulkHeadingUpdate, BulkRefileSource, CustomIdBackfillPreview, EmptyPropertiesDrawer, FileSnapshot, Heading, HeadingCreatePayload, HeadingLocation, HeadingTarget, HeadingUpdatePayload, HistoryEntryKind, Note, OrphanedCustomId, RefilePosition, TimeTrackingSummary, UnpromotedOrgFile};
-use nobo_core::core::{clock, file_kind, heading_identity, heading_utils, task_utils, refile};
+use nobo_core::core::models::{
+    BulkHeadingUpdate, BulkRefileSource, CustomIdBackfillPreview, EmptyPropertiesDrawer, FileSnapshot, Heading, HeadingCreatePayload,
+    HeadingLocation, HeadingTarget, HeadingUpdatePayload, HistoryEntryKind, Note, OrphanedCustomId, RefilePosition, TimeTrackingSummary,
+    UnpromotedOrgFile,
+};
+use nobo_core::core::vault_write;
+use nobo_core::core::{clock, file_kind, heading_identity, heading_utils, refile, task_utils};
 use nobo_core::utils::effort_utils;
 use nobo_core::utils::fs_utils;
+use nobo_core::utils::fs_utils::filename_of;
 use nobo_core::utils::note_utils;
 use nobo_core::utils::repeat_utils;
 use nobo_core::utils::ToCmdResult;
 use rusqlite::Connection;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use nobo_core::core::edna;
-use nobo_core::utils::fs_utils::filename_of;
 
-pub fn get_all_actions(
-    index_manager: &IndexManager,
-) -> Result<Vec<Heading>, String> {
+pub fn get_all_actions(index_manager: &IndexManager) -> Result<Vec<Heading>, String> {
     Ok(index_manager.all_headings_with_state())
 }
 
@@ -51,7 +53,9 @@ pub fn check_missing_custom_ids(index_manager: &IndexManager) -> Result<CustomId
     // Maybe return the data per file to give the user information of the files affected?
     // Would that be interesting information in some use-case?
     let config = Config::load().unwrap_or_default();
-    let missing: Vec<Heading> = index_manager.headings_by_file().iter()
+    let missing: Vec<Heading> = index_manager
+        .headings_by_file()
+        .iter()
         .flat_map(|(path_str, headings)| {
             let is_gtd = is_configured_gtd_file(Path::new(path_str), &config);
             headings.iter().filter(move |h| !heading_identity::has_custom_id(h) && (is_gtd || h.level == 1))
@@ -70,10 +74,7 @@ pub fn check_missing_custom_ids(index_manager: &IndexManager) -> Result<CustomId
 /// see its own doc comment. Deliberately does NOT bump UPDATED/LAST_ACTIVITY.
 /// Records one CustomIdsBackfilled entry per touched file, so this one-time
 /// action is itself normally undo-able.
-pub fn backfill_custom_ids(
-    index_manager: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<u32, String> {
+pub fn backfill_custom_ids(index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<u32, String> {
     // Reads and writes every vault file with an un-stamped heading, which
     // would otherwise occupy an async worker thread for its whole
     // duration. See orchestrator.rs's rescan_local_state for why
@@ -132,8 +133,12 @@ pub fn backfill_custom_ids(
             index_manager.update_file(&path);
             let after = Some(fs_utils::lines_to_content(&lines));
 
-            record_best_effort(&db, HistoryEntryKind::CustomIdsBackfilled { filename: filename_of(&path), count: missing.len() as u32 }, false,
-                vec![FileSnapshot { path: path_str, before, after }]);
+            record_best_effort(
+                &db,
+                HistoryEntryKind::CustomIdsBackfilled { filename: filename_of(&path), count: missing.len() as u32 },
+                false,
+                vec![FileSnapshot { path: path_str, before, after }],
+            );
 
             total += missing.len() as u32;
         }
@@ -141,10 +146,7 @@ pub fn backfill_custom_ids(
     })
 }
 
-pub fn get_headings_from_file(
-    file_path: String,
-    index_manager: &IndexManager,
-) -> Result<Vec<Heading>, String> {
+pub fn get_headings_from_file(file_path: String, index_manager: &IndexManager) -> Result<Vec<Heading>, String> {
     let target_path = PathBuf::from(&file_path);
     Ok(index_manager.get_headings_or_parse(&target_path))
 }
@@ -160,10 +162,7 @@ pub fn get_headings_from_file(
 ///  │    └── headingB-B
 ///  └── headingC
 /// ```
-pub fn get_projects_tree_from_file(
-    file_path: String,
-    index_manager: &IndexManager,
-) -> Result<Vec<Heading>, String> {
+pub fn get_projects_tree_from_file(file_path: String, index_manager: &IndexManager) -> Result<Vec<Heading>, String> {
     let target_path = PathBuf::from(&file_path);
     let flat = index_manager.get_headings_or_parse(&target_path);
     Ok(heading_utils::projects_tree(flat))
@@ -173,10 +172,7 @@ pub fn get_projects_tree_from_file(
 /// exactly as it sits on disk, not a re-serialized approximation. For
 /// sharing a project, where the subtasks are most of what is worth
 /// sharing.
-pub fn get_heading_source_text(
-    file_path: String,
-    target: HeadingTarget,
-) -> Result<String, String> {
+pub fn get_heading_source_text(file_path: String, target: HeadingTarget) -> Result<String, String> {
     let target_path = PathBuf::from(&file_path);
     // Parsed from disk, not from the cache, for the same reason the writers
     // do it (see flat_from_disk): the line range resolved here is used to
@@ -191,7 +187,10 @@ pub fn get_heading_source_text(
     let selected: Vec<String> = lines
         .into_iter()
         .enumerate()
-        .filter(|(i, _)| { let n = i + 1; n >= start_line && n <= end_line })
+        .filter(|(i, _)| {
+            let n = i + 1;
+            n >= start_line && n <= end_line
+        })
         .map(|(_, l)| l)
         .collect();
 
@@ -238,11 +237,7 @@ pub fn update_heading_in_file(
     // with the same limitation gets this right without touching this
     // line.
     let states = file_kind::capabilities(file_kind::of_path(&target_path)).states;
-    let repeated = if states == file_kind::StateSupport::DoneOnly {
-        None
-    } else {
-        repeat_utils::repeat_on_finish(&heading, &payload)
-    };
+    let repeated = if states == file_kind::StateSupport::DoneOnly { None } else { repeat_utils::repeat_on_finish(&heading, &payload) };
     let (heading, payload) = match repeated {
         Some(repeat) => (repeat.heading, repeat.payload),
         None => (heading, payload),
@@ -263,21 +258,27 @@ pub fn update_heading_in_file(
     // trigger-cascaded changes too, no multi-file tracking needed.
     let new_block = heading_utils::build_org_heading_block(&heading, &payload);
     let entry = HistoryEntryKind::HeadingUpdated { filename: filename_of(&target_path), title };
-    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
-        edit.replace(new_block)?;
-        // A subtask's own state/tags/content changing also bumps its
-        // enclosing project's (and every ancestor's) LAST_ACTIVITY, so it
-        // resurfaces under "sort by last activity" without needing to be
-        // opened itself.
-        edit.touch_ancestors()?;
-        edit.commit()?;
-        if state_changed {
-            // The triggers read the file as it is now.
-            index_manager.update_file(&target_path);
-            edna::apply_triggers(&target_path, line_no, &index_manager)?;
-        }
-        Ok(())
-    })
+    vault_write::recorded(
+        &target_path,
+        |_| entry,
+        index_manager,
+        db,
+        || {
+            edit.replace(new_block)?;
+            // A subtask's own state/tags/content changing also bumps its
+            // enclosing project's (and every ancestor's) LAST_ACTIVITY, so it
+            // resurfaces under "sort by last activity" without needing to be
+            // opened itself.
+            edit.touch_ancestors()?;
+            edit.commit()?;
+            if state_changed {
+                // The triggers read the file as it is now.
+                index_manager.update_file(&target_path);
+                edna::apply_triggers(&target_path, line_no, &index_manager)?;
+            }
+            Ok(())
+        },
+    )
 }
 
 /// Stamps a CUSTOM_ID onto exactly one heading, but only if it doesn't
@@ -311,10 +312,16 @@ pub fn ensure_custom_id_for_heading(
 
     let block = heading_utils::stamp_custom_id_only(&heading);
     let entry = HistoryEntryKind::CustomIdsBackfilled { filename: filename_of(&target_path), count: 1 };
-    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
-        edit.replace(block)?;
-        edit.commit()
-    })?;
+    vault_write::recorded(
+        &target_path,
+        |_| entry,
+        index_manager,
+        db,
+        || {
+            edit.replace(block)?;
+            edit.commit()
+        },
+    )?;
 
     Ok(id)
 }
@@ -322,10 +329,7 @@ pub fn ensure_custom_id_for_heading(
 /// Every heading in the vault whose own CUSTOM_ID is never referenced by a
 /// `::#h:ID` heading-link anywhere -- see Settings' Maintenance section,
 /// which surfaces these for review before remove_custom_ids deletes them.
-pub fn find_orphaned_custom_ids(
-    base_dir: String,
-    index_manager: &IndexManager,
-) -> Result<Vec<OrphanedCustomId>, String> {
+pub fn find_orphaned_custom_ids(base_dir: String, index_manager: &IndexManager) -> Result<Vec<OrphanedCustomId>, String> {
     note_utils::find_orphaned_custom_ids(Path::new(&base_dir), &index_manager.headings_by_file()).to_cmd()
 }
 
@@ -337,11 +341,7 @@ pub fn find_orphaned_custom_ids(
 /// same "stale index, don't panic" stance as update_heading_in_file's own
 /// not_found_at_line case, just non-fatal here since this runs as one
 /// best-effort batch over a preview list the user already reviewed).
-pub fn remove_custom_ids(
-    targets: Vec<HeadingLocation>,
-    index_manager: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<u32, String> {
+pub fn remove_custom_ids(targets: Vec<HeadingLocation>, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<u32, String> {
     crate::blocking(|| {
         let mut by_file: std::collections::HashMap<String, Vec<HeadingTarget>> = std::collections::HashMap::new();
         for target in targets {
@@ -394,8 +394,12 @@ pub fn remove_custom_ids(
             index_manager.update_file(&path);
             let after = Some(fs_utils::lines_to_content(&lines));
 
-            record_best_effort(&db, HistoryEntryKind::CustomIdsRemoved { filename: filename_of(&path), count: touched }, false,
-                vec![FileSnapshot { path: path_str, before, after }]);
+            record_best_effort(
+                &db,
+                HistoryEntryKind::CustomIdsRemoved { filename: filename_of(&path), count: touched },
+                false,
+                vec![FileSnapshot { path: path_str, before, after }],
+            );
 
             total += touched;
         }
@@ -425,11 +429,7 @@ pub fn find_unpromoted_org_files(base_dir: String) -> Result<Vec<UnpromotedOrgFi
 /// find_unpromoted_org_files' preview, and also called directly the first
 /// time a plain `.org` file gets saved through the Notes editor (see
 /// useNoteEditor.ts's saveActiveNote).
-pub fn promote_org_file_to_note(
-    path: String,
-    index_manager: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<Note, String> {
+pub fn promote_org_file_to_note(path: String, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<Note, String> {
     crate::blocking(|| {
         let old_path = PathBuf::from(&path);
         // Promoting RENAMES the file to its Denote name -- the step that
@@ -446,8 +446,12 @@ pub fn promote_org_file_to_note(
         let new_path = PathBuf::from(&note.path);
         index_manager.update_file(&new_path);
 
-        record_best_effort(&db, HistoryEntryKind::FileRenamed { old_filename, new_filename: filename_of(&new_path) }, false,
-            vec![FileSnapshot { path: note.path.clone(), before: None, after: std::fs::read_to_string(&new_path).ok() }]);
+        record_best_effort(
+            &db,
+            HistoryEntryKind::FileRenamed { old_filename, new_filename: filename_of(&new_path) },
+            false,
+            vec![FileSnapshot { path: note.path.clone(), before: None, after: std::fs::read_to_string(&new_path).ok() }],
+        );
 
         Ok(note)
     })
@@ -456,9 +460,7 @@ pub fn promote_org_file_to_note(
 /// Every heading in the vault whose own `:PROPERTIES:...:END:` drawer is
 /// completely empty -- Settings' Maintenance section surfaces these for
 /// review before remove_empty_properties_drawers deletes them.
-pub fn find_empty_properties_drawers(
-    index_manager: &IndexManager,
-) -> Result<Vec<EmptyPropertiesDrawer>, String> {
+pub fn find_empty_properties_drawers(index_manager: &IndexManager) -> Result<Vec<EmptyPropertiesDrawer>, String> {
     note_utils::find_empty_properties_drawers(&index_manager.headings_by_file()).to_cmd()
 }
 
@@ -513,8 +515,12 @@ pub fn remove_empty_properties_drawers(
             index_manager.update_file(&path);
             let after = Some(fs_utils::lines_to_content(&lines));
 
-            record_best_effort(&db, HistoryEntryKind::EmptyPropertiesDrawersRemoved { filename: filename_of(&path), count: touched }, false,
-                vec![FileSnapshot { path: path_str, before, after }]);
+            record_best_effort(
+                &db,
+                HistoryEntryKind::EmptyPropertiesDrawersRemoved { filename: filename_of(&path), count: touched },
+                false,
+                vec![FileSnapshot { path: path_str, before, after }],
+            );
 
             total += touched;
         }
@@ -594,11 +600,7 @@ pub fn bulk_delete_headings(
     })
 }
 
-pub fn create_heading_in_file(
-    payload: HeadingCreatePayload,
-    index_manager: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<(), String> {
+pub fn create_heading_in_file(payload: HeadingCreatePayload, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
     let target_path = PathBuf::from(&payload.file_path);
     let title = payload.title.clone();
 
@@ -620,38 +622,44 @@ pub fn create_heading_in_file(
     let new_lines = heading_utils::build_new_heading_block(&payload, level);
 
     let entry = HistoryEntryKind::HeadingCreated { filename: filename_of(&target_path), title };
-    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
-        match parent_edit {
-            Some(mut edit) => {
-                edit.insert_after_subtree(new_lines)?;
+    vault_write::recorded(
+        &target_path,
+        |_| entry,
+        index_manager,
+        db,
+        || {
+            match parent_edit {
+                Some(mut edit) => {
+                    edit.insert_after_subtree(new_lines)?;
 
-                // A new subtask is a change to its project too -- the
-                // parent itself included, not just its ancestors, since
-                // the parent is rarely the node being edited directly
-                // here. Applied after the insertion, which sits at or
-                // beyond the parent's own subtree end and therefore
-                // strictly after every one of these headings' own line
-                // ranges.
-                edit.touch_self_and_ancestors()?;
-                edit.commit()?;
-            }
-            None => {
-                // The same rule HeadingEdit applies on insert: a task
-                // pasted into the new heading's description, drawer and
-                // id included, must not arrive with an id the file
-                // already has (see heading_utils::renew_taken_ids). A
-                // file that does not exist yet has none to collide with.
-                let mut new_lines = new_lines;
-                if target_path.exists() {
-                    let (_, flat) = heading_utils::read_and_parse(&target_path)?;
-                    let taken = heading_utils::ids_in_file_except(&flat, None);
-                    heading_utils::renew_taken_ids(&mut new_lines, &taken, false);
+                    // A new subtask is a change to its project too -- the
+                    // parent itself included, not just its ancestors, since
+                    // the parent is rarely the node being edited directly
+                    // here. Applied after the insertion, which sits at or
+                    // beyond the parent's own subtree end and therefore
+                    // strictly after every one of these headings' own line
+                    // ranges.
+                    edit.touch_self_and_ancestors()?;
+                    edit.commit()?;
                 }
-                fs_utils::append_lines(&target_path, new_lines).to_cmd()?;
+                None => {
+                    // The same rule HeadingEdit applies on insert: a task
+                    // pasted into the new heading's description, drawer and
+                    // id included, must not arrive with an id the file
+                    // already has (see heading_utils::renew_taken_ids). A
+                    // file that does not exist yet has none to collide with.
+                    let mut new_lines = new_lines;
+                    if target_path.exists() {
+                        let (_, flat) = heading_utils::read_and_parse(&target_path)?;
+                        let taken = heading_utils::ids_in_file_except(&flat, None);
+                        heading_utils::renew_taken_ids(&mut new_lines, &taken, false);
+                    }
+                    fs_utils::append_lines(&target_path, new_lines).to_cmd()?;
+                }
             }
-        }
-        Ok(())
-    })
+            Ok(())
+        },
+    )
 }
 
 pub fn delete_heading_in_file(
@@ -669,12 +677,18 @@ pub fn delete_heading_in_file(
     let title = edit.heading().title.clone();
 
     let entry = HistoryEntryKind::HeadingDeleted { filename: filename_of(&target_path), title };
-    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
-        edit.delete_subtree()?;
-        // Deleting/completing a subtask is a change to its project too.
-        edit.touch_ancestors()?;
-        edit.commit()
-    })
+    vault_write::recorded(
+        &target_path,
+        |_| entry,
+        index_manager,
+        db,
+        || {
+            edit.delete_subtree()?;
+            // Deleting/completing a subtask is a change to its project too.
+            edit.touch_ancestors()?;
+            edit.commit()
+        },
+    )
 }
 
 /// Reorders a heading among its siblings.
@@ -703,11 +717,9 @@ pub fn move_heading_in_file(
     // identity like every other write: a line number alone would move the
     // entry above whatever has since taken that line.
     let anchor = match &before {
-        Some(sibling) => Some(heading_identity::resolve_target(
-            edit.flat(),
-            sibling,
-            &nobo_core::core::errors::subject::sibling_heading(),
-        )?),
+        Some(sibling) => {
+            Some(heading_identity::resolve_target(edit.flat(), sibling, &nobo_core::core::errors::subject::sibling_heading())?)
+        }
         None => None,
     };
 
@@ -747,11 +759,7 @@ pub fn archive_done_tasks(
     task_utils::archive_ranges(&target_path, &lines, ranges, &index_manager, &db).map(|n| n as u32)
 }
 
-pub fn archive_done_projects(
-    file_path: String,
-    index_manager: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<u32, String> {
+pub fn archive_done_projects(file_path: String, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<u32, String> {
     let target_path = PathBuf::from(&file_path);
     let (lines, flat) = heading_utils::read_and_parse(&target_path)?;
     let ranges = task_utils::find_archivable_project_ranges(&flat);
@@ -775,32 +783,20 @@ pub fn archive_single_project(
 /// Starts a new open CLOCK entry on FILE_PATH/LINE_NO -- see
 /// core::clock::clock_in for the actual logic (exactly one global timer,
 /// auto-closing whatever else was running).
-pub fn clock_in(
-    file_path: String,
-    target: HeadingTarget,
-    index_manager: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<(), String> {
+pub fn clock_in(file_path: String, target: HeadingTarget, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
     clock::clock_in(&file_path, &target, index_manager, db)
 }
 
 /// Stops FILE_PATH/LINE_NO's own running timer -- see core::clock::clock_out
 /// for the actual logic.
-pub fn clock_out(
-    file_path: String,
-    target: HeadingTarget,
-    index_manager: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<(), String> {
+pub fn clock_out(file_path: String, target: HeadingTarget, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
     clock::clock_out(&file_path, &target, index_manager, db)
 }
 
 /// Thin IO wrapper -- the actual grouping/summation lives in
 /// task_utils::time_tracking_summary (pure, unit-tested there) so it's
 /// consistent with every other command in this file.
-pub fn get_time_tracking_summary(
-    index_manager: &IndexManager,
-) -> Result<TimeTrackingSummary, String> {
+pub fn get_time_tracking_summary(index_manager: &IndexManager) -> Result<TimeTrackingSummary, String> {
     Ok(task_utils::time_tracking_summary(&index_manager.headings_by_file()))
 }
 
@@ -809,9 +805,7 @@ pub fn get_time_tracking_summary(
 /// narrows this down to the configured GTD files itself, the same way
 /// Actions.tsx/Projects.tsx already compare against their own configured
 /// path rather than the backend hardcoding file scope.
-pub fn get_all_headings(
-    index_manager: &IndexManager,
-) -> Result<Vec<Heading>, String> {
+pub fn get_all_headings(index_manager: &IndexManager) -> Result<Vec<Heading>, String> {
     Ok(index_manager.all_headings())
 }
 
@@ -826,9 +820,7 @@ fn resolve_effort_presets(file_content: Option<&str>, settings_presets_org: Opti
         return values;
     }
 
-    let from_settings = settings_presets_org
-        .map(effort_utils::parse_effort_all)
-        .filter(|v| !v.is_empty());
+    let from_settings = settings_presets_org.map(effort_utils::parse_effort_all).filter(|v| !v.is_empty());
 
     from_settings.unwrap_or_else(|| effort_utils::parse_effort_all(effort_utils::DEFAULT_EFFORT_PRESETS_ORG))
 }
@@ -910,7 +902,8 @@ fn write_refile_result(
     let refuse = |path: &Path| -> Option<String> {
         (!file_kind::capabilities(file_kind::of_path(path)).editable).then(|| {
             nobo_core::t!(
-                "\"{}\" wird von nobo erzeugt und kann nicht beschrieben werden -- nichts wurde verschoben.", "\"{}\" is generated by nobo and cannot be written -- nothing was moved.",
+                "\"{}\" wird von nobo erzeugt und kann nicht beschrieben werden -- nichts wurde verschoben.",
+                "\"{}\" is generated by nobo and cannot be written -- nothing was moved.",
                 filename_of(path)
             )
         })
@@ -1006,11 +999,8 @@ pub fn refile_heading(
     let tgt_existed = same_file || tgt_path.exists();
     // A same-file refile (reordering within one list) reuses the source
     // read: it is the very same file on disk.
-    let (all_tgt_lines, tgt_parsed) = if same_file || !tgt_existed {
-        (Vec::new(), Vec::new())
-    } else {
-        heading_utils::read_and_parse(&tgt_path)?
-    };
+    let (all_tgt_lines, tgt_parsed) =
+        if same_file || !tgt_existed { (Vec::new(), Vec::new()) } else { heading_utils::read_and_parse(&tgt_path)? };
     let tgt_flat: &[Heading] = match (&target_parent, same_file) {
         (None, _) => &[],
         (Some(_), true) => &src_flat,
@@ -1022,7 +1012,9 @@ pub fn refile_heading(
     // right one into the wrong place -- both unrecoverable without undo.
     let target_parent_line = match &target_parent {
         None => None,
-        Some(parent) => Some(tgt_flat[heading_identity::resolve_target(tgt_flat, parent, &nobo_core::core::errors::subject::target_heading())?].line_no),
+        Some(parent) => {
+            Some(tgt_flat[heading_identity::resolve_target(tgt_flat, parent, &nobo_core::core::errors::subject::target_heading())?].line_no)
+        }
     };
     let src_level = src_flat[src_idx].level;
     let title = src_flat[src_idx].title.clone();
@@ -1049,16 +1041,9 @@ pub fn refile_heading(
         None
     };
 
-    let params = refile::RefileParams {
-        start_line,
-        end_line,
-        src_level,
-        target_level,
-        default_state,
-    };
-    let (new_src_lines, new_tgt_lines) = refile::splice_refile(
-        all_src_lines, &params, target_parent_line, position, same_file, &tgt_path, all_tgt_lines,
-    )?;
+    let params = refile::RefileParams { start_line, end_line, src_level, target_level, default_state };
+    let (new_src_lines, new_tgt_lines) =
+        refile::splice_refile(all_src_lines, &params, target_parent_line, position, same_file, &tgt_path, all_tgt_lines)?;
     let after_src = new_src_lines.join("\n");
     let after_tgt = new_tgt_lines.join("\n");
 
@@ -1108,11 +1093,8 @@ pub fn bulk_refile_headings(
     // a same-file batch -- see refile_heading above.
     let (all_src_lines, src_flat) = heading_utils::read_and_parse(&src_path)?;
     let tgt_existed = same_file || tgt_path.exists();
-    let (all_tgt_lines, tgt_parsed) = if same_file || !tgt_existed {
-        (Vec::new(), Vec::new())
-    } else {
-        heading_utils::read_and_parse(&tgt_path)?
-    };
+    let (all_tgt_lines, tgt_parsed) =
+        if same_file || !tgt_existed { (Vec::new(), Vec::new()) } else { heading_utils::read_and_parse(&tgt_path)? };
     let tgt_flat: &[Heading] = match (&target_parent, same_file) {
         (None, _) => &[],
         (Some(_), true) => &src_flat,
@@ -1124,7 +1106,9 @@ pub fn bulk_refile_headings(
     // plus one wrong subtree.
     let target_parent_line = match &target_parent {
         None => None,
-        Some(parent) => Some(tgt_flat[heading_identity::resolve_target(tgt_flat, parent, &nobo_core::core::errors::subject::target_heading())?].line_no),
+        Some(parent) => {
+            Some(tgt_flat[heading_identity::resolve_target(tgt_flat, parent, &nobo_core::core::errors::subject::target_heading())?].line_no)
+        }
     };
 
     let target_level = match target_parent_line {
@@ -1150,7 +1134,14 @@ pub fn bulk_refile_headings(
         .collect::<Result<_, String>>()?;
 
     let (new_src_lines, new_tgt_lines, count) = refile::splice_bulk_refile(
-        &src_flat, &source_entries, all_src_lines, target_parent_line, same_file, target_level, &tgt_path, all_tgt_lines,
+        &src_flat,
+        &source_entries,
+        all_src_lines,
+        target_parent_line,
+        same_file,
+        target_level,
+        &tgt_path,
+        all_tgt_lines,
     )?;
 
     if count == 0 {
@@ -1233,10 +1224,7 @@ mod tests {
 
     #[test]
     fn resolve_effort_presets_falls_back_to_the_hardcoded_default_when_nothing_at_all_is_available() {
-        assert_eq!(
-            resolve_effort_presets(None, None),
-            effort_utils::parse_effort_all(effort_utils::DEFAULT_EFFORT_PRESETS_ORG),
-        );
+        assert_eq!(resolve_effort_presets(None, None), effort_utils::parse_effort_all(effort_utils::DEFAULT_EFFORT_PRESETS_ORG),);
     }
 
     /// `backfill_custom_ids` without the `tauri::State` wrapper, which
@@ -1250,11 +1238,15 @@ mod tests {
             let path = PathBuf::from(&path_str);
             let is_gtd = is_configured_gtd_file(&path, &config);
             let wants_stamp = |h: &Heading| !heading_identity::has_custom_id(h) && (is_gtd || h.level == 1);
-            if !cached.iter().any(|h| wants_stamp(h)) { continue; }
+            if !cached.iter().any(|h| wants_stamp(h)) {
+                continue;
+            }
 
             let flat = heading_utils::parse_from_disk(&path);
             let mut missing: Vec<&Heading> = flat.iter().filter(|h| wants_stamp(h)).collect();
-            if missing.is_empty() { continue; }
+            if missing.is_empty() {
+                continue;
+            }
             missing.sort_unstable_by(|a, b| b.line_no.cmp(&a.line_no));
 
             let before = std::fs::read_to_string(&path).ok();
@@ -1268,8 +1260,12 @@ mod tests {
             fs_utils::write_lines(&path, &lines).unwrap();
             index.update_file(&path);
             let after = std::fs::read_to_string(&path).ok();
-            record_best_effort(db, HistoryEntryKind::CustomIdsBackfilled { filename: filename_of(&path), count: missing.len() as u32 }, false,
-                vec![FileSnapshot { path: path_str, before, after }]);
+            record_best_effort(
+                db,
+                HistoryEntryKind::CustomIdsBackfilled { filename: filename_of(&path), count: missing.len() as u32 },
+                false,
+                vec![FileSnapshot { path: path_str, before, after }],
+            );
             total += missing.len() as u32;
         }
         total
@@ -1302,12 +1298,15 @@ mod tests {
     // backfill_custom_ids_body's identical comment on Config::default().
     fn check_missing_custom_ids_body(index: &IndexManager) -> CustomIdBackfillPreview {
         let config = Config::default();
-        let missing: Vec<Heading> = index.headings_by_file().iter()
+        let missing: Vec<Heading> = index
+            .headings_by_file()
+            .iter()
             .flat_map(|(path_str, headings)| {
                 let is_gtd = is_configured_gtd_file(Path::new(path_str), &config);
                 headings.iter().filter(move |h| !heading_identity::has_custom_id(h) && (is_gtd || h.level == 1))
             })
-            .cloned().collect();
+            .cloned()
+            .collect();
         let example_titles = missing.iter().take(EXAMPLE_TITLE_LIMIT).map(|h| h.title.clone()).collect();
         let example_block = missing.first().map(|h| heading_utils::stamp_custom_id_only(h).join("\n"));
         CustomIdBackfillPreview { missing_count: missing.len() as u32, example_titles, example_block }
@@ -1499,8 +1498,12 @@ mod tests {
         index.update_file(file_path);
         let after = std::fs::read_to_string(file_path).ok();
 
-        record_best_effort(db, HistoryEntryKind::CustomIdsBackfilled { filename: filename_of(file_path), count: 1 }, false,
-            vec![FileSnapshot { path: file_path.to_string_lossy().into_owned(), before, after }]);
+        record_best_effort(
+            db,
+            HistoryEntryKind::CustomIdsBackfilled { filename: filename_of(file_path), count: 1 },
+            false,
+            vec![FileSnapshot { path: file_path.to_string_lossy().into_owned(), before, after }],
+        );
 
         Ok(id)
     }
@@ -1580,13 +1583,19 @@ mod tests {
                     touched += 1;
                 }
             }
-            if touched == 0 { continue; }
+            if touched == 0 {
+                continue;
+            }
 
             fs_utils::write_lines(&path, &lines).unwrap();
             index.update_file(&path);
             let after = std::fs::read_to_string(&path).ok();
-            record_best_effort(db, HistoryEntryKind::CustomIdsRemoved { filename: filename_of(&path), count: touched }, false,
-                vec![FileSnapshot { path: path_str, before, after }]);
+            record_best_effort(
+                db,
+                HistoryEntryKind::CustomIdsRemoved { filename: filename_of(&path), count: touched },
+                false,
+                vec![FileSnapshot { path: path_str, before, after }],
+            );
             total += touched;
         }
         total
@@ -1603,7 +1612,11 @@ mod tests {
         history::store::init_schema(&conn).unwrap();
         let db = Mutex::new(conn);
 
-        let count = remove_custom_ids_body(&index, &db, vec![HeadingLocation { file_path: path.to_string_lossy().into_owned(), target: at_line(1) }]);
+        let count = remove_custom_ids_body(
+            &index,
+            &db,
+            vec![HeadingLocation { file_path: path.to_string_lossy().into_owned(), target: at_line(1) }],
+        );
         assert_eq!(count, 1);
 
         let result = std::fs::read_to_string(&path).unwrap();
@@ -1615,10 +1628,11 @@ mod tests {
     fn remove_custom_ids_handles_two_targets_in_the_same_file_without_line_shift_corruption() {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("a.org");
-        std::fs::write(&path, concat!(
-            "* First\n:PROPERTIES:\n:CUSTOM_ID: id-1\n:END:\n",
-            "* Second\n:PROPERTIES:\n:CUSTOM_ID: id-2\n:END:\n",
-        )).unwrap();
+        std::fs::write(
+            &path,
+            concat!("* First\n:PROPERTIES:\n:CUSTOM_ID: id-1\n:END:\n", "* Second\n:PROPERTIES:\n:CUSTOM_ID: id-2\n:END:\n",),
+        )
+        .unwrap();
         let index = IndexManager::new();
         index.scan_directory(dir.path());
         let conn = Connection::open_in_memory().unwrap();
@@ -1649,7 +1663,11 @@ mod tests {
         history::store::init_schema(&conn).unwrap();
         let db = Mutex::new(conn);
 
-        let count = remove_custom_ids_body(&index, &db, vec![HeadingLocation { file_path: path.to_string_lossy().into_owned(), target: at_line(1) }]);
+        let count = remove_custom_ids_body(
+            &index,
+            &db,
+            vec![HeadingLocation { file_path: path.to_string_lossy().into_owned(), target: at_line(1) }],
+        );
         assert_eq!(count, 1);
 
         let result = std::fs::read_to_string(&path).unwrap();
@@ -1684,7 +1702,11 @@ mod tests {
         history::store::init_schema(&conn).unwrap();
         let db = Mutex::new(conn);
 
-        let count = remove_custom_ids_body(&index, &db, vec![HeadingLocation { file_path: path.to_string_lossy().into_owned(), target: at_line(99) }]);
+        let count = remove_custom_ids_body(
+            &index,
+            &db,
+            vec![HeadingLocation { file_path: path.to_string_lossy().into_owned(), target: at_line(99) }],
+        );
         assert_eq!(count, 0);
         assert!(std::fs::read_to_string(&path).unwrap().contains("CUSTOM_ID"));
     }
@@ -1701,8 +1723,12 @@ mod tests {
         let new_path = PathBuf::from(&note.path);
         index.update_file(&new_path);
 
-        record_best_effort(db, HistoryEntryKind::FileRenamed { old_filename, new_filename: filename_of(&new_path) }, false,
-            vec![FileSnapshot { path: note.path.clone(), before: None, after: std::fs::read_to_string(&new_path).ok() }]);
+        record_best_effort(
+            db,
+            HistoryEntryKind::FileRenamed { old_filename, new_filename: filename_of(&new_path) },
+            false,
+            vec![FileSnapshot { path: note.path.clone(), before: None, after: std::fs::read_to_string(&new_path).ok() }],
+        );
 
         note
     }
@@ -1723,7 +1749,11 @@ mod tests {
         let note = promote_org_file_to_note_body(&index, &db, &path);
 
         let by_file = index.headings_by_file();
-        assert!(!by_file.contains_key(&path.to_string_lossy().into_owned()), "stale old path is gone from the index: {:?}", by_file.keys().collect::<Vec<_>>());
+        assert!(
+            !by_file.contains_key(&path.to_string_lossy().into_owned()),
+            "stale old path is gone from the index: {:?}",
+            by_file.keys().collect::<Vec<_>>()
+        );
         assert!(by_file.contains_key(&note.path), "new (renamed) path is indexed: {:?}", by_file.keys().collect::<Vec<_>>());
     }
 
@@ -1776,13 +1806,19 @@ mod tests {
                     touched += 1;
                 }
             }
-            if touched == 0 { continue; }
+            if touched == 0 {
+                continue;
+            }
 
             fs_utils::write_lines(&path, &lines).unwrap();
             index.update_file(&path);
             let after = std::fs::read_to_string(&path).ok();
-            record_best_effort(db, HistoryEntryKind::EmptyPropertiesDrawersRemoved { filename: filename_of(&path), count: touched }, false,
-                vec![FileSnapshot { path: path_str, before, after }]);
+            record_best_effort(
+                db,
+                HistoryEntryKind::EmptyPropertiesDrawersRemoved { filename: filename_of(&path), count: touched },
+                false,
+                vec![FileSnapshot { path: path_str, before, after }],
+            );
             total += touched;
         }
         total
@@ -1813,12 +1849,7 @@ mod tests {
     /// The body of update_heading_in_file, minus the tauri::State wrapper
     /// (which cannot be constructed outside a running app) -- same literal
     /// duplicate approach as backfill_custom_ids_body above.
-    fn update_heading_body(
-        index: &IndexManager,
-        path: &Path,
-        target: &HeadingTarget,
-        payload: HeadingUpdatePayload,
-    ) -> Result<(), String> {
+    fn update_heading_body(index: &IndexManager, path: &Path, target: &HeadingTarget, payload: HeadingUpdatePayload) -> Result<(), String> {
         let mut edit = heading_utils::open_edit(path, target, &nobo_core::core::errors::subject::heading())?;
         edit.write(&payload)?;
         edit.touch_ancestors()?;
@@ -1841,7 +1872,8 @@ mod tests {
             "* TODO Erste Aufgabe\n:PROPERTIES:\n:CUSTOM_ID: h:aaa\n:END:\n\
              * TODO Zweite Aufgabe\n:PROPERTIES:\n:CUSTOM_ID: h:bbb\n:END:\n\
              Wichtige Notizen der zweiten Aufgabe.\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         // Both captured from the same load, exactly as the UI holds them.
         let flat = index.get_headings_or_parse(&path);
@@ -1850,14 +1882,17 @@ mod tests {
 
         // A description written on the FIRST task pushes the second one
         // down by three lines -- `second` is now stale.
-        update_heading_body(&index, &path, &first, HeadingUpdatePayload {
-            content: Some("Zeile\nZeile\nZeile".to_string()), ..Default::default()
-        }).unwrap();
+        update_heading_body(
+            &index,
+            &path,
+            &first,
+            HeadingUpdatePayload { content: Some("Zeile\nZeile\nZeile".to_string()), ..Default::default() },
+        )
+        .unwrap();
 
         // ...and the second task is edited with that stale reference.
-        update_heading_body(&index, &path, &second, HeadingUpdatePayload {
-            state: Some("DONE".to_string()), ..Default::default()
-        }).unwrap();
+        update_heading_body(&index, &path, &second, HeadingUpdatePayload { state: Some("DONE".to_string()), ..Default::default() })
+            .unwrap();
 
         let after = index.get_headings_or_parse(&path);
         let first_after = after.iter().find(|h| h.title == "Erste Aufgabe").unwrap();
@@ -1878,10 +1913,7 @@ mod tests {
     fn an_edit_after_the_file_changed_behind_the_index_still_lands_on_its_own_heading() {
         let (dir, index, _db) = setup();
         let path = dir.path().join("actions.org");
-        std::fs::write(
-            &path,
-            "* TODO Meine Aufgabe\n:PROPERTIES:\n:CUSTOM_ID: h:aaa\n:END:\n",
-        ).unwrap();
+        std::fs::write(&path, "* TODO Meine Aufgabe\n:PROPERTIES:\n:CUSTOM_ID: h:aaa\n:END:\n").unwrap();
         index.scan_directory(dir.path());
 
         let flat = index.get_headings_or_parse(&path);
@@ -1893,11 +1925,11 @@ mod tests {
             &path,
             "* TODO Von woanders\n:PROPERTIES:\n:CUSTOM_ID: h:zzz\n:END:\nFremder Text.\n\
              * TODO Meine Aufgabe\n:PROPERTIES:\n:CUSTOM_ID: h:aaa\n:END:\n",
-        ).unwrap();
+        )
+        .unwrap();
 
-        update_heading_body(&index, &path, &mine, HeadingUpdatePayload {
-            content: Some("Meine Notiz".to_string()), ..Default::default()
-        }).unwrap();
+        update_heading_body(&index, &path, &mine, HeadingUpdatePayload { content: Some("Meine Notiz".to_string()), ..Default::default() })
+            .unwrap();
 
         let after = heading_utils::parse_from_disk(&path);
         let foreign = after.iter().find(|h| h.title == "Von woanders").unwrap();
@@ -1915,10 +1947,7 @@ mod tests {
     fn a_new_subtask_gets_its_level_from_the_parent_the_write_actually_resolved_to() {
         let (dir, index, _db) = setup();
         let path = dir.path().join("projects.org");
-        std::fs::write(
-            &path,
-            "* TODO Projekt :project:\n:PROPERTIES:\n:CUSTOM_ID: h:proj\n:END:\n",
-        ).unwrap();
+        std::fs::write(&path, "* TODO Projekt :project:\n:PROPERTIES:\n:CUSTOM_ID: h:proj\n:END:\n").unwrap();
         index.scan_directory(dir.path());
         let parent = target_for(&index.get_headings_or_parse(&path)[0]);
 
@@ -1927,7 +1956,8 @@ mod tests {
             &path,
             "* TODO Oberprojekt :project:\n\
              ** TODO Projekt :project:\n:PROPERTIES:\n:CUSTOM_ID: h:proj\n:END:\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         // create_heading_in_file's own logic, with the caller still
         // believing the parent sits at level 1.
@@ -1943,7 +1973,9 @@ mod tests {
             category: None,
         };
         let flat = heading_utils::parse_from_disk(&path);
-        let idx = heading_identity::resolve_target(&flat, payload.parent.as_ref().unwrap(), &nobo_core::core::errors::subject::parent_heading()).unwrap();
+        let idx =
+            heading_identity::resolve_target(&flat, payload.parent.as_ref().unwrap(), &nobo_core::core::errors::subject::parent_heading())
+                .unwrap();
         let level = flat[idx].level + 1;
         let block = heading_utils::build_new_heading_block(&payload, level);
         fs_utils::insert_lines_after(&path, heading_utils::find_subtree_end_line(&flat, idx), block).unwrap();
@@ -1960,15 +1992,16 @@ mod tests {
     fn an_edit_of_a_heading_that_no_longer_exists_is_refused_instead_of_misapplied() {
         let (dir, index, _db) = setup();
         let path = dir.path().join("actions.org");
-        std::fs::write(
-            &path,
-            "* TODO Bleibt\n:PROPERTIES:\n:CUSTOM_ID: h:aaa\n:END:\nEigener Text.\n",
-        ).unwrap();
+        std::fs::write(&path, "* TODO Bleibt\n:PROPERTIES:\n:CUSTOM_ID: h:aaa\n:END:\nEigener Text.\n").unwrap();
         let gone = HeadingTarget { line_no: 1, custom_id: Some("h:weg".into()), title: Some("Gelöscht".into()) };
 
-        let err = update_heading_body(&index, &path, &gone, HeadingUpdatePayload {
-            content: Some("Text der gelöschten Aufgabe".to_string()), ..Default::default()
-        }).unwrap_err();
+        let err = update_heading_body(
+            &index,
+            &path,
+            &gone,
+            HeadingUpdatePayload { content: Some("Text der gelöschten Aufgabe".to_string()), ..Default::default() },
+        )
+        .unwrap_err();
 
         assert!(err.contains("h:weg"), "{err}");
         let after = index.get_headings_or_parse(&path);
@@ -1987,7 +2020,15 @@ mod tests {
         HeadingTarget { line_no: 0, custom_id: None, title: Some(title.to_string()) }
     }
 
-    fn refile_in(path: &std::path::Path, what: &str, beside: &str, position: RefilePosition, state: Option<&str>, index: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
+    fn refile_in(
+        path: &std::path::Path,
+        what: &str,
+        beside: &str,
+        position: RefilePosition,
+        state: Option<&str>,
+        index: &IndexManager,
+        db: &Mutex<Connection>,
+    ) -> Result<(), String> {
         let file = path.to_string_lossy().into_owned();
         refile_heading(file.clone(), by_title(what), file, Some(by_title(beside)), Some(position), state.map(String::from), index, db)
     }
@@ -2137,16 +2178,30 @@ mod tests {
         let flat = index.get_headings_or_parse(&path);
         let subtask = flat.iter().find(|h| h.title == "Subtask").unwrap().clone();
         let payload = HeadingUpdatePayload {
-            state: Some("DONE".to_string()), priority: None, title: None, scheduled: None, deadline: None,
-            content: None, closed: None, properties: None, history: None, clocks: None, tags: None, effort_minutes: None,
+            state: Some("DONE".to_string()),
+            priority: None,
+            title: None,
+            scheduled: None,
+            deadline: None,
+            content: None,
+            closed: None,
+            properties: None,
+            history: None,
+            clocks: None,
+            tags: None,
+            effort_minutes: None,
         };
         let before = std::fs::read_to_string(&path).ok();
         let new_block = heading_utils::build_org_heading_block(&subtask, &payload);
         fs_utils::splice_lines(&path, subtask.line_no - 1, subtask.last_line, new_block).unwrap();
         index.update_file(&path);
         let after = std::fs::read_to_string(&path).ok();
-        record_best_effort(&db, HistoryEntryKind::HeadingUpdated { filename: "projects.org".into(), title: "Subtask".into() }, false,
-            vec![FileSnapshot { path: path_str.clone(), before, after }]);
+        record_best_effort(
+            &db,
+            HistoryEntryKind::HeadingUpdated { filename: "projects.org".into(), title: "Subtask".into() },
+            false,
+            vec![FileSnapshot { path: path_str.clone(), before, after }],
+        );
 
         {
             let conn = db.lock().unwrap();
@@ -2174,8 +2229,12 @@ mod tests {
         fs_utils::insert_lines_after(&path, insert_after_line, new_lines).unwrap();
         index.update_file(&path);
         let after2 = std::fs::read_to_string(&path).ok();
-        record_best_effort(&db, HistoryEntryKind::HeadingCreated { filename: "projects.org".into(), title: "New Subtask".into() }, false,
-            vec![FileSnapshot { path: path_str.clone(), before: before2, after: after2 }]);
+        record_best_effort(
+            &db,
+            HistoryEntryKind::HeadingCreated { filename: "projects.org".into(), title: "New Subtask".into() },
+            false,
+            vec![FileSnapshot { path: path_str.clone(), before: before2, after: after2 }],
+        );
 
         let conn = db.lock().unwrap();
         let entries = history::list_for_path(&conn, &path_str, 10).unwrap();
@@ -2207,17 +2266,14 @@ mod tests {
             "* Project :project:\n:PROPERTIES:\n:UPDATED: 2020-01-01 Wed 00:00\n:LAST_ACTIVITY: 2020-01-01 Wed 00:00\n:END:\n\
              ** TODO Group\n:PROPERTIES:\n:UPDATED: 2020-01-01 Wed 00:00\n:LAST_ACTIVITY: 2020-01-01 Wed 00:00\n:END:\n\
              *** TODO Subtask\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         let flat = index.get_headings_or_parse(&path);
         let idx = flat.iter().position(|h| h.title == "Subtask").unwrap();
         let heading = flat[idx].clone();
         let ancestors = heading_utils::ancestors_of(&flat, idx);
-        assert_eq!(
-            ancestors.iter().map(|h| h.title.as_str()).collect::<Vec<_>>(),
-            vec!["Group", "Project"],
-            "nearest ancestor first"
-        );
+        assert_eq!(ancestors.iter().map(|h| h.title.as_str()).collect::<Vec<_>>(), vec!["Group", "Project"], "nearest ancestor first");
 
         // -- update_heading_in_file's logic: TODO -> DONE.
         let payload = HeadingUpdatePayload { state: Some("DONE".to_string()), ..Default::default() };
@@ -2242,7 +2298,8 @@ mod tests {
             "* Project :project:\n:PROPERTIES:\n:UPDATED: 2021-01-01 Wed 00:00\n:LAST_ACTIVITY: 2021-01-01 Wed 00:00\n:END:\n\
              ** TODO Group\n:PROPERTIES:\n:UPDATED: 2021-01-01 Wed 00:00\n:LAST_ACTIVITY: 2021-01-01 Wed 00:00\n:END:\n\
              *** TODO Subtask\n",
-        ).unwrap();
+        )
+        .unwrap();
         index.update_file(&path);
         let flat2 = index.get_headings_or_parse(&path);
         let group_idx = flat2.iter().position(|h| h.title == "Group").unwrap();
@@ -2258,7 +2315,9 @@ mod tests {
             category: None,
         };
         let new_lines = heading_utils::build_new_heading_block(&create_payload, flat2[group_idx].level + 1);
-        let mut edit = heading_utils::open_edit(&path, &at_line(flat2[group_idx].line_no), &nobo_core::core::errors::subject::parent_heading()).unwrap();
+        let mut edit =
+            heading_utils::open_edit(&path, &at_line(flat2[group_idx].line_no), &nobo_core::core::errors::subject::parent_heading())
+                .unwrap();
         edit.insert_after_subtree(new_lines).unwrap();
         edit.touch_self_and_ancestors().unwrap();
         edit.commit().unwrap();
@@ -2267,8 +2326,16 @@ mod tests {
         let flat3 = index.get_headings_or_parse(&path);
         let project3 = flat3.iter().find(|h| h.title == "Project").unwrap();
         let group3 = flat3.iter().find(|h| h.title == "Group").unwrap();
-        assert_ne!(project3.properties.get("LAST_ACTIVITY").unwrap(), "2021-01-01 Wed 00:00", "project's LAST_ACTIVITY bumped by new subtask");
-        assert_ne!(group3.properties.get("LAST_ACTIVITY").unwrap(), "2021-01-01 Wed 00:00", "direct parent's LAST_ACTIVITY bumped by new subtask");
+        assert_ne!(
+            project3.properties.get("LAST_ACTIVITY").unwrap(),
+            "2021-01-01 Wed 00:00",
+            "project's LAST_ACTIVITY bumped by new subtask"
+        );
+        assert_ne!(
+            group3.properties.get("LAST_ACTIVITY").unwrap(),
+            "2021-01-01 Wed 00:00",
+            "direct parent's LAST_ACTIVITY bumped by new subtask"
+        );
         assert_eq!(project3.properties.get("UPDATED").unwrap(), "2021-01-01 Wed 00:00", "project's own UPDATED untouched by new subtask");
         assert_eq!(group3.properties.get("UPDATED").unwrap(), "2021-01-01 Wed 00:00", "group's own UPDATED untouched by new subtask");
     }
@@ -2291,7 +2358,8 @@ mod tests {
              * Project B :project:\n:PROPERTIES:\n:CUSTOM_ID: proj-b\n:UPDATED: 2020-01-01 Wed 00:00\n:END:\n\
              ** DONE Subtask B1\n:PROPERTIES:\n:CLOSED: [2020-01-01 Wed]\n:END:\n\
              ** TODO Subtask B2 :urgent:\nSome body text.\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         let text_of = |flat: &[Heading], title: &str| {
             let idx = flat.iter().position(|h| h.title == title).unwrap();
@@ -2312,7 +2380,11 @@ mod tests {
         let a1_after = flat_after.iter().find(|h| h.title == "Subtask A1").unwrap();
         assert_eq!(a1_after.state.as_deref(), Some("DONE"), "the actual edit took effect");
 
-        assert_eq!(project_b_before, text_of(&flat_after, "Project B"), "unrelated Project B subtree byte-identical at its new, shifted location");
+        assert_eq!(
+            project_b_before,
+            text_of(&flat_after, "Project B"),
+            "unrelated Project B subtree byte-identical at its new, shifted location"
+        );
     }
 
     /// Same concern as the update test above, but for create_heading_in_file
@@ -2327,7 +2399,8 @@ mod tests {
             "* Project A :project:\n** TODO Subtask A1\n\
              * Project B :project:\n:PROPERTIES:\n:CUSTOM_ID: proj-b\n:END:\n\
              ** DONE Subtask B1\n** TODO Subtask B2 :urgent:\nSome body text.\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         let text_of = |flat: &[Heading], title: &str| {
             let idx = flat.iter().position(|h| h.title == title).unwrap();
@@ -2359,7 +2432,11 @@ mod tests {
         let flat_after = index.get_headings_or_parse(&path);
         assert!(flat_after.iter().any(|h| h.title == "New Subtask"), "the actual create took effect");
 
-        assert_eq!(project_b_before, text_of(&flat_after, "Project B"), "unrelated Project B subtree byte-identical at its new, shifted location");
+        assert_eq!(
+            project_b_before,
+            text_of(&flat_after, "Project B"),
+            "unrelated Project B subtree byte-identical at its new, shifted location"
+        );
     }
 
     /// delete_heading_in_file's own body has no test elsewhere in this file
@@ -2380,7 +2457,8 @@ mod tests {
             "* Project A :project:\n** TODO Keep me A\n\
              * Project B :project:\n** TODO Delete me\n*** TODO Nested under delete me\n** TODO Keep me B\n\
              * Project C :project:\n:PROPERTIES:\n:CUSTOM_ID: proj-c\n:END:\n** DONE Keep me C\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         let text_of = |flat: &[Heading], title: &str| {
             let idx = flat.iter().position(|h| h.title == title).unwrap();
@@ -2394,7 +2472,8 @@ mod tests {
 
         // -- delete_heading_in_file's own logic: remove "Delete me" (and its own nested child).
         let idx = flat_before.iter().position(|h| h.title == "Delete me").unwrap();
-        let mut edit = heading_utils::open_edit(&path, &at_line(flat_before[idx].line_no), &nobo_core::core::errors::subject::heading()).unwrap();
+        let mut edit =
+            heading_utils::open_edit(&path, &at_line(flat_before[idx].line_no), &nobo_core::core::errors::subject::heading()).unwrap();
         edit.delete_subtree().unwrap();
         edit.touch_ancestors().unwrap();
         edit.commit().unwrap();
@@ -2406,10 +2485,17 @@ mod tests {
 
         assert_eq!(project_a_before, text_of(&flat_after, "Project A"), "unrelated Project A, entirely before the deletion, untouched");
         assert_eq!(project_c_before, text_of(&flat_after, "Project C"), "unrelated Project C, entirely after the deletion, untouched");
-        assert_eq!(keep_me_b_before, text_of(&flat_after, "Keep me B"), "Keep me B's own text byte-identical -- proves the deleted range's end_line didn't spill into its immediate next sibling");
+        assert_eq!(
+            keep_me_b_before,
+            text_of(&flat_after, "Keep me B"),
+            "Keep me B's own text byte-identical -- proves the deleted range's end_line didn't spill into its immediate next sibling"
+        );
 
         let project_b = flat_after.iter().find(|h| h.title == "Project B").unwrap();
-        assert!(project_b.properties.contains_key("LAST_ACTIVITY"), "Project B, the deleted heading's own parent, gets touched per touch_ancestors");
+        assert!(
+            project_b.properties.contains_key("LAST_ACTIVITY"),
+            "Project B, the deleted heading's own parent, gets touched per touch_ancestors"
+        );
     }
 
     /// End-to-end command test for refile_heading (the single-item path) --
@@ -2440,18 +2526,30 @@ mod tests {
         let before_tgt = all_tgt_lines.join("\n");
 
         let params = refile::RefileParams { start_line, end_line, src_level: 1, target_level, default_state: None };
-        let (new_src_lines, new_tgt_lines) = refile::splice_refile(
-            all_src_lines, &params, Some(target_parent_line), RefilePosition::Into, false, &tgt_path, all_tgt_lines,
-        ).unwrap();
+        let (new_src_lines, new_tgt_lines) =
+            refile::splice_refile(all_src_lines, &params, Some(target_parent_line), RefilePosition::Into, false, &tgt_path, all_tgt_lines)
+                .unwrap();
         fs_utils::write_lines(&src_path, &new_src_lines).unwrap();
         fs_utils::write_lines(&tgt_path, &new_tgt_lines).unwrap();
         index.update_file(&src_path);
         index.update_file(&tgt_path);
-        record_best_effort(&db, HistoryEntryKind::Refiled { title: "Move me".into(), target_filename: "projects.org".into() }, false,
+        record_best_effort(
+            &db,
+            HistoryEntryKind::Refiled { title: "Move me".into(), target_filename: "projects.org".into() },
+            false,
             vec![
-                FileSnapshot { path: tgt_path.to_string_lossy().into_owned(), before: Some(before_tgt), after: Some(new_tgt_lines.join("\n")) },
-                FileSnapshot { path: src_path.to_string_lossy().into_owned(), before: Some(before_src), after: Some(new_src_lines.join("\n")) },
-            ]);
+                FileSnapshot {
+                    path: tgt_path.to_string_lossy().into_owned(),
+                    before: Some(before_tgt),
+                    after: Some(new_tgt_lines.join("\n")),
+                },
+                FileSnapshot {
+                    path: src_path.to_string_lossy().into_owned(),
+                    before: Some(before_src),
+                    after: Some(new_src_lines.join("\n")),
+                },
+            ],
+        );
 
         let src_after = index.get_headings_or_parse(&src_path);
         let tgt_after = index.get_headings_or_parse(&tgt_path);
@@ -2461,7 +2559,11 @@ mod tests {
         assert!(tgt_after.iter().any(|h| h.title == "Existing subtask"), "unrelated pre-existing target subtask untouched");
 
         let conn = db.lock().unwrap();
-        assert_eq!(history::list_for_path(&conn, &tgt_path.to_string_lossy(), 10).unwrap().len(), 1, "one history entry recorded for the target file");
+        assert_eq!(
+            history::list_for_path(&conn, &tgt_path.to_string_lossy(), 10).unwrap().len(),
+            1,
+            "one history entry recorded for the target file"
+        );
     }
 
     /// Reported perf problem: bulk-selecting several subtasks under the
@@ -2487,7 +2589,8 @@ mod tests {
             "* Project :project:\n:PROPERTIES:\n:UPDATED: 2020-01-01 Wed 00:00\n:LAST_ACTIVITY: 2020-01-01 Wed 00:00\n:END:\n\
              ** TODO Subtask A\n\
              ** TODO Subtask B\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         let flat = index.get_headings_or_parse(&path);
         let line_of = |title: &str| flat.iter().find(|h| h.title == title).unwrap().line_no;
@@ -2518,8 +2621,16 @@ mod tests {
         assert_eq!(a.state.as_deref(), Some("DONE"), "A got its own state payload");
         assert_eq!(b.tags, vec!["urgent".to_string()], "B got its own, different tags payload");
         assert_eq!(b.state.as_deref(), Some("TODO"), "B's state untouched by A's payload -- each entry's patch stays independent");
-        assert_ne!(project.properties.get("LAST_ACTIVITY").unwrap(), "2020-01-01 Wed 00:00", "shared project ancestor's LAST_ACTIVITY bumped once by the batch");
-        assert_eq!(project.properties.get("UPDATED").unwrap(), "2020-01-01 Wed 00:00", "project's own UPDATED untouched by a subtask batch");
+        assert_ne!(
+            project.properties.get("LAST_ACTIVITY").unwrap(),
+            "2020-01-01 Wed 00:00",
+            "shared project ancestor's LAST_ACTIVITY bumped once by the batch"
+        );
+        assert_eq!(
+            project.properties.get("UPDATED").unwrap(),
+            "2020-01-01 Wed 00:00",
+            "project's own UPDATED untouched by a subtask batch"
+        );
     }
 
     /// Same reported-perf-problem shape as the bulk_update test above, but
@@ -2539,7 +2650,8 @@ mod tests {
              ** TODO Subtask A\n\
              ** TODO Subtask B\n\
              ** TODO Subtask C\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         let flat = index.get_headings_or_parse(&path);
         let line_of = |title: &str| flat.iter().find(|h| h.title == title).unwrap().line_no;
@@ -2560,8 +2672,16 @@ mod tests {
         assert!(flat_after.iter().find(|h| h.title == "Subtask B").is_none(), "B removed");
         assert!(flat_after.iter().find(|h| h.title == "Subtask C").is_some(), "C untouched");
         let project = flat_after.iter().find(|h| h.title == "Project").unwrap();
-        assert_ne!(project.properties.get("LAST_ACTIVITY").unwrap(), "2020-01-01 Wed 00:00", "shared project ancestor's LAST_ACTIVITY bumped once by the batch");
-        assert_eq!(project.properties.get("UPDATED").unwrap(), "2020-01-01 Wed 00:00", "project's own UPDATED untouched by a subtask batch");
+        assert_ne!(
+            project.properties.get("LAST_ACTIVITY").unwrap(),
+            "2020-01-01 Wed 00:00",
+            "shared project ancestor's LAST_ACTIVITY bumped once by the batch"
+        );
+        assert_eq!(
+            project.properties.get("UPDATED").unwrap(),
+            "2020-01-01 Wed 00:00",
+            "project's own UPDATED untouched by a subtask batch"
+        );
     }
 
     /// The hazard useBulkDelete.ts's own doc comment calls out: a selection
@@ -2580,7 +2700,8 @@ mod tests {
              ** TODO Subtask\n\
              * Project B :project:\n\
              ** TODO Keep me\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         let flat = index.get_headings_or_parse(&path);
         let line_of = |title: &str| flat.iter().find(|h| h.title == title).unwrap().line_no;
@@ -2617,7 +2738,8 @@ mod tests {
             "* TODO Task A\n\
              * TODO Task B\n\
              * TODO Task C\n",
-        ).unwrap();
+        )
+        .unwrap();
 
         let flat = index.get_headings_or_parse(&path);
         let line_of = |title: &str| flat.iter().find(|h| h.title == title).unwrap().line_no;
@@ -2637,8 +2759,12 @@ mod tests {
         let count = result.unwrap();
         assert_eq!(count, 2);
         if count > 0 {
-            record_best_effort(&db, HistoryEntryKind::HeadingsBulkDeleted { filename: filename_of(&path), count }, false,
-                vec![FileSnapshot { path: file_path, before, after }]);
+            record_best_effort(
+                &db,
+                HistoryEntryKind::HeadingsBulkDeleted { filename: filename_of(&path), count },
+                false,
+                vec![FileSnapshot { path: file_path, before, after }],
+            );
         }
 
         let flat_after = index.get_headings_or_parse(&path);
@@ -2695,9 +2821,16 @@ mod tests {
         let source_entries: Vec<(usize, Option<String>)> = sources.into_iter().map(|s| (s.target.line_no, s.default_state)).collect();
 
         let (new_src_lines, new_tgt_lines, count) = refile::splice_bulk_refile(
-            &src_flat, &source_entries, all_src_lines, Some(target_parent_line as usize), same_file, target_level,
-            &tgt_path, all_tgt_lines,
-        ).unwrap();
+            &src_flat,
+            &source_entries,
+            all_src_lines,
+            Some(target_parent_line as usize),
+            same_file,
+            target_level,
+            &tgt_path,
+            all_tgt_lines,
+        )
+        .unwrap();
         assert_eq!(count, 2);
         let after_src = new_src_lines.join("\n");
         let after_tgt = new_tgt_lines.join("\n");
@@ -2705,11 +2838,15 @@ mod tests {
         fs_utils::write_lines(&tgt_path, &new_tgt_lines).unwrap();
         index.update_file(&src_path);
         index.update_file(&tgt_path);
-        record_best_effort(&db, HistoryEntryKind::HeadingsBulkRefiled { count, target_filename: filename_of(&tgt_path) }, false,
+        record_best_effort(
+            &db,
+            HistoryEntryKind::HeadingsBulkRefiled { count, target_filename: filename_of(&tgt_path) },
+            false,
             vec![
                 FileSnapshot { path: target_file, before: before_tgt, after: Some(after_tgt) },
                 FileSnapshot { path: source_file, before: Some(before_src), after: Some(after_src) },
-            ]);
+            ],
+        );
 
         let src_after = index.get_headings_or_parse(&src_path);
         assert_eq!(src_after.len(), 1, "only Task B stays behind");
@@ -2737,19 +2874,23 @@ mod tests {
         // separate, addressable level-1 heading (org_parser's rule: state
         // or :project: tag required once something else already opened
         // the heading before it).
-        std::fs::write(&path, concat!(
-            "* Project A :project:\n",
-            "  :PROPERTIES:\n",
-            "  :CATEGORY: Work\n",
-            "  :END:\n",
-            "  :LOGBOOK:\n",
-            "  CLOCK: [2026-08-17 Mon 09:00]--[2026-08-17 Mon 10:00] =>  1:00\n",
-            "  :END:\n",
-            "* Project B :project:\n",
-            "  :LOGBOOK:\n",
-            "  CLOCK: [2026-08-17 Mon 11:00]--[2026-08-17 Mon 11:30] =>  0:30\n",
-            "  :END:\n",
-        )).unwrap();
+        std::fs::write(
+            &path,
+            concat!(
+                "* Project A :project:\n",
+                "  :PROPERTIES:\n",
+                "  :CATEGORY: Work\n",
+                "  :END:\n",
+                "  :LOGBOOK:\n",
+                "  CLOCK: [2026-08-17 Mon 09:00]--[2026-08-17 Mon 10:00] =>  1:00\n",
+                "  :END:\n",
+                "* Project B :project:\n",
+                "  :LOGBOOK:\n",
+                "  CLOCK: [2026-08-17 Mon 11:00]--[2026-08-17 Mon 11:30] =>  0:30\n",
+                "  :END:\n",
+            ),
+        )
+        .unwrap();
         index.update_file(&path);
 
         let summary = task_utils::time_tracking_summary(&index.headings_by_file());
@@ -2767,15 +2908,19 @@ mod tests {
     fn summary_matches_category_case_insensitively() {
         let (dir, index, _db) = setup();
         let path = dir.path().join("projects.org");
-        std::fs::write(&path, concat!(
-            "* Schule\n",
-            "  :PROPERTIES:\n",
-            "  :Category: Schule\n",
-            "  :END:\n",
-            "  :LOGBOOK:\n",
-            "  CLOCK: [2026-08-17 Mon 09:00]--[2026-08-17 Mon 10:00] =>  1:00\n",
-            "  :END:\n",
-        )).unwrap();
+        std::fs::write(
+            &path,
+            concat!(
+                "* Schule\n",
+                "  :PROPERTIES:\n",
+                "  :Category: Schule\n",
+                "  :END:\n",
+                "  :LOGBOOK:\n",
+                "  CLOCK: [2026-08-17 Mon 09:00]--[2026-08-17 Mon 10:00] =>  1:00\n",
+                "  :END:\n",
+            ),
+        )
+        .unwrap();
         index.update_file(&path);
 
         let flat = index.get_headings_or_parse(&path);

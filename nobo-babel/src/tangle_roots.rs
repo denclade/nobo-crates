@@ -58,10 +58,7 @@ fn store_path() -> PathBuf {
 }
 
 fn load(path: &Path) -> GrantFile {
-    fs::read_to_string(path)
-        .ok()
-        .and_then(|content| serde_json::from_str(&content).ok())
-        .unwrap_or_default()
+    fs::read_to_string(path).ok().and_then(|content| serde_json::from_str(&content).ok()).unwrap_or_default()
 }
 
 fn save(path: &Path, store: &GrantFile) -> std::io::Result<()> {
@@ -83,10 +80,7 @@ pub fn is_granted(target: &Path) -> bool {
 /// same reason: a test may not write to the real config directory.
 pub fn is_granted_at(store: &Path, target: &Path) -> bool {
     let target = canonicalize_or_self(target);
-    load(store)
-        .directories
-        .iter()
-        .any(|entry| is_inside(&target, Path::new(&entry.directory)))
+    load(store).directories.iter().any(|entry| is_inside(&target, Path::new(&entry.directory)))
 }
 
 /// Whether TARGET is DIRECTORY itself or below it.
@@ -109,10 +103,7 @@ pub fn grant_at(path: &Path, directory: &Path) -> Result<(), String> {
     if store.directories.iter().any(|entry| entry.directory == key) {
         return Ok(());
     }
-    store.directories.push(GrantEntry {
-        directory: key,
-        granted_at: chrono::Local::now().to_rfc3339(),
-    });
+    store.directories.push(GrantEntry { directory: key, granted_at: chrono::Local::now().to_rfc3339() });
     save(path, &store).map_err(|e| e.to_string())
 }
 

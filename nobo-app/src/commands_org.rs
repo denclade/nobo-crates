@@ -16,11 +16,11 @@ use std::sync::Mutex;
 
 use rusqlite::Connection;
 
-use nobo_core::core::vault_write;
 use nobo_core::core::indexer::IndexManager;
 use nobo_core::core::org_ast;
 use nobo_core::core::org_edit::{self, Edit};
 use nobo_core::core::org_sort::{self, SortKey, SortTarget};
+use nobo_core::core::vault_write;
 
 /// Ticks or clears the checkbox on LINE_NO (1-based) of FILE_PATH and
 /// brings every parent checkbox above it up to date.

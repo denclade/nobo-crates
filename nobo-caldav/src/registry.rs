@@ -58,10 +58,8 @@ impl CalDavSubscription {
 
 /// Every CalDAV subscription in the vault, tasks and calendars together.
 pub fn list(vault_root: &Path) -> Vec<CalDavSubscription> {
-    let mut subscriptions: Vec<CalDavSubscription> = [CalDavKind::Tasks, CalDavKind::Events]
-        .into_iter()
-        .flat_map(|kind| list_of_kind(vault_root, kind))
-        .collect();
+    let mut subscriptions: Vec<CalDavSubscription> =
+        [CalDavKind::Tasks, CalDavKind::Events].into_iter().flat_map(|kind| list_of_kind(vault_root, kind)).collect();
     subscriptions.sort_by_key(|subscription| subscription.name.to_lowercase());
     subscriptions
 }
@@ -100,8 +98,7 @@ pub fn read(path: &Path) -> Option<CalDavSubscription> {
 
     Some(CalDavSubscription {
         id: path.file_stem()?.to_string_lossy().into_owned(),
-        color: file_kind::leading_keyword(&lines, nobo_calendar_mirror::COLOR_KEYWORD)
-            .filter(|color| !color.is_empty()),
+        color: file_kind::leading_keyword(&lines, nobo_calendar_mirror::COLOR_KEYWORD).filter(|color| !color.is_empty()),
         name: file_kind::leading_keyword(&lines, "#+TITLE:").filter(|t| !t.is_empty()).unwrap_or_else(|| url.clone()),
         account_id: identity::account_id(&username, &url),
         username,
@@ -267,9 +264,6 @@ mod tests {
         subscribe(vault.path(), CalDavKind::Tasks, "Einkauf");
 
         let found = &list(vault.path())[0];
-        assert_eq!(
-            found.account_id,
-            identity::account_id("dennis", "https://cloud.example.com/dav/cal/dennis/einkauf/")
-        );
+        assert_eq!(found.account_id, identity::account_id("dennis", "https://cloud.example.com/dav/cal/dennis/einkauf/"));
     }
 }

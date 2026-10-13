@@ -1,6 +1,6 @@
-use std::path::PathBuf;
-use rusqlite::Connection;
 use crate::config::settings::config_dir;
+use rusqlite::Connection;
+use std::path::PathBuf;
 
 pub fn history_db_path() -> PathBuf {
     config_dir().join("nobo.sqlite")
@@ -32,9 +32,9 @@ pub fn open_at(path: PathBuf) -> rusqlite::Result<Connection> {
         "PRAGMA journal_mode = WAL;
          PRAGMA synchronous = NORMAL;
          PRAGMA busy_timeout = 5000;
-         PRAGMA foreign_keys = ON;"
+         PRAGMA foreign_keys = ON;",
     )?;
-    
+
     Ok(conn)
 }
 /// Adds columns a table is missing, so a schema that grew after a database
@@ -54,8 +54,7 @@ pub fn open_at(path: PathBuf) -> rusqlite::Result<Connection> {
 #[allow(dead_code)]
 pub fn ensure_columns(conn: &Connection, table: &str, columns: &[(&str, &str)]) -> rusqlite::Result<()> {
     let mut stmt = conn.prepare(&format!("PRAGMA table_info({table})"))?;
-    let existing: Vec<String> =
-        stmt.query_map([], |row| row.get::<_, String>(1))?.collect::<Result<_, _>>()?;
+    let existing: Vec<String> = stmt.query_map([], |row| row.get::<_, String>(1))?.collect::<Result<_, _>>()?;
 
     for (name, definition) in columns {
         if existing.iter().any(|e| e == name) {

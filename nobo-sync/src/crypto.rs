@@ -98,14 +98,11 @@ pub fn derive_salt(identity: &str) -> [u8; SALT_LEN] {
 pub fn derive_master_key(password: &str, salt: &[u8; SALT_LEN]) -> Result<MasterKey, String> {
     use argon2::{Algorithm, Argon2, Params, Version};
 
-    let params = Params::new(19 * 1024, 2, 1, Some(KEY_LEN))
-        .map_err(map_err("invalid Argon2 params"))?;
+    let params = Params::new(19 * 1024, 2, 1, Some(KEY_LEN)).map_err(map_err("invalid Argon2 params"))?;
     let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
 
     let mut key = [0u8; KEY_LEN];
-    argon2
-        .hash_password_into(password.as_bytes(), salt, &mut key)
-        .map_err(map_err("key derivation failed"))?;
+    argon2.hash_password_into(password.as_bytes(), salt, &mut key).map_err(map_err("key derivation failed"))?;
     Ok(Zeroizing::new(key))
 }
 
@@ -139,9 +136,7 @@ pub fn wrap_key(master_key: &MasterKey, file_key: &FileKey) -> Result<WrappedKey
     let nonce = GenericArray::from_slice(&nonce_bytes);
 
     let file_key_bytes: &[u8] = file_key.as_ref();
-    let ciphertext = cipher
-        .encrypt(nonce, file_key_bytes)
-        .map_err(map_err("failed to wrap file key"))?;
+    let ciphertext = cipher.encrypt(nonce, file_key_bytes).map_err(map_err("failed to wrap file key"))?;
 
     Ok(WrappedKey { nonce: nonce_bytes, ciphertext })
 }
@@ -160,9 +155,7 @@ pub fn unwrap_key(master_key: &MasterKey, wrapped: &WrappedKey) -> Result<FileKe
         .decrypt(nonce, wrapped.ciphertext.as_slice())
         .map_err(map_err("failed to unwrap file key (wrong password or corrupted data)"))?;
 
-    let key: [u8; KEY_LEN] = plaintext
-        .try_into()
-        .map_err(|_| "unwrapped key has the wrong length".to_string())?;
+    let key: [u8; KEY_LEN] = plaintext.try_into().map_err(|_| "unwrapped key has the wrong length".to_string())?;
     Ok(Zeroizing::new(key))
 }
 
@@ -234,16 +227,12 @@ pub fn encrypt_stream(file_key: &FileKey, reader: &mut impl Read, writer: &mut i
         }
 
         if filled == CHUNK_LEN {
-            let ciphertext = encryptor
-                .encrypt_next(buf.as_slice())
-                .map_err(map_err("stream encryption failed"))?;
+            let ciphertext = encryptor.encrypt_next(buf.as_slice()).map_err(map_err("stream encryption failed"))?;
             writer.write_all(&ciphertext).map_err(map_err("failed to write ciphertext chunk"))?;
             filled = 0;
         } else {
             // n == 0 here: true EOF with a partial (possibly empty) final chunk.
-            let ciphertext = encryptor
-                .encrypt_last(&buf[..filled])
-                .map_err(map_err("stream encryption failed (final chunk)"))?;
+            let ciphertext = encryptor.encrypt_last(&buf[..filled]).map_err(map_err("stream encryption failed (final chunk)"))?;
             writer.write_all(&ciphertext).map_err(map_err("failed to write final ciphertext chunk"))?;
             break;
         }

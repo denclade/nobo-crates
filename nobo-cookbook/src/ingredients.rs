@@ -10,14 +10,10 @@
 
 use super::model::{Amount, Ingredient};
 
-
 /// Vulgar fractions, which recipes use freely and `str::parse` does not
 /// know. What actually turns up in kitchens; anything else falls through
 /// to "no amount", which is a safe outcome.
-const FRACTIONS: &[(char, f64)] = &[
-    ('½', 0.5), ('⅓', 1.0 / 3.0), ('⅔', 2.0 / 3.0),
-    ('¼', 0.25), ('¾', 0.75), ('⅛', 0.125),
-];
+const FRACTIONS: &[(char, f64)] = &[('½', 0.5), ('⅓', 1.0 / 3.0), ('⅔', 2.0 / 3.0), ('¼', 0.25), ('¾', 0.75), ('⅛', 0.125)];
 
 /// Words that are not units, however much they look like one standing
 /// between a number and the ingredient. Without this, "3 sehr reife
@@ -34,8 +30,7 @@ fn is_unit_like(word: &str) -> bool {
         && word.chars().count() <= 5
         && !matches!(
             word.to_lowercase().as_str(),
-            "sehr" | "ganz" | "gut" | "frisch" | "reife" | "reifen" | "große" | "kleine"
-                | "very" | "ripe" | "large" | "small"
+            "sehr" | "ganz" | "gut" | "frisch" | "reife" | "reifen" | "große" | "kleine" | "very" | "ripe" | "large" | "small"
         )
 }
 
@@ -54,11 +49,7 @@ fn parse_amount(text: &str) -> Option<Amount> {
     // separator and the rest read as an unusable item.
     let mut to = None;
     let dashed = rest.trim_start();
-    if let Some(after_dash) = dashed
-        .strip_prefix("--")
-        .or_else(|| dashed.strip_prefix('-'))
-        .or_else(|| dashed.strip_prefix('–'))
-    {
+    if let Some(after_dash) = dashed.strip_prefix("--").or_else(|| dashed.strip_prefix('-')).or_else(|| dashed.strip_prefix('–')) {
         if let Some((upper, after_upper)) = read_number(after_dash) {
             to = Some(upper);
             rest = after_upper;
@@ -85,10 +76,7 @@ fn read_number(input: &str) -> Option<(f64, &str)> {
         return Some((value, rest));
     }
 
-    let digits: String = input
-        .chars()
-        .take_while(|c| c.is_ascii_digit() || *c == '.' || *c == ',')
-        .collect();
+    let digits: String = input.chars().take_while(|c| c.is_ascii_digit() || *c == '.' || *c == ',').collect();
     let digits = digits.trim_end_matches(['.', ',']).to_string();
     if digits.is_empty() {
         return None;
@@ -117,10 +105,7 @@ fn read_number(input: &str) -> Option<(f64, &str)> {
 
 fn read_fraction_char(input: &str) -> Option<(f64, &str)> {
     let first = input.chars().next()?;
-    FRACTIONS
-        .iter()
-        .find(|(c, _)| *c == first)
-        .map(|(_, value)| (*value, &input[first.len_utf8()..]))
+    FRACTIONS.iter().find(|(c, _)| *c == first).map(|(_, value)| (*value, &input[first.len_utf8()..]))
 }
 
 fn read_fraction(input: &str) -> Option<(f64, &str)> {

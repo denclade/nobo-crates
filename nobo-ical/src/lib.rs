@@ -33,12 +33,7 @@ pub fn text(properties: &[Property], name: &str) -> Option<String> {
 
 /// A parameter of a property (`TZID`, `VALUE`), case-insensitively.
 pub fn param(property: &Property, name: &str) -> Option<String> {
-    property
-        .params
-        .as_ref()?
-        .iter()
-        .find(|(key, _)| key.eq_ignore_ascii_case(name))
-        .and_then(|(_, values)| values.first().cloned())
+    property.params.as_ref()?.iter().find(|(key, _)| key.eq_ignore_ascii_case(name)).and_then(|(_, values)| values.first().cloned())
 }
 
 /// A whole day rather than a moment: `VALUE=DATE`, or a bare `YYYYMMDD`.
@@ -126,11 +121,7 @@ pub fn unescape(raw: &str) -> String {
 /// The inverse of `unescape`. Order matters: backslashes first, or the
 /// escapes introduced below would be escaped again.
 pub fn escape(value: &str) -> String {
-    value
-        .replace('\\', "\\\\")
-        .replace(';', "\\;")
-        .replace(',', "\\,")
-        .replace('\n', "\\n")
+    value.replace('\\', "\\\\").replace(';', "\\;").replace(',', "\\,").replace('\n', "\\n")
 }
 
 /// A comma-separated list value (CATEGORIES), with escaped commas kept
@@ -226,11 +217,7 @@ mod tests {
     #[test]
     fn a_zoned_stamp_is_converted_rather_than_taken_at_face_value() {
         let zoned = property_with("20260827T090000", vec![("TZID".to_string(), vec!["Europe/Berlin".to_string()])]);
-        let expected = chrono_tz::Europe::Berlin
-            .with_ymd_and_hms(2026, 8, 27, 9, 0, 0)
-            .unwrap()
-            .with_timezone(&Local)
-            .naive_local();
+        let expected = chrono_tz::Europe::Berlin.with_ymd_and_hms(2026, 8, 27, 9, 0, 0).unwrap().with_timezone(&Local).naive_local();
 
         assert_eq!(when(&zoned), Some(When::At(expected)));
     }

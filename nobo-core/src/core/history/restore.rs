@@ -223,13 +223,19 @@ fn resolve_restore_delete(removed: RemovedHeading, current_flat: &[Heading]) -> 
     }
 
     match resolved_parent {
-        Some(None) => HeadingRestoreOutcome::Feasible(RestoreAction::Reinsert { anchor: ReinsertAnchor::TopLevel, raw_lines: removed.raw_lines }),
+        Some(None) => {
+            HeadingRestoreOutcome::Feasible(RestoreAction::Reinsert { anchor: ReinsertAnchor::TopLevel, raw_lines: removed.raw_lines })
+        }
         Some(Some(parent_line_no)) => {
             let anchor = ReinsertAnchor::AppendToParent { parent_line_no };
             HeadingRestoreOutcome::Feasible(RestoreAction::Reinsert { anchor, raw_lines: removed.raw_lines })
         }
         None => HeadingRestoreOutcome::NotFeasible {
-            reason: crate::t!("Die übergeordnete Überschrift \"{}\" existiert nicht mehr.", "The parent heading \"{}\" no longer exists.", removed.parent_title.as_deref().unwrap_or("")),
+            reason: crate::t!(
+                "Die übergeordnete Überschrift \"{}\" existiert nicht mehr.",
+                "The parent heading \"{}\" no longer exists.",
+                removed.parent_title.as_deref().unwrap_or("")
+            ),
         },
     }
 }
@@ -241,7 +247,10 @@ fn resolve_restore_update(revert: UpdateRevert, current_flat: &[Heading]) -> Hea
             HeadingRestoreOutcome::Feasible(RestoreAction::PatchFields { target_line_no, payload: revert.payload })
         }
         None => HeadingRestoreOutcome::NotFeasible {
-            reason: crate::t!("Die Überschrift konnte im aktuellen Dokument nicht mehr eindeutig gefunden werden.", "The heading could not be identified unambiguously in the current document."),
+            reason: crate::t!(
+                "Die Überschrift konnte im aktuellen Dokument nicht mehr eindeutig gefunden werden.",
+                "The heading could not be identified unambiguously in the current document."
+            ),
         },
     }
 }
@@ -252,7 +261,12 @@ fn resolve_restore_update(revert: UpdateRevert, current_flat: &[Heading]) -> Hea
 /// NOT reflect the touch_ancestors LAST_ACTIVITY bump `apply()` below also
 /// performs -- a cosmetic simplification (see this feature's own plan doc),
 /// the actual restored CONTENT here is exactly what gets written.
-fn build_preview_reinsert(current_lines: &[String], current_flat: &[Heading], anchor: &ReinsertAnchor, raw_lines: &[String]) -> Vec<String> {
+fn build_preview_reinsert(
+    current_lines: &[String],
+    current_flat: &[Heading],
+    anchor: &ReinsertAnchor,
+    raw_lines: &[String],
+) -> Vec<String> {
     let mut lines = current_lines.to_vec();
     match anchor {
         ReinsertAnchor::BeforeSibling { sibling_line_no } => {
@@ -274,7 +288,12 @@ fn build_preview_reinsert(current_lines: &[String], current_flat: &[Heading], an
 
 /// Same in-memory-only spirit as build_preview_reinsert above, but a
 /// REPLACE at the target's own current position instead of an insert.
-fn build_preview_patch(current_lines: &[String], current_flat: &[Heading], target_line_no: usize, payload: &HeadingUpdatePayload) -> Vec<String> {
+fn build_preview_patch(
+    current_lines: &[String],
+    current_flat: &[Heading],
+    target_line_no: usize,
+    payload: &HeadingUpdatePayload,
+) -> Vec<String> {
     let mut lines = current_lines.to_vec();
     if let Some(idx) = current_flat.iter().position(|h| h.line_no == target_line_no) {
         let heading = &current_flat[idx];
@@ -355,7 +374,10 @@ fn check_bulk(entry: &crate::core::models::HistoryEntry) -> HeadingRestoreCheck 
     let Some(primary) = entry.snapshots.first() else {
         return HeadingRestoreCheck {
             feasible: false,
-            reason: Some(crate::t!("Kein Inhalt gespeichert -- nicht wiederherstellbar.", "No content was recorded -- nothing to restore.")),
+            reason: Some(crate::t!(
+                "Kein Inhalt gespeichert -- nicht wiederherstellbar.",
+                "No content was recorded -- nothing to restore."
+            )),
             raw_block: None,
             current_text: None,
             preview_text: None,
@@ -404,7 +426,11 @@ fn apply_bulk(conn: &Connection, index_manager: &IndexManager, entry: &crate::co
         if snap.before.is_some() {
             let path = PathBuf::from(&snap.path);
             if path.parent().is_some_and(|p| !p.exists()) {
-                return Err(crate::t!("Der Ordner für \"{}\" existiert nicht mehr -- Wiederherstellen nicht möglich.", "The folder for \"{}\" no longer exists -- restoring is not possible.", snap.path));
+                return Err(crate::t!(
+                    "Der Ordner für \"{}\" existiert nicht mehr -- Wiederherstellen nicht möglich.",
+                    "The folder for \"{}\" no longer exists -- restoring is not possible.",
+                    snap.path
+                ));
             }
         }
     }
@@ -420,11 +446,7 @@ fn apply_bulk(conn: &Connection, index_manager: &IndexManager, entry: &crate::co
                 // same -- a half-written restore is the one failure this
                 // path must not have.
                 fs_utils::write_atomic(&path, content)
-                    .map_err(|e| crate::t!(
-                        "Wiederherstellen von \"{}\" fehlgeschlagen: {e}",
-                        "Restoring \"{}\" failed: {e}",
-                        snap.path
-                    ))?;
+                    .map_err(|e| crate::t!("Wiederherstellen von \"{}\" fehlgeschlagen: {e}", "Restoring \"{}\" failed: {e}", snap.path))?;
                 index_manager.update_file(&path);
             }
             None => {
@@ -438,10 +460,8 @@ fn apply_bulk(conn: &Connection, index_manager: &IndexManager, entry: &crate::co
         restored_snapshots.push(FileSnapshot { path: snap.path.clone(), before: snap.after.clone(), after: snap.before.clone() });
     }
 
-    let primary_filename = PathBuf::from(&entry.snapshots[0].path)
-        .file_name()
-        .map(|f| f.to_string_lossy().into_owned())
-        .unwrap_or_default();
+    let primary_filename =
+        PathBuf::from(&entry.snapshots[0].path).file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
     let _ = history::record(
         conn,
         HistoryEntryKind::HeadingsBulkRestored { filename: primary_filename, count: bulk_count(&entry.kind) },
@@ -454,10 +474,16 @@ fn apply_bulk(conn: &Connection, index_manager: &IndexManager, entry: &crate::co
 
 fn compute(entry: &crate::core::models::HistoryEntry) -> Result<Computation, String> {
     let Some(snapshot) = entry.snapshots.first() else {
-        return Ok(not_feasible(&crate::t!("Kein Inhalt gespeichert -- nicht wiederherstellbar.", "No content was recorded -- nothing to restore.")));
+        return Ok(not_feasible(&crate::t!(
+            "Kein Inhalt gespeichert -- nicht wiederherstellbar.",
+            "No content was recorded -- nothing to restore."
+        )));
     };
     let Some(before) = snapshot.before.as_deref() else {
-        return Ok(not_feasible(&crate::t!("Kein Inhalt gespeichert -- nicht wiederherstellbar.", "No content was recorded -- nothing to restore.")));
+        return Ok(not_feasible(&crate::t!(
+            "Kein Inhalt gespeichert -- nicht wiederherstellbar.",
+            "No content was recorded -- nothing to restore."
+        )));
     };
     let after = snapshot.after.as_deref().unwrap_or("");
     let path = PathBuf::from(&snapshot.path);
@@ -465,17 +491,28 @@ fn compute(entry: &crate::core::models::HistoryEntry) -> Result<Computation, Str
     let input = match &entry.kind {
         HistoryEntryKind::HeadingDeleted { .. } => {
             let Some(removed) = find_removed_heading(before, after) else {
-                return Ok(not_feasible(&crate::t!("Der gelöschte Bereich konnte nicht eindeutig bestimmt werden.", "The deleted range could not be determined unambiguously.")));
+                return Ok(not_feasible(&crate::t!(
+                    "Der gelöschte Bereich konnte nicht eindeutig bestimmt werden.",
+                    "The deleted range could not be determined unambiguously."
+                )));
             };
             OutcomeInput::Delete(removed)
         }
         HistoryEntryKind::HeadingUpdated { title, .. } => {
             let Some(revert) = find_update_revert(before, after, title) else {
-                return Ok(not_feasible(&crate::t!("Die Änderung konnte nicht eindeutig bestimmt werden.", "The change could not be determined unambiguously.")));
+                return Ok(not_feasible(&crate::t!(
+                    "Die Änderung konnte nicht eindeutig bestimmt werden.",
+                    "The change could not be determined unambiguously."
+                )));
             };
             OutcomeInput::Update(revert)
         }
-        _ => return Err(crate::t!("Dieser Eintrags-Typ unterstützt kein gezieltes Wiederherstellen.", "This kind of history entry cannot be restored selectively.")),
+        _ => {
+            return Err(crate::t!(
+                "Dieser Eintrags-Typ unterstützt kein gezieltes Wiederherstellen.",
+                "This kind of history entry cannot be restored selectively."
+            ))
+        }
     };
 
     let Ok(current_lines) = fs_utils::read_lines(&path) else {
@@ -514,12 +551,16 @@ fn compute(entry: &crate::core::models::HistoryEntry) -> Result<Computation, Str
 /// whole-file restore, since no per-heading identity was stored for it.
 /// Any other kind never recorded enough to restore anything.
 pub fn check(conn: &Connection, entry_id: i64) -> Result<HeadingRestoreCheck, String> {
-    let entry = store::get(conn, entry_id).to_cmd()?.ok_or_else(|| crate::t!("History-Eintrag nicht gefunden.", "History entry not found."))?;
+    let entry =
+        store::get(conn, entry_id).to_cmd()?.ok_or_else(|| crate::t!("History-Eintrag nicht gefunden.", "History entry not found."))?;
     if !matches!(entry.kind, HistoryEntryKind::HeadingDeleted { .. } | HistoryEntryKind::HeadingUpdated { .. }) {
         if is_bulk_snapshot_kind(&entry.kind) {
             return Ok(check_bulk(&entry));
         }
-        return Err(crate::t!("Dieser Eintrags-Typ unterstützt kein gezieltes Wiederherstellen.", "This kind of history entry cannot be restored selectively."));
+        return Err(crate::t!(
+            "Dieser Eintrags-Typ unterstützt kein gezieltes Wiederherstellen.",
+            "This kind of history entry cannot be restored selectively."
+        ));
     }
 
     let computation = compute(&entry)?;
@@ -539,7 +580,10 @@ pub fn check(conn: &Connection, entry_id: i64) -> Result<HeadingRestoreCheck, St
                     (raw_lines.join("\n"), preview)
                 }
                 RestoreAction::PatchFields { target_line_no, payload } => {
-                    let raw = computation.current_flat.iter().find(|h| h.line_no == *target_line_no)
+                    let raw = computation
+                        .current_flat
+                        .iter()
+                        .find(|h| h.line_no == *target_line_no)
                         .map(|h| heading_utils::build_org_heading_block(h, payload).join("\n"))
                         .unwrap_or_default();
                     let preview = build_preview_patch(&computation.current_lines, &computation.current_flat, *target_line_no, payload);
@@ -571,12 +615,16 @@ pub fn check(conn: &Connection, entry_id: i64) -> Result<HeadingRestoreCheck, St
 /// failed recording is swallowed either way, so it never fails an
 /// otherwise-successful restore.
 pub fn apply(conn: &Connection, index_manager: &IndexManager, entry_id: i64) -> Result<(), String> {
-    let entry = store::get(conn, entry_id).to_cmd()?.ok_or_else(|| crate::t!("History-Eintrag nicht gefunden.", "History entry not found."))?;
+    let entry =
+        store::get(conn, entry_id).to_cmd()?.ok_or_else(|| crate::t!("History-Eintrag nicht gefunden.", "History entry not found."))?;
     if !matches!(entry.kind, HistoryEntryKind::HeadingDeleted { .. } | HistoryEntryKind::HeadingUpdated { .. }) {
         if is_bulk_snapshot_kind(&entry.kind) {
             return apply_bulk(conn, index_manager, &entry);
         }
-        return Err(crate::t!("Dieser Eintrags-Typ unterstützt kein gezieltes Wiederherstellen.", "This kind of history entry cannot be restored selectively."));
+        return Err(crate::t!(
+            "Dieser Eintrags-Typ unterstützt kein gezieltes Wiederherstellen.",
+            "This kind of history entry cannot be restored selectively."
+        ));
     }
 
     let computation = compute(&entry)?;
@@ -594,11 +642,8 @@ pub fn apply(conn: &Connection, index_manager: &IndexManager, entry_id: i64) -> 
             let (before, result, after) = history::snapshot_around(&path, || {
                 match anchor {
                     ReinsertAnchor::BeforeSibling { sibling_line_no } => {
-                        let mut edit = heading_utils::open_edit(
-                            &path,
-                            &heading_utils::target_at_line(sibling_line_no),
-                            "Nachbar-Überschrift",
-                        )?;
+                        let mut edit =
+                            heading_utils::open_edit(&path, &heading_utils::target_at_line(sibling_line_no), "Nachbar-Überschrift")?;
                         edit.insert_before(raw_lines.clone())?;
 
                         // The sibling's ancestor chain is the restored
@@ -608,11 +653,7 @@ pub fn apply(conn: &Connection, index_manager: &IndexManager, entry_id: i64) -> 
                         edit.commit()?;
                     }
                     ReinsertAnchor::AppendToParent { parent_line_no } => {
-                        let mut edit = heading_utils::open_edit(
-                            &path,
-                            &heading_utils::target_at_line(parent_line_no),
-                            "Ziel-Überschrift",
-                        )?;
+                        let mut edit = heading_utils::open_edit(&path, &heading_utils::target_at_line(parent_line_no), "Ziel-Überschrift")?;
                         edit.insert_after_subtree(raw_lines.clone())?;
                         edit.touch_self_and_ancestors()?;
                         edit.commit()?;
@@ -641,11 +682,7 @@ pub fn apply(conn: &Connection, index_manager: &IndexManager, entry_id: i64) -> 
                 // back a recorded position, and the heading that sits
                 // there is the one the snapshot describes. Refuses when
                 // nothing does, with the same message as before.
-                let mut edit = heading_utils::open_edit(
-                    &path,
-                    &heading_utils::target_at_line(target_line_no),
-                    "Ziel-Überschrift",
-                )?;
+                let mut edit = heading_utils::open_edit(&path, &heading_utils::target_at_line(target_line_no), "Ziel-Überschrift")?;
                 edit.write(&payload)?;
                 edit.touch_ancestors()?;
                 edit.commit()?;
@@ -681,20 +718,36 @@ mod tests {
     fn record_delete(conn: &Connection, path: &std::path::Path, before: &str, after: &str, title: &str) -> i64 {
         history::record(
             conn,
-            HistoryEntryKind::HeadingDeleted { filename: path.file_name().unwrap().to_string_lossy().into_owned(), title: title.to_string() },
+            HistoryEntryKind::HeadingDeleted {
+                filename: path.file_name().unwrap().to_string_lossy().into_owned(),
+                title: title.to_string(),
+            },
             false,
-            vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: Some(before.to_string()), after: Some(after.to_string()) }],
-        ).unwrap();
+            vec![FileSnapshot {
+                path: path.to_string_lossy().into_owned(),
+                before: Some(before.to_string()),
+                after: Some(after.to_string()),
+            }],
+        )
+        .unwrap();
         store::list(conn, 1).unwrap()[0].id
     }
 
     fn record_update(conn: &Connection, path: &std::path::Path, before: &str, after: &str, old_title: &str) -> i64 {
         history::record(
             conn,
-            HistoryEntryKind::HeadingUpdated { filename: path.file_name().unwrap().to_string_lossy().into_owned(), title: old_title.to_string() },
+            HistoryEntryKind::HeadingUpdated {
+                filename: path.file_name().unwrap().to_string_lossy().into_owned(),
+                title: old_title.to_string(),
+            },
             false,
-            vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: Some(before.to_string()), after: Some(after.to_string()) }],
-        ).unwrap();
+            vec![FileSnapshot {
+                path: path.to_string_lossy().into_owned(),
+                before: Some(before.to_string()),
+                after: Some(after.to_string()),
+            }],
+        )
+        .unwrap();
         store::list(conn, 1).unwrap()[0].id
     }
 
@@ -707,7 +760,8 @@ mod tests {
     fn restoring_into_a_file_that_changed_behind_the_index_still_lands_in_the_right_place() {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("projects.org");
-        let before = "* Project A                                                        :project:\n** TODO Subtask One\n** TODO Subtask Two\n";
+        let before =
+            "* Project A                                                        :project:\n** TODO Subtask One\n** TODO Subtask Two\n";
         let after = "* Project A                                                        :project:\n** TODO Subtask One\n";
         std::fs::write(&path, after).unwrap();
         let conn = conn();
@@ -734,7 +788,8 @@ mod tests {
     fn restores_deleted_subtask_as_last_child_of_its_still_existing_project() {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("projects.org");
-        let before = "* Project A                                                        :project:\n** TODO Subtask One\n** TODO Subtask Two\n";
+        let before =
+            "* Project A                                                        :project:\n** TODO Subtask One\n** TODO Subtask Two\n";
         let after = "* Project A                                                        :project:\n** TODO Subtask One\n";
         std::fs::write(&path, after).unwrap();
         let conn = conn();
@@ -760,7 +815,8 @@ mod tests {
     fn restoring_a_deleted_middle_subtask_reinserts_it_between_its_original_neighbors() {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("projects.org");
-        let before = "* Project A                                                        :project:\n** TODO One\n** TODO Two\n** TODO Three\n";
+        let before =
+            "* Project A                                                        :project:\n** TODO One\n** TODO Two\n** TODO Three\n";
         let after = "* Project A                                                        :project:\n** TODO One\n** TODO Three\n";
         std::fs::write(&path, after).unwrap();
         let conn = conn();
@@ -772,7 +828,11 @@ mod tests {
         let titles: Vec<&str> = ["One", "Two", "Three"].iter().map(|t| result.find(t).map(|_| *t).unwrap()).collect();
         let mut positions: Vec<(usize, &str)> = titles.iter().map(|t| (result.find(t).unwrap(), *t)).collect();
         positions.sort();
-        assert_eq!(positions.iter().map(|(_, t)| *t).collect::<Vec<_>>(), vec!["One", "Two", "Three"], "restored order must exactly match the original document order");
+        assert_eq!(
+            positions.iter().map(|(_, t)| *t).collect::<Vec<_>>(),
+            vec!["One", "Two", "Three"],
+            "restored order must exactly match the original document order"
+        );
     }
 
     /// A deleted first child must go back before the sibling that
@@ -781,7 +841,8 @@ mod tests {
     fn restoring_a_deleted_first_subtask_reinserts_it_before_its_original_next_sibling() {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("projects.org");
-        let before = "* Project A                                                        :project:\n** TODO One\n** TODO Two\n** TODO Three\n";
+        let before =
+            "* Project A                                                        :project:\n** TODO One\n** TODO Two\n** TODO Three\n";
         let after = "* Project A                                                        :project:\n** TODO Two\n** TODO Three\n";
         std::fs::write(&path, after).unwrap();
         let conn = conn();
@@ -808,7 +869,8 @@ mod tests {
         // The history entry's own before/after snapshot pair represents
         // ONLY "Two"'s own deletion (a clean, isolatable single-heading
         // removal) -- "Three" is still present in both.
-        let before = "* Project A                                                        :project:\n** TODO One\n** TODO Two\n** TODO Three\n";
+        let before =
+            "* Project A                                                        :project:\n** TODO One\n** TODO Two\n** TODO Three\n";
         let after = "* Project A                                                        :project:\n** TODO One\n** TODO Three\n";
         // But the file ON DISK, right now, has since moved on further --
         // "Three" was ALSO independently removed at some later point, so by
@@ -836,12 +898,17 @@ mod tests {
     fn restore_does_not_anchor_to_a_same_titled_heading_that_moved_to_a_different_project() {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("projects.org");
-        let before = "* Project A                                                        :project:\n** TODO One\n** TODO Two\n** TODO Three\n";
+        let before =
+            "* Project A                                                        :project:\n** TODO One\n** TODO Two\n** TODO Three\n";
         let after = "* Project A                                                        :project:\n** TODO One\n** TODO Three\n";
         // "Two" (no CUSTOM_ID, so title-fallback identity) now ALSO exists
         // under an unrelated Project B -- must not be used as the restore
         // anchor for Project A's own deleted "Two".
-        std::fs::write(&path, format!("{after}* Project B                                                        :project:\n** TODO Two\n")).unwrap();
+        std::fs::write(
+            &path,
+            format!("{after}* Project B                                                        :project:\n** TODO Two\n"),
+        )
+        .unwrap();
         let conn = conn();
         let index = IndexManager::new();
         let id = record_delete(&conn, &path, before, after, "Two");
@@ -851,7 +918,10 @@ mod tests {
         let project_a_end = result.find("Project B").unwrap();
         let restored_two_pos = result[..project_a_end].find("Two");
         assert!(restored_two_pos.is_some(), "restored under Project A, not left missing entirely");
-        assert!(result[..project_a_end].find("One").unwrap() < restored_two_pos.unwrap(), "appended after Project A's own surviving sibling, not before Project B's unrelated \"Two\"");
+        assert!(
+            result[..project_a_end].find("One").unwrap() < restored_two_pos.unwrap(),
+            "appended after Project A's own surviving sibling, not before Project B's unrelated \"Two\""
+        );
     }
 
     #[test]
@@ -897,7 +967,8 @@ mod tests {
         let conn = conn();
         // No snapshot content at all -- same shape core::history::record
         // stores for an over-MAX_SNAPSHOT_BYTES action.
-        history::record(&conn, HistoryEntryKind::HeadingDeleted { filename: "projects.org".into(), title: "X".into() }, false, vec![]).unwrap();
+        history::record(&conn, HistoryEntryKind::HeadingDeleted { filename: "projects.org".into(), title: "X".into() }, false, vec![])
+            .unwrap();
         let id = store::list(&conn, 1).unwrap()[0].id;
 
         let check = check(&conn, id).unwrap();
@@ -918,14 +989,18 @@ mod tests {
     fn restore_works_when_the_real_delete_also_touched_the_parents_last_activity() {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("projects.org");
-        std::fs::write(&path, concat!(
-            "* Project                                                          :project:\n",
-            ":PROPERTIES:\n",
-            ":LAST_ACTIVITY: 2020-01-01 Wed 00:00\n",
-            ":END:\n",
-            "** TODO Keep me\n",
-            "** TODO Delete me\n",
-        )).unwrap();
+        std::fs::write(
+            &path,
+            concat!(
+                "* Project                                                          :project:\n",
+                ":PROPERTIES:\n",
+                ":LAST_ACTIVITY: 2020-01-01 Wed 00:00\n",
+                ":END:\n",
+                "** TODO Keep me\n",
+                "** TODO Delete me\n",
+            ),
+        )
+        .unwrap();
         let index = IndexManager::new();
 
         // Exact body of commands_headings::delete_heading_in_file, minus the
@@ -934,7 +1009,9 @@ mod tests {
         let flat = index.get_headings_or_parse(&path);
         let idx = flat.iter().position(|h| h.title == "Delete me").unwrap();
         let before = std::fs::read_to_string(&path).ok();
-        let mut edit = heading_utils::open_edit(&path, &heading_utils::target_at_line(flat[idx].line_no), &crate::core::errors::subject::heading()).unwrap();
+        let mut edit =
+            heading_utils::open_edit(&path, &heading_utils::target_at_line(flat[idx].line_no), &crate::core::errors::subject::heading())
+                .unwrap();
         edit.delete_subtree().unwrap();
         edit.touch_ancestors().unwrap();
         edit.commit().unwrap();
@@ -969,8 +1046,13 @@ mod tests {
     fn check_and_apply_error_for_an_entry_kind_that_supports_no_targeted_restore() {
         let conn = conn();
         let index = IndexManager::new();
-        history::record(&conn, HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            vec![FileSnapshot { path: "/a.org".into(), before: Some("v1".into()), after: Some("v2".into()) }]).unwrap();
+        history::record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: "/a.org".into(), before: Some("v1".into()), after: Some("v2".into()) }],
+        )
+        .unwrap();
         let id = store::list(&conn, 1).unwrap()[0].id;
 
         assert!(check(&conn, id).is_err(), "only HeadingDeleted/HeadingUpdated entries support a targeted restore");
@@ -987,8 +1069,13 @@ mod tests {
         // itself didn't exist before the action) -- not a shape a real
         // HeadingDeleted entry produces, but check()/apply() must still
         // degrade cleanly rather than panic on the missing text.
-        history::record(&conn, HistoryEntryKind::HeadingDeleted { filename: "projects.org".into(), title: "X".into() }, false,
-            vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: None, after: Some("* Project A :project:\n".into()) }]).unwrap();
+        history::record(
+            &conn,
+            HistoryEntryKind::HeadingDeleted { filename: "projects.org".into(), title: "X".into() },
+            false,
+            vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: None, after: Some("* Project A :project:\n".into()) }],
+        )
+        .unwrap();
         let id = store::list(&conn, 1).unwrap()[0].id;
 
         let check = check(&conn, id).unwrap();
@@ -1006,7 +1093,8 @@ mod tests {
         // guessing which one was "really" meant.
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("projects.org");
-        let before = "* Project A                                                        :project:\n** TODO Subtask One\n** TODO Subtask Two\n";
+        let before =
+            "* Project A                                                        :project:\n** TODO Subtask One\n** TODO Subtask Two\n";
         let after = "* Project A                                                        :project:\n";
         std::fs::write(&path, after).unwrap();
         let conn = conn();
@@ -1111,10 +1199,14 @@ mod tests {
         let after = "* Project A                                                        :project:\n";
         // The CURRENT file has two headings sharing the exact same title --
         // resolve_restore_delete's documented "first match wins" behavior.
-        std::fs::write(&path, concat!(
-            "* Project A                                                        :project:\n",
-            "* Project A                                                        :project:\n",
-        )).unwrap();
+        std::fs::write(
+            &path,
+            concat!(
+                "* Project A                                                        :project:\n",
+                "* Project A                                                        :project:\n",
+            ),
+        )
+        .unwrap();
         let conn = conn();
         let index = IndexManager::new();
         let id = record_delete(&conn, &path, before, after, "Subtask One");
@@ -1149,8 +1241,17 @@ mod tests {
         // would only ever reach THIS one, never older_id directly.
         let other_path = dir.path().join("other.org");
         std::fs::write(&other_path, "newer content").unwrap();
-        history::record(&conn, HistoryEntryKind::FileEdited { filename: "other.org".into() }, false,
-            vec![FileSnapshot { path: other_path.to_string_lossy().into_owned(), before: Some("older content".into()), after: Some("newer content".into()) }]).unwrap();
+        history::record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "other.org".into() },
+            false,
+            vec![FileSnapshot {
+                path: other_path.to_string_lossy().into_owned(),
+                before: Some("older content".into()),
+                after: Some("newer content".into()),
+            }],
+        )
+        .unwrap();
 
         let check = check(&conn, older_id).unwrap();
         assert!(check.feasible, "still checkable despite not being the most recent entry");
@@ -1283,7 +1384,10 @@ mod tests {
         apply(&conn, &index, id).unwrap();
         let result = std::fs::read_to_string(&path).unwrap();
         assert!(result.contains("Old Title"), "title reverted: {result}");
-        assert!(result.contains("Edited later, unrelated to the title revert"), "later description edit preserved, not rolled back: {result}");
+        assert!(
+            result.contains("Edited later, unrelated to the title revert"),
+            "later description edit preserved, not rolled back: {result}"
+        );
     }
 
     #[test]
@@ -1328,8 +1432,13 @@ mod tests {
             conn,
             HistoryEntryKind::HeadingsBulkDeleted { filename: path.file_name().unwrap().to_string_lossy().into_owned(), count },
             false,
-            vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: Some(before.to_string()), after: Some(after.to_string()) }],
-        ).unwrap();
+            vec![FileSnapshot {
+                path: path.to_string_lossy().into_owned(),
+                before: Some(before.to_string()),
+                after: Some(after.to_string()),
+            }],
+        )
+        .unwrap();
         store::list(conn, 1).unwrap()[0].id
     }
 
@@ -1384,8 +1493,13 @@ mod tests {
         let index = IndexManager::new();
         // before: None -- e.g. a HeadingsBulkRefiled entry whose target was
         // a brand-new file that didn't exist before the refile.
-        history::record(&conn, HistoryEntryKind::HeadingsBulkRefiled { count: 1, target_filename: "new-target.org".into() }, false,
-            vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: None, after: Some("* Task A\n".into()) }]).unwrap();
+        history::record(
+            &conn,
+            HistoryEntryKind::HeadingsBulkRefiled { count: 1, target_filename: "new-target.org".into() },
+            false,
+            vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: None, after: Some("* Task A\n".into()) }],
+        )
+        .unwrap();
         let id = store::list(&conn, 1).unwrap()[0].id;
 
         apply(&conn, &index, id).unwrap();
@@ -1408,15 +1522,33 @@ mod tests {
         // Target snapshot listed first (mirrors bulk_refile_headings' own
         // snapshot order: target always first, source appended when it
         // differs from the target).
-        history::record(&conn, HistoryEntryKind::HeadingsBulkRefiled { count: 1, target_filename: "projects.org".into() }, false, vec![
-            FileSnapshot { path: tgt_path.to_string_lossy().into_owned(), before: Some(tgt_before.into()), after: Some(tgt_after.into()) },
-            FileSnapshot { path: src_path.to_string_lossy().into_owned(), before: Some(src_before.into()), after: Some(src_after.into()) },
-        ]).unwrap();
+        history::record(
+            &conn,
+            HistoryEntryKind::HeadingsBulkRefiled { count: 1, target_filename: "projects.org".into() },
+            false,
+            vec![
+                FileSnapshot {
+                    path: tgt_path.to_string_lossy().into_owned(),
+                    before: Some(tgt_before.into()),
+                    after: Some(tgt_after.into()),
+                },
+                FileSnapshot {
+                    path: src_path.to_string_lossy().into_owned(),
+                    before: Some(src_before.into()),
+                    after: Some(src_after.into()),
+                },
+            ],
+        )
+        .unwrap();
         let id = store::list(&conn, 1).unwrap()[0].id;
 
         let check = check(&conn, id).unwrap();
         assert!(check.feasible);
-        assert_eq!(check.additional_filenames, vec!["actions.org".to_string()], "the source file is named, even though only the target's diff is shown");
+        assert_eq!(
+            check.additional_filenames,
+            vec!["actions.org".to_string()],
+            "the source file is named, even though only the target's diff is shown"
+        );
 
         apply(&conn, &index, id).unwrap();
         assert_eq!(std::fs::read_to_string(&tgt_path).unwrap(), tgt_before, "target reverted");
@@ -1447,16 +1579,34 @@ mod tests {
         // containing folder having been removed since this bulk action.
         let conn = conn();
         let index = IndexManager::new();
-        history::record(&conn, HistoryEntryKind::HeadingsBulkRefiled { count: 1, target_filename: "projects.org".into() }, false, vec![
-            FileSnapshot { path: ok_path.to_string_lossy().into_owned(), before: Some("before content".into()), after: Some("current content".into()) },
-            FileSnapshot { path: missing_dir_path.to_string_lossy().into_owned(), before: Some("also before".into()), after: Some("also after".into()) },
-        ]).unwrap();
+        history::record(
+            &conn,
+            HistoryEntryKind::HeadingsBulkRefiled { count: 1, target_filename: "projects.org".into() },
+            false,
+            vec![
+                FileSnapshot {
+                    path: ok_path.to_string_lossy().into_owned(),
+                    before: Some("before content".into()),
+                    after: Some("current content".into()),
+                },
+                FileSnapshot {
+                    path: missing_dir_path.to_string_lossy().into_owned(),
+                    before: Some("also before".into()),
+                    after: Some("also after".into()),
+                },
+            ],
+        )
+        .unwrap();
         let id = store::list(&conn, 1).unwrap()[0].id;
 
         let err = apply(&conn, &index, id);
         assert!(err.is_err());
         assert!(err.unwrap_err().contains("projects.org"), "names the specific problem file");
-        assert_eq!(std::fs::read_to_string(&ok_path).unwrap(), "current content", "the OTHER, writable file is left untouched -- no partial apply");
+        assert_eq!(
+            std::fs::read_to_string(&ok_path).unwrap(),
+            "current content",
+            "the OTHER, writable file is left untouched -- no partial apply"
+        );
     }
 
     #[test]
@@ -1478,7 +1628,13 @@ mod tests {
     }
 
     fn record_bulk_refile(conn: &Connection, snapshots: Vec<FileSnapshot>, count: u32, target_filename: &str) -> i64 {
-        history::record(conn, HistoryEntryKind::HeadingsBulkRefiled { count, target_filename: target_filename.to_string() }, false, snapshots).unwrap();
+        history::record(
+            conn,
+            HistoryEntryKind::HeadingsBulkRefiled { count, target_filename: target_filename.to_string() },
+            false,
+            snapshots,
+        )
+        .unwrap();
         store::list(conn, 1).unwrap()[0].id
     }
 
@@ -1499,10 +1655,23 @@ mod tests {
         std::fs::write(&tgt_path, tgt_after).unwrap();
         let conn = conn();
         let index = IndexManager::new();
-        let id = record_bulk_refile(&conn, vec![
-            FileSnapshot { path: tgt_path.to_string_lossy().into_owned(), before: Some(tgt_before.into()), after: Some(tgt_after.into()) },
-            FileSnapshot { path: src_path.to_string_lossy().into_owned(), before: Some(src_before.into()), after: Some(src_after.into()) },
-        ], 3, "projects.org");
+        let id = record_bulk_refile(
+            &conn,
+            vec![
+                FileSnapshot {
+                    path: tgt_path.to_string_lossy().into_owned(),
+                    before: Some(tgt_before.into()),
+                    after: Some(tgt_after.into()),
+                },
+                FileSnapshot {
+                    path: src_path.to_string_lossy().into_owned(),
+                    before: Some(src_before.into()),
+                    after: Some(src_after.into()),
+                },
+            ],
+            3,
+            "projects.org",
+        );
 
         apply(&conn, &index, id).unwrap();
         assert_eq!(std::fs::read_to_string(&tgt_path).unwrap(), tgt_before, "all three moved tasks gone from the target again");
@@ -1530,20 +1699,30 @@ mod tests {
 
         let conn = conn();
         let index = IndexManager::new();
-        let older_id = record_bulk_refile(&conn, vec![
-            FileSnapshot { path: tgt_path.to_string_lossy().into_owned(), before: Some(tgt_v1.into()), after: Some(tgt_v2.into()) },
-            FileSnapshot { path: src_path.to_string_lossy().into_owned(), before: Some(src_v1.into()), after: Some(src_v2.into()) },
-        ], 1, "projects.org");
+        let older_id = record_bulk_refile(
+            &conn,
+            vec![
+                FileSnapshot { path: tgt_path.to_string_lossy().into_owned(), before: Some(tgt_v1.into()), after: Some(tgt_v2.into()) },
+                FileSnapshot { path: src_path.to_string_lossy().into_owned(), before: Some(src_v1.into()), after: Some(src_v2.into()) },
+            ],
+            1,
+            "projects.org",
+        );
 
         // Second, later bulk refile: Task B ALSO moves out, independently.
         let src_v3 = "* Task C\n";
         let tgt_v3 = "* Project\n** Task A\n** Task B\n";
         std::fs::write(&src_path, src_v3).unwrap();
         std::fs::write(&tgt_path, tgt_v3).unwrap();
-        record_bulk_refile(&conn, vec![
-            FileSnapshot { path: tgt_path.to_string_lossy().into_owned(), before: Some(tgt_v2.into()), after: Some(tgt_v3.into()) },
-            FileSnapshot { path: src_path.to_string_lossy().into_owned(), before: Some(src_v2.into()), after: Some(src_v3.into()) },
-        ], 1, "projects.org");
+        record_bulk_refile(
+            &conn,
+            vec![
+                FileSnapshot { path: tgt_path.to_string_lossy().into_owned(), before: Some(tgt_v2.into()), after: Some(tgt_v3.into()) },
+                FileSnapshot { path: src_path.to_string_lossy().into_owned(), before: Some(src_v2.into()), after: Some(src_v3.into()) },
+            ],
+            1,
+            "projects.org",
+        );
 
         // Restoring the OLDER entry directly (not via the linear stack) --
         // brings the files back to right after the FIRST refile, i.e. Task
@@ -1576,19 +1755,49 @@ mod tests {
 
         let conn = conn();
         let index = IndexManager::new();
-        let entry_a = record_bulk_refile(&conn, vec![
-            FileSnapshot { path: tgt_a.to_string_lossy().into_owned(), before: Some("* Project A\n".into()), after: Some("* Project A\n** Task X\n".into()) },
-            FileSnapshot { path: src_a.to_string_lossy().into_owned(), before: Some("* Task X\n* Task Y\n".into()), after: Some("* Task Y\n".into()) },
-        ], 1, "projects.org");
-        let entry_b = record_bulk_refile(&conn, vec![
-            FileSnapshot { path: tgt_b.to_string_lossy().into_owned(), before: Some("* Project B\n".into()), after: Some("* Project B\n** Task Z\n".into()) },
-            FileSnapshot { path: src_b.to_string_lossy().into_owned(), before: Some("* Task Z\n* Task W\n".into()), after: Some("* Task W\n".into()) },
-        ], 1, "projects.org");
+        let entry_a = record_bulk_refile(
+            &conn,
+            vec![
+                FileSnapshot {
+                    path: tgt_a.to_string_lossy().into_owned(),
+                    before: Some("* Project A\n".into()),
+                    after: Some("* Project A\n** Task X\n".into()),
+                },
+                FileSnapshot {
+                    path: src_a.to_string_lossy().into_owned(),
+                    before: Some("* Task X\n* Task Y\n".into()),
+                    after: Some("* Task Y\n".into()),
+                },
+            ],
+            1,
+            "projects.org",
+        );
+        let entry_b = record_bulk_refile(
+            &conn,
+            vec![
+                FileSnapshot {
+                    path: tgt_b.to_string_lossy().into_owned(),
+                    before: Some("* Project B\n".into()),
+                    after: Some("* Project B\n** Task Z\n".into()),
+                },
+                FileSnapshot {
+                    path: src_b.to_string_lossy().into_owned(),
+                    before: Some("* Task Z\n* Task W\n".into()),
+                    after: Some("* Task W\n".into()),
+                },
+            ],
+            1,
+            "projects.org",
+        );
 
         apply(&conn, &index, entry_a).unwrap();
         assert_eq!(std::fs::read_to_string(&tgt_a).unwrap(), "* Project A\n", "project A's target reverted");
         assert_eq!(std::fs::read_to_string(&src_a).unwrap(), "* Task X\n* Task Y\n", "project A's source reverted");
-        assert_eq!(std::fs::read_to_string(&tgt_b).unwrap(), "* Project B\n** Task Z\n", "project B completely untouched by restoring project A's entry");
+        assert_eq!(
+            std::fs::read_to_string(&tgt_b).unwrap(),
+            "* Project B\n** Task Z\n",
+            "project B completely untouched by restoring project A's entry"
+        );
         assert_eq!(std::fs::read_to_string(&src_b).unwrap(), "* Task W\n", "project B's source likewise untouched");
 
         apply(&conn, &index, entry_b).unwrap();
@@ -1618,14 +1827,40 @@ mod tests {
 
         let conn = conn();
         let index = IndexManager::new();
-        let entry_a = record_bulk_refile(&conn, vec![
-            FileSnapshot { path: tgt_a.to_string_lossy().into_owned(), before: Some("* Project A\n".into()), after: Some("* Project A\n** Task X\n".into()) },
-            FileSnapshot { path: src_a.to_string_lossy().into_owned(), before: Some("* Task X\n* Task Y\n".into()), after: Some("* Task Y\n".into()) },
-        ], 1, "project-a-projects.org");
-        let entry_b = record_bulk_refile(&conn, vec![
-            FileSnapshot { path: tgt_b.to_string_lossy().into_owned(), before: Some("* Project B\n".into()), after: Some("* Project B\n** Task Z\n".into()) },
-            FileSnapshot { path: src_b.to_string_lossy().into_owned(), before: Some("* Task Z\n* Task W\n".into()), after: Some("* Task W\n".into()) },
-        ], 1, "project-b-projects.org");
+        let entry_a = record_bulk_refile(
+            &conn,
+            vec![
+                FileSnapshot {
+                    path: tgt_a.to_string_lossy().into_owned(),
+                    before: Some("* Project A\n".into()),
+                    after: Some("* Project A\n** Task X\n".into()),
+                },
+                FileSnapshot {
+                    path: src_a.to_string_lossy().into_owned(),
+                    before: Some("* Task X\n* Task Y\n".into()),
+                    after: Some("* Task Y\n".into()),
+                },
+            ],
+            1,
+            "project-a-projects.org",
+        );
+        let entry_b = record_bulk_refile(
+            &conn,
+            vec![
+                FileSnapshot {
+                    path: tgt_b.to_string_lossy().into_owned(),
+                    before: Some("* Project B\n".into()),
+                    after: Some("* Project B\n** Task Z\n".into()),
+                },
+                FileSnapshot {
+                    path: src_b.to_string_lossy().into_owned(),
+                    before: Some("* Task Z\n* Task W\n".into()),
+                    after: Some("* Task W\n".into()),
+                },
+            ],
+            1,
+            "project-b-projects.org",
+        );
 
         // Informing the user: the check for project A's entry still comes
         // back feasible (a missing file doesn't block restoring -- see

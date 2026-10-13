@@ -143,16 +143,17 @@ pub fn prune(conn: &Connection, max_entries: i64, max_bytes: i64) -> rusqlite::R
 
 fn snapshots_for(conn: &Connection, action_id: i64) -> rusqlite::Result<Vec<FileSnapshot>> {
     let mut stmt = conn.prepare("SELECT file_path, before_gzip, after_gzip FROM history_snapshots WHERE action_id = ?1")?;
-    let rows = stmt.query_map(params![action_id], |row| {
-        let before_gzip: Option<Vec<u8>> = row.get(1)?;
-        let after_gzip: Option<Vec<u8>> = row.get(2)?;
-        Ok(FileSnapshot {
-            path: row.get(0)?,
-            before: before_gzip.as_deref().map(decompress),
-            after: after_gzip.as_deref().map(decompress),
-        })
-    })?
-    .collect();
+    let rows = stmt
+        .query_map(params![action_id], |row| {
+            let before_gzip: Option<Vec<u8>> = row.get(1)?;
+            let after_gzip: Option<Vec<u8>> = row.get(2)?;
+            Ok(FileSnapshot {
+                path: row.get(0)?,
+                before: before_gzip.as_deref().map(decompress),
+                after: after_gzip.as_deref().map(decompress),
+            })
+        })?
+        .collect();
     rows
 }
 
@@ -165,20 +166,31 @@ fn snapshots_for(conn: &Connection, action_id: i64) -> rusqlite::Result<Vec<File
 /// (`HistoryModal`) asks for the single entry it is showing.
 fn snapshot_paths_for(conn: &Connection, action_id: i64) -> rusqlite::Result<Vec<FileSnapshot>> {
     let mut stmt = conn.prepare("SELECT file_path FROM history_snapshots WHERE action_id = ?1")?;
-    let rows: rusqlite::Result<Vec<FileSnapshot>> = stmt
-        .query_map(params![action_id], |row| {
-            Ok(FileSnapshot { path: row.get(0)?, before: None, after: None })
-        })?
-        .collect();
+    let rows: rusqlite::Result<Vec<FileSnapshot>> =
+        stmt.query_map(params![action_id], |row| Ok(FileSnapshot { path: row.get(0)?, before: None, after: None }))?.collect();
     rows
 }
 
-fn to_entry(conn: &Connection, id: i64, timestamp: String, kind_json: String, is_draft: bool, undone: bool) -> rusqlite::Result<HistoryEntry> {
+fn to_entry(
+    conn: &Connection,
+    id: i64,
+    timestamp: String,
+    kind_json: String,
+    is_draft: bool,
+    undone: bool,
+) -> rusqlite::Result<HistoryEntry> {
     to_entry_with(conn, id, timestamp, kind_json, is_draft, undone, snapshots_for)
 }
 
 /// The same without snapshot content -- see `snapshot_paths_for`.
-fn to_listed_entry(conn: &Connection, id: i64, timestamp: String, kind_json: String, is_draft: bool, undone: bool) -> rusqlite::Result<HistoryEntry> {
+fn to_listed_entry(
+    conn: &Connection,
+    id: i64,
+    timestamp: String,
+    kind_json: String,
+    is_draft: bool,
+    undone: bool,
+) -> rusqlite::Result<HistoryEntry> {
     to_entry_with(conn, id, timestamp, kind_json, is_draft, undone, snapshot_paths_for)
 }
 
@@ -191,8 +203,7 @@ fn to_entry_with(
     undone: bool,
     snapshots: fn(&Connection, i64) -> rusqlite::Result<Vec<FileSnapshot>>,
 ) -> rusqlite::Result<HistoryEntry> {
-    let kind: HistoryEntryKind = serde_json::from_str(&kind_json)
-        .unwrap_or(HistoryEntryKind::FileEdited { filename: String::new() });
+    let kind: HistoryEntryKind = serde_json::from_str(&kind_json).unwrap_or(HistoryEntryKind::FileEdited { filename: String::new() });
     Ok(HistoryEntry { id, timestamp, kind, is_draft, undone, snapshots: snapshots(conn, id)? })
 }
 
@@ -243,9 +254,7 @@ pub fn list(conn: &Connection, limit: i64) -> rusqlite::Result<Vec<HistoryEntry>
         })?
         .collect::<rusqlite::Result<_>>()?;
 
-    rows.into_iter()
-        .map(|(id, ts, kind_json, is_draft, undone)| to_listed_entry(conn, id, ts, kind_json, is_draft, undone))
-        .collect()
+    rows.into_iter().map(|(id, ts, kind_json, is_draft, undone)| to_listed_entry(conn, id, ts, kind_json, is_draft, undone)).collect()
 }
 
 /// Same as `list`, narrowed to actions that touched FILE_PATH (via a
@@ -271,27 +280,21 @@ pub fn list_for_path(conn: &Connection, file_path: &str, limit: i64) -> rusqlite
         })?
         .collect::<rusqlite::Result<_>>()?;
 
-    rows.into_iter()
-        .map(|(id, ts, kind_json, is_draft, undone)| to_listed_entry(conn, id, ts, kind_json, is_draft, undone))
-        .collect()
+    rows.into_iter().map(|(id, ts, kind_json, is_draft, undone)| to_listed_entry(conn, id, ts, kind_json, is_draft, undone)).collect()
 }
 
 /// A single action by id, `None` if it was pruned or never existed.
 pub fn get(conn: &Connection, id: i64) -> rusqlite::Result<Option<HistoryEntry>> {
     let row: Option<(i64, String, String, bool, bool)> = conn
-        .query_row(
-            "SELECT id, timestamp, kind, is_draft, undone FROM history_actions WHERE id = ?1",
-            params![id],
-            |row| {
-                Ok((
-                    row.get::<_, i64>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, String>(2)?,
-                    row.get::<_, i64>(3)? != 0,
-                    row.get::<_, i64>(4)? != 0,
-                ))
-            },
-        )
+        .query_row("SELECT id, timestamp, kind, is_draft, undone FROM history_actions WHERE id = ?1", params![id], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, i64>(3)? != 0,
+                row.get::<_, i64>(4)? != 0,
+            ))
+        })
         .optional()?;
     let Some((id, timestamp, kind_json, is_draft, undone)) = row else { return Ok(None) };
     to_entry(conn, id, timestamp, kind_json, is_draft, undone).map(Some)
@@ -310,12 +313,8 @@ pub fn is_undone(conn: &Connection, id: i64) -> rusqlite::Result<Option<bool>> {
 /// stack invariant guarantees active ids form a contiguous prefix (any
 /// redo tail is always fully cleared on the next `record`, see there).
 pub fn has_active_entry_after(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
-    conn.query_row(
-        "SELECT EXISTS(SELECT 1 FROM history_actions WHERE undone = 0 AND id > ?1)",
-        params![id],
-        |row| row.get::<_, i64>(0),
-    )
-    .map(|n| n != 0)
+    conn.query_row("SELECT EXISTS(SELECT 1 FROM history_actions WHERE undone = 0 AND id > ?1)", params![id], |row| row.get::<_, i64>(0))
+        .map(|n| n != 0)
 }
 
 #[cfg(test)]
@@ -337,8 +336,8 @@ mod tests {
     #[test]
     fn a_listing_names_the_files_without_their_content() {
         let conn = conn();
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            &[snap("/a.org", Some("old"), Some("new"))]).unwrap();
+        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false, &[snap("/a.org", Some("old"), Some("new"))])
+            .unwrap();
 
         let entries = list(&conn, 10).unwrap();
         assert_eq!(entries.len(), 1);
@@ -353,8 +352,8 @@ mod tests {
     #[test]
     fn a_single_entry_carries_its_content() {
         let conn = conn();
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            &[snap("/a.org", Some("old"), Some("new"))]).unwrap();
+        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false, &[snap("/a.org", Some("old"), Some("new"))])
+            .unwrap();
         let id = list(&conn, 1).unwrap()[0].id;
 
         let entry = get(&conn, id).unwrap().expect("just recorded");
@@ -366,8 +365,8 @@ mod tests {
     #[test]
     fn undo_then_redo_toggles_the_flag() {
         let conn = conn();
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            &[snap("/a.org", Some("old"), Some("new"))]).unwrap();
+        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false, &[snap("/a.org", Some("old"), Some("new"))])
+            .unwrap();
 
         let undone = undo_toggle(&conn).unwrap().unwrap();
         assert!(undone.undone);
@@ -381,12 +380,11 @@ mod tests {
     #[test]
     fn recording_a_new_action_discards_the_redo_tail() {
         let conn = conn();
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            &[snap("/a.org", Some("v1"), Some("v2"))]).unwrap();
+        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false, &[snap("/a.org", Some("v1"), Some("v2"))])
+            .unwrap();
         undo_toggle(&conn).unwrap();
 
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "b.org".into() }, false,
-            &[snap("/b.org", None, Some("v1"))]).unwrap();
+        record(&conn, &HistoryEntryKind::FileEdited { filename: "b.org".into() }, false, &[snap("/b.org", None, Some("v1"))]).unwrap();
 
         assert!(redo_toggle(&conn).unwrap().is_none(), "the undone v1->v2 action should be gone");
         assert_eq!(list(&conn, 10).unwrap().len(), 1);
@@ -396,8 +394,13 @@ mod tests {
     fn prune_keeps_only_the_newest_n() {
         let conn = conn();
         for i in 0..5 {
-            record(&conn, &HistoryEntryKind::FileEdited { filename: format!("{i}.org") }, false,
-                &[snap(&format!("/{i}.org"), None, Some("x"))]).unwrap();
+            record(
+                &conn,
+                &HistoryEntryKind::FileEdited { filename: format!("{i}.org") },
+                false,
+                &[snap(&format!("/{i}.org"), None, Some("x"))],
+            )
+            .unwrap();
         }
         prune(&conn, 2, i64::MAX).unwrap();
         let entries = list(&conn, 10).unwrap();
@@ -415,12 +418,15 @@ mod tests {
         // Incompressible, so the stored blob really is about this big.
         let bulky: String = (0..40_000).map(|i| char::from(b'a' + (i * 7 % 26) as u8)).collect();
         for i in 0..6 {
-            record(&conn, &HistoryEntryKind::FileEdited { filename: format!("{i}.org") }, false,
-                &[snap(&format!("/{i}.org"), None, Some(&bulky))]).unwrap();
-        }
-        let stored: i64 = conn
-            .query_row("SELECT SUM(LENGTH(after_gzip)) FROM history_snapshots", [], |r| r.get(0))
+            record(
+                &conn,
+                &HistoryEntryKind::FileEdited { filename: format!("{i}.org") },
+                false,
+                &[snap(&format!("/{i}.org"), None, Some(&bulky))],
+            )
             .unwrap();
+        }
+        let stored: i64 = conn.query_row("SELECT SUM(LENGTH(after_gzip)) FROM history_snapshots", [], |r| r.get(0)).unwrap();
         assert!(stored > 0, "the test text has to actually cost something");
 
         // A budget for roughly half of them.
@@ -428,13 +434,8 @@ mod tests {
 
         let entries = list(&conn, 10).unwrap();
         assert!(entries.len() < 6 && !entries.is_empty(), "some dropped, not all: {}", entries.len());
-        assert!(
-            matches!(&entries[0].kind, HistoryEntryKind::FileEdited { filename } if filename == "5.org"),
-            "the newest survives"
-        );
-        let left: i64 = conn
-            .query_row("SELECT COALESCE(SUM(LENGTH(after_gzip)), 0) FROM history_snapshots", [], |r| r.get(0))
-            .unwrap();
+        assert!(matches!(&entries[0].kind, HistoryEntryKind::FileEdited { filename } if filename == "5.org"), "the newest survives");
+        let left: i64 = conn.query_row("SELECT COALESCE(SUM(LENGTH(after_gzip)), 0) FROM history_snapshots", [], |r| r.get(0)).unwrap();
         assert!(left <= stored / 2, "what is left fits the budget: {left} > {}", stored / 2);
     }
 
@@ -443,8 +444,13 @@ mod tests {
     #[test]
     fn the_newest_action_survives_any_budget() {
         let conn = conn();
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            &[snap("/a.org", None, Some("something worth undoing"))]).unwrap();
+        record(
+            &conn,
+            &HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            &[snap("/a.org", None, Some("something worth undoing"))],
+        )
+        .unwrap();
 
         prune(&conn, 300, 0).unwrap();
 
@@ -454,12 +460,17 @@ mod tests {
     #[test]
     fn list_for_path_excludes_actions_touching_other_files() {
         let conn = conn();
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            &[snap("/a.org", Some("v1"), Some("v2"))]).unwrap();
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "b.org".into() }, false,
-            &[snap("/b.org", Some("v1"), Some("v2"))]).unwrap();
-        record(&conn, &HistoryEntryKind::Refiled { title: "x".into(), target_filename: "a.org".into() }, false,
-            &[snap("/a.org", Some("v2"), Some("v3")), snap("/c.org", Some("v1"), Some("v2"))]).unwrap();
+        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false, &[snap("/a.org", Some("v1"), Some("v2"))])
+            .unwrap();
+        record(&conn, &HistoryEntryKind::FileEdited { filename: "b.org".into() }, false, &[snap("/b.org", Some("v1"), Some("v2"))])
+            .unwrap();
+        record(
+            &conn,
+            &HistoryEntryKind::Refiled { title: "x".into(), target_filename: "a.org".into() },
+            false,
+            &[snap("/a.org", Some("v2"), Some("v3")), snap("/c.org", Some("v1"), Some("v2"))],
+        )
+        .unwrap();
 
         let entries = list_for_path(&conn, "/a.org", 10).unwrap();
         assert_eq!(entries.len(), 2, "only the two actions touching /a.org");
@@ -469,8 +480,13 @@ mod tests {
     #[test]
     fn get_returns_the_entry_with_its_snapshots() {
         let conn = conn();
-        record(&conn, &HistoryEntryKind::HeadingDeleted { filename: "a.org".into(), title: "Task".into() }, false,
-            &[snap("/a.org", Some("before"), Some("after"))]).unwrap();
+        record(
+            &conn,
+            &HistoryEntryKind::HeadingDeleted { filename: "a.org".into(), title: "Task".into() },
+            false,
+            &[snap("/a.org", Some("before"), Some("after"))],
+        )
+        .unwrap();
         let id = list(&conn, 1).unwrap()[0].id;
 
         let entry = get(&conn, id).unwrap().unwrap();
@@ -487,8 +503,8 @@ mod tests {
     #[test]
     fn is_undone_reflects_toggled_state_and_none_for_missing_id() {
         let conn = conn();
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            &[snap("/a.org", Some("v1"), Some("v2"))]).unwrap();
+        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false, &[snap("/a.org", Some("v1"), Some("v2"))])
+            .unwrap();
         let id = list(&conn, 1).unwrap()[0].id;
 
         assert_eq!(is_undone(&conn, id).unwrap(), Some(false));
@@ -500,11 +516,11 @@ mod tests {
     #[test]
     fn has_active_entry_after_reports_whether_a_newer_action_is_still_active() {
         let conn = conn();
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            &[snap("/a.org", Some("v1"), Some("v2"))]).unwrap();
+        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false, &[snap("/a.org", Some("v1"), Some("v2"))])
+            .unwrap();
         let first_id = list(&conn, 1).unwrap()[0].id;
-        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false,
-            &[snap("/a.org", Some("v2"), Some("v3"))]).unwrap();
+        record(&conn, &HistoryEntryKind::FileEdited { filename: "a.org".into() }, false, &[snap("/a.org", Some("v2"), Some("v3"))])
+            .unwrap();
 
         assert!(has_active_entry_after(&conn, first_id).unwrap());
         undo_toggle(&conn).unwrap();

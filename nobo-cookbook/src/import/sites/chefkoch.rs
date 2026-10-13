@@ -48,9 +48,7 @@ impl Refiner for Chefkoch {
         let shape: Vec<(Option<String>, usize)> = elements(page.html, "ds-ingredients-table")
             .iter()
             .map(|table| {
-                let title = table
-                    .text_of_first("ds-ingredients-table__headline")
-                    .map(|t| t.trim_end_matches(':').trim().to_string());
+                let title = table.text_of_first("ds-ingredients-table__headline").map(|t| t.trim_end_matches(':').trim().to_string());
                 (title, table.find("ds-ingredients-table__tr").len())
             })
             .collect();

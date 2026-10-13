@@ -18,15 +18,14 @@ pub mod sync;
 pub mod vtodo;
 
 pub mod commands;
+pub mod model;
 #[cfg(feature = "tauri")]
 pub mod tauri_commands;
-pub mod model;
 
 /// Where this feature's settings live in `settings.json` (see
 /// `config::section`). Compiled in every build: a build without caldav
 /// still must not drop the section when it saves.
-pub const SETTINGS: nobo_core::config::section::Section<model::Settings> =
-    nobo_core::config::section::Section::new("caldav");
+pub const SETTINGS: nobo_core::config::section::Section<model::Settings> = nobo_core::config::section::Section::new("caldav");
 
 // The accounts and the list-view toggle used to be `Config` fields with
 // this feature's name on them -- `caldav_accounts` even had to be hidden
@@ -63,10 +62,13 @@ fn adopt_legacy_settings(config: &mut nobo_core::config::settings::Config) -> Re
         return Ok(false);
     }
     if !config.has_section("caldav") {
-        config.set_section("caldav", &model::Settings {
-            accounts: accounts.and_then(|value| serde_json::from_value(value).ok()).unwrap_or_default(),
-            lists_hide_done: hide_done.and_then(|value| serde_json::from_value(value).ok()).unwrap_or(false),
-        })?;
+        config.set_section(
+            "caldav",
+            &model::Settings {
+                accounts: accounts.and_then(|value| serde_json::from_value(value).ok()).unwrap_or_default(),
+                lists_hide_done: hide_done.and_then(|value| serde_json::from_value(value).ok()).unwrap_or(false),
+            },
+        )?;
     }
     Ok(true)
 }
@@ -113,7 +115,10 @@ inventory::submit! {
 /// asks `app_features()` and leaves the section out entirely (see
 /// store/capabilities.ts).
 pub fn unavailable() -> String {
-    nobo_core::t!("Diese Version von nobo verbindet sich nicht mit CalDAV-Servern.", "This build of nobo does not connect to CalDAV servers.")
+    nobo_core::t!(
+        "Diese Version von nobo verbindet sich nicht mit CalDAV-Servern.",
+        "This build of nobo does not connect to CalDAV servers."
+    )
 }
 
 use nobo_core::core::file_kind::{FileKind, FileKindSpec, ReadOnly, StateSupport, WriteVeto};
@@ -177,8 +182,7 @@ inventory::submit! {
 /// Takes the mutex, not a guard: there is network IO between the reads and
 /// the writes, and holding the app's one database lock across that would
 /// stall everything else for as long as the server takes.
-static SYNCING_SUBSCRIPTION: nobo_core::core::once_at_a_time::OncePerKey =
-    nobo_core::core::once_at_a_time::OncePerKey::new();
+static SYNCING_SUBSCRIPTION: nobo_core::core::once_at_a_time::OncePerKey = nobo_core::core::once_at_a_time::OncePerKey::new();
 
 pub async fn sync_subscription(
     transport: &dyn sync::CalDavTransport,
@@ -215,13 +219,11 @@ pub async fn sync_subscription(
         // meaningless for it -- but the two numbers that are not (what
         // came back, and what of it is new) belong in the same shape, so
         // every caller can treat one subscription like any other.
-        model::CalDavKind::Events => events::sync_calendar(transport, db, subscription, file)
-            .await
-            .map(|outcome| model::ListSyncOutcome {
-                pulled: outcome.event_count,
-                arrived: outcome.arrived,
-                ..Default::default()
-            }),
+        model::CalDavKind::Events => events::sync_calendar(transport, db, subscription, file).await.map(|outcome| model::ListSyncOutcome {
+            pulled: outcome.event_count,
+            arrived: outcome.arrived,
+            ..Default::default()
+        }),
     }
 }
 
@@ -261,8 +263,7 @@ mod sample_data_tests {
 
         // More than one server, so the settings page's grouping by account
         // is visible in the sandbox at all.
-        let accounts: std::collections::HashSet<&str> =
-            lists.iter().map(|list| list.account_id.as_str()).collect();
+        let accounts: std::collections::HashSet<&str> = lists.iter().map(|list| list.account_id.as_str()).collect();
         assert!(accounts.len() >= 2, "expected lists from two servers: {lists:?}");
     }
 
@@ -286,11 +287,11 @@ mod sample_data_tests {
 
 #[cfg(test)]
 mod search_tests {
+    use super::model::CalDavKind;
+    use super::registry::{subscription_for, write_empty};
     use nobo_core::core::indexer::IndexManager;
     use nobo_core::core::search::{self, SearchQuery};
     use nobo_core::core::vault::Vault;
-    use super::registry::{subscription_for, write_empty};
-    use super::model::CalDavKind;
 
     /// Only the synced lists, and only their tasks -- the point of asking
     /// "where was that on one of my lists" rather than searching the whole
@@ -340,32 +341,28 @@ mod search_tests {
 /// parameter on every command for a second runtime nobody has.
 #[cfg(feature = "tauri")]
 pub fn init() -> tauri::plugin::TauriPlugin<tauri::Wry> {
-    tauri::plugin::Builder::new("nobo-caldav")
-        .invoke_handler(specta_builder().invoke_handler())
-        .build()
+    tauri::plugin::Builder::new("nobo-caldav").invoke_handler(specta_builder().invoke_handler()).build()
 }
 
 /// This plugin's command surface, in the one place both the runtime and
 /// the bindings read it from.
 #[cfg(feature = "tauri")]
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
-    tauri_specta::Builder::<tauri::Wry>::new()
-        .plugin_name("nobo-caldav")
-        .commands(tauri_specta::collect_commands![
-            tauri_commands::caldav_settings,
-            tauri_commands::caldav_set_lists_hide_done,
-            tauri_commands::caldav_accounts,
-            tauri_commands::caldav_add_account,
-            tauri_commands::caldav_forget_account,
-            tauri_commands::caldav_collections,
-            tauri_commands::caldav_subscriptions,
-            tauri_commands::caldav_subscribe,
-            tauri_commands::caldav_unsubscribe,
-            tauri_commands::caldav_save_credentials,
-            tauri_commands::caldav_sync_all,
-            tauri_commands::caldav_sync_one,
-            tauri_commands::caldav_subscription_file,
-        ])
+    tauri_specta::Builder::<tauri::Wry>::new().plugin_name("nobo-caldav").commands(tauri_specta::collect_commands![
+        tauri_commands::caldav_settings,
+        tauri_commands::caldav_set_lists_hide_done,
+        tauri_commands::caldav_accounts,
+        tauri_commands::caldav_add_account,
+        tauri_commands::caldav_forget_account,
+        tauri_commands::caldav_collections,
+        tauri_commands::caldav_subscriptions,
+        tauri_commands::caldav_subscribe,
+        tauri_commands::caldav_unsubscribe,
+        tauri_commands::caldav_save_credentials,
+        tauri_commands::caldav_sync_all,
+        tauri_commands::caldav_sync_one,
+        tauri_commands::caldav_subscription_file,
+    ])
 }
 
 /// Writes this plugin's `bindings.ts` next to the frontend half that
@@ -379,11 +376,7 @@ mod bindings_export {
     #[test]
     fn export_bindings() {
         super::specta_builder()
-            .export(
-                specta_typescript::Typescript::default(),
-                "../../src/features/caldav/bindings.ts",
-            )
+            .export(specta_typescript::Typescript::default(), "../../src/features/caldav/bindings.ts")
             .expect("failed to write the bindings");
     }
 }
-

@@ -82,30 +82,16 @@ pub fn get_all(conn: &Connection) -> rusqlite::Result<Vec<SyncStateRow>> {
     let mut stmt = conn.prepare("SELECT path, base_hash, local_hash, deleted_at FROM sync_state")?;
     let rows = stmt
         .query_map([], |row| {
-            Ok(SyncStateRow {
-                path: row.get(0)?,
-                base_hash: row.get(1)?,
-                local_hash: row.get(2)?,
-                deleted_at: row.get(3)?,
-            })
+            Ok(SyncStateRow { path: row.get(0)?, base_hash: row.get(1)?, local_hash: row.get(2)?, deleted_at: row.get(3)? })
         })?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(rows)
 }
 
 pub fn get(conn: &Connection, path: &str) -> rusqlite::Result<Option<SyncStateRow>> {
-    conn.query_row(
-        "SELECT path, base_hash, local_hash, deleted_at FROM sync_state WHERE path = ?1",
-        params![path],
-        |row| {
-            Ok(SyncStateRow {
-                path: row.get(0)?,
-                base_hash: row.get(1)?,
-                local_hash: row.get(2)?,
-                deleted_at: row.get(3)?,
-            })
-        },
-    )
+    conn.query_row("SELECT path, base_hash, local_hash, deleted_at FROM sync_state WHERE path = ?1", params![path], |row| {
+        Ok(SyncStateRow { path: row.get(0)?, base_hash: row.get(1)?, local_hash: row.get(2)?, deleted_at: row.get(3)? })
+    })
     .optional()
 }
 

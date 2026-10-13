@@ -15,18 +15,16 @@ use nobo_core::core::vault_write::{edit_file, edit_files};
 use nobo_core::t;
 use nobo_core::utils::note_utils;
 
-pub use crate::categories::{bookmarks_create_file, bookmarks_files, bookmarks_set_file, category_file_name};
 use crate::categories::bookmark_files;
+pub use crate::categories::{bookmarks_create_file, bookmarks_files, bookmarks_set_file, category_file_name};
 use crate::model::{Bookmark, Collection, Draft, Located, Patch, Target};
 use crate::{parse, url, write};
 
 /// Every bookmark in every bookmarks file: files by title, bookmarks in
 /// the order they are written.
 pub fn bookmarks_list(index_manager: &IndexManager) -> Result<Vec<Bookmark>, String> {
-    let mut files: Vec<(String, String, String)> = bookmark_files(index_manager)?
-        .into_iter()
-        .map(|(path, text)| (parse::category_title(&path, &text), path, text))
-        .collect();
+    let mut files: Vec<(String, String, String)> =
+        bookmark_files(index_manager)?.into_iter().map(|(path, text)| (parse::category_title(&path, &text), path, text)).collect();
     files.sort_by_key(|(title, ..)| title.to_lowercase());
     Ok(files.iter().flat_map(|(title, path, text)| parse::bookmarks_of(path, title, text)).collect())
 }
@@ -37,9 +35,11 @@ pub fn bookmarks_collections(index_manager: &IndexManager) -> Result<Vec<Collect
     Ok(bookmark_files(index_manager)?
         .iter()
         .flat_map(|(path, text)| {
-            parse::collections_of(text)
-                .into_iter()
-                .map(|(collection, line_no)| Collection { file_path: path.clone(), path: collection, line_no })
+            parse::collections_of(text).into_iter().map(|(collection, line_no)| Collection {
+                file_path: path.clone(),
+                path: collection,
+                line_no,
+            })
         })
         .collect())
 }
@@ -54,15 +54,13 @@ pub fn bookmarks_find(url: String, index_manager: &IndexManager) -> Result<Vec<B
 /// Refuses URL when a bookmark other than EXCEPT (a key) already points
 /// there: a page is saved once, and found again where it is.
 fn refuse_duplicate(url: &str, except: Option<&str>, index_manager: &IndexManager) -> Result<(), String> {
-    let Some(existing) = bookmarks_find(url.to_string(), index_manager)?.into_iter().find(|bookmark| Some(bookmark.key.as_str()) != except) else {
+    let Some(existing) = bookmarks_find(url.to_string(), index_manager)?.into_iter().find(|bookmark| Some(bookmark.key.as_str()) != except)
+    else {
         return Ok(());
     };
     let place = std::iter::once(existing.category.clone()).chain(existing.collection.iter().cloned()).collect::<Vec<_>>().join(" › ");
     let title = existing.title;
-    Err(t!(
-        "Diese Adresse ist schon gespeichert: „{title}“ in {place}.",
-        "This address is already saved: \"{title}\" in {place}."
-    ))
+    Err(t!("Diese Adresse ist schon gespeichert: „{title}“ in {place}.", "This address is already saved: \"{title}\" in {place}."))
 }
 
 /// Where the bookmark at LINE (1-based) of TEXT is now, by its key.
@@ -113,7 +111,10 @@ pub fn bookmarks_save(
 /// bookmark already has is refused, as on saving.
 pub fn bookmarks_update(target: Target, patch: Patch, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<Located, String> {
     if let Some(url) = patch.url.as_deref().filter(|url| url::normalize(url) != url::normalize(&target.url)) {
-        let own = bookmarks_list(index_manager)?.into_iter().find(|bookmark| bookmark.file_path == target.file_path && bookmark.url == target.url).map(|bookmark| bookmark.key);
+        let own = bookmarks_list(index_manager)?
+            .into_iter()
+            .find(|bookmark| bookmark.file_path == target.file_path && bookmark.url == target.url)
+            .map(|bookmark| bookmark.key);
         refuse_duplicate(url, own.as_deref(), index_manager)?;
     }
     let now = now();

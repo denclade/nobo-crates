@@ -268,11 +268,7 @@ pub async fn sync_republish_vault(db: State<'_, Arc<Mutex<Connection>>>) -> Resu
 
 #[tauri::command]
 #[specta::specta]
-pub async fn sync_resolve_conflict(
-    conflict: ConflictInfo,
-    keep_local: bool,
-    db: State<'_, Arc<Mutex<Connection>>>,
-) -> Result<(), String> {
+pub async fn sync_resolve_conflict(conflict: ConflictInfo, keep_local: bool, db: State<'_, Arc<Mutex<Connection>>>) -> Result<(), String> {
     commands::sync_resolve_conflict(conflict, keep_local, db.inner()).await
 }
 
@@ -283,9 +279,7 @@ pub async fn sync_resolve_conflict(
 /// state here, not a failure).
 #[tauri::command]
 #[specta::specta]
-pub async fn sync_connection_info(
-    session_state: State<'_, SyncSessionState>,
-) -> Result<Option<SyncConnectionInfo>, String> {
+pub async fn sync_connection_info(session_state: State<'_, SyncSessionState>) -> Result<Option<SyncConnectionInfo>, String> {
     commands::sync_connection_info(session_state.inner()).await
 }
 

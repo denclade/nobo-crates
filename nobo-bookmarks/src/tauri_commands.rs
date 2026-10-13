@@ -124,7 +124,10 @@ pub async fn bookmarks_preview(url: String) -> Result<crate::model::Preview, Str
     #[cfg(feature = "fetch")]
     return commands::bookmarks_preview(url).await;
     #[cfg(not(feature = "fetch"))]
-    return { let _ = url; Err(nobo_core::t!("Diese Version von nobo ruft keine Seiten ab.", "This build of nobo does not fetch pages.")) };
+    return {
+        let _ = url;
+        Err(nobo_core::t!("Diese Version von nobo ruft keine Seiten ab.", "This build of nobo does not fetch pages."))
+    };
 }
 
 /// A Linkwarden backup (the file's text) into the bookmarks file

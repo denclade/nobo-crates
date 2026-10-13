@@ -3,21 +3,13 @@ use nobo_core::core::models::DirEntry;
 use nobo_core::utils::fs_utils;
 use std::path::PathBuf;
 
-pub fn get_directory_contents(
-    dir: String,
-    show_hidden: bool,
-    index_state: &IndexManager,
-) -> Vec<DirEntry> {
+pub fn get_directory_contents(dir: String, show_hidden: bool, index_state: &IndexManager) -> Vec<DirEntry> {
     index_state.directory_contents(&PathBuf::from(dir), show_hidden)
 }
 
 /// Same as get_directory_contents, but walks every subdirectory of `dir` too
 /// -- backs the Notes sidebar's Ctrl+F "include subfolders" filter toggle.
-pub fn get_directory_contents_recursive(
-    dir: String,
-    show_hidden: bool,
-    index_state: &IndexManager,
-) -> Vec<DirEntry> {
+pub fn get_directory_contents_recursive(dir: String, show_hidden: bool, index_state: &IndexManager) -> Vec<DirEntry> {
     index_state.directory_contents_recursive(&PathBuf::from(dir), show_hidden)
 }
 
@@ -30,10 +22,7 @@ pub fn get_suggestions(input: String) -> Vec<String> {
 /// src/components/editor/completion/filePathSource.ts), which fuzzy-matches
 /// client-side against this list. `/` regardless of OS, matching org-mode's
 /// own link convention (so a link written on one OS still resolves on another).
-pub fn list_files_for_completion(
-    base_dir: String,
-    index_state: &IndexManager,
-) -> Vec<String> {
+pub fn list_files_for_completion(base_dir: String, index_state: &IndexManager) -> Vec<String> {
     index_state.files_relative_to(&PathBuf::from(base_dir))
 }
 

@@ -30,10 +30,10 @@ pub mod import_linkwarden;
 pub mod model;
 pub mod parse;
 pub mod preview;
-pub mod url;
-pub mod write;
 #[cfg(feature = "tauri")]
 pub mod tauri_commands;
+pub mod url;
+pub mod write;
 
 pub use model::{Bookmark, BookmarkFile, Collection, Draft, Located, Patch, Preview, Target};
 
@@ -126,16 +126,12 @@ pub fn unavailable() -> String {
 /// Everything this plugin brings, in one call: `.plugin(nobo_bookmarks::init())`.
 #[cfg(feature = "tauri")]
 pub fn init() -> tauri::plugin::TauriPlugin<tauri::Wry> {
-    tauri::plugin::Builder::new("nobo-bookmarks")
-        .invoke_handler(specta_builder().invoke_handler())
-        .build()
+    tauri::plugin::Builder::new("nobo-bookmarks").invoke_handler(specta_builder().invoke_handler()).build()
 }
 
 #[cfg(feature = "tauri")]
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
-    tauri_specta::Builder::<tauri::Wry>::new()
-        .plugin_name("nobo-bookmarks")
-        .commands(command_list())
+    tauri_specta::Builder::<tauri::Wry>::new().plugin_name("nobo-bookmarks").commands(command_list())
 }
 
 /// Every command, in every build: the page lookup is registered without
@@ -178,7 +174,8 @@ mod search_tests {
     use nobo_core::core::search::{self, SearchQuery};
     use nobo_core::core::vault::Vault;
 
-    const FILE: &str = "#+NOBO_TYPE: bookmarks\n\n* Rust\n** reqwest :http:\n:PROPERTIES:\n:URL: https://docs.rs/reqwest\n:END:\nFür das Scraping.\n";
+    const FILE: &str =
+        "#+NOBO_TYPE: bookmarks\n\n* Rust\n** reqwest :http:\n:PROPERTIES:\n:URL: https://docs.rs/reqwest\n:END:\nFür das Scraping.\n";
 
     fn hits(file: &str, text: &str, words: &str) -> Vec<nobo_core::core::models::Heading> {
         let dir = tempfile::tempdir().unwrap();

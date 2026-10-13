@@ -51,13 +51,7 @@ pub fn get(conn: &Connection, id: &str) -> rusqlite::Result<Option<FeedState>> {
     conn.query_row(
         "SELECT etag, last_modified, event_count FROM calendar_state WHERE id = ?1 AND format = ?2",
         params![id, MIRROR_FORMAT],
-        |row| {
-            Ok(FeedState {
-                etag: row.get(0)?,
-                last_modified: row.get(1)?,
-                event_count: row.get::<_, i64>(2)? as usize,
-            })
-        },
+        |row| Ok(FeedState { etag: row.get(0)?, last_modified: row.get(1)?, event_count: row.get::<_, i64>(2)? as usize }),
     )
     .optional()
 }

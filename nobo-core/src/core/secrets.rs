@@ -157,7 +157,14 @@ der Schlüsselbund ist gesperrt und es kann kein Entsperr-Dialog angezeigt werde
 Schlüsselbund entsperren und erneut versuchen."
             ),
             SecretError::Backend(raw) => {
-                write!(f, "{}", crate::t!("Passwort konnte nicht im Schlüsselbund gespeichert werden: {raw}", "Could not save the password in the keychain: {raw}"))
+                write!(
+                    f,
+                    "{}",
+                    crate::t!(
+                        "Passwort konnte nicht im Schlüsselbund gespeichert werden: {raw}",
+                        "Could not save the password in the keychain: {raw}"
+                    )
+                )
             }
         }
     }
@@ -311,9 +318,7 @@ fn known_answer(key: &str) -> Option<Option<String>> {
 }
 
 fn legacy_name_is_known_empty(legacy_key: &str) -> bool {
-    legacy_names_known_empty()
-        .lock()
-        .is_ok_and(|known| known.contains(legacy_key))
+    legacy_names_known_empty().lock().is_ok_and(|known| known.contains(legacy_key))
 }
 
 /// Also the answer for that key: a value moved off the old name was
@@ -529,16 +534,10 @@ impl Secrets {
     /// gone, not "gone under the name we currently use".
     pub async fn delete(&self, name: &str) -> Result<(), String> {
         let store = store()?;
-        store
-            .delete(&self.key(name), Intent::Background)
-            .await
-            .map_err(|e| e.to_string())?;
+        store.delete(&self.key(name), Intent::Background).await.map_err(|e| e.to_string())?;
         remember_answer(&self.key(name), None);
         if let Some(legacy_key) = self.legacy_key(name).filter(|key| !legacy_name_is_known_empty(key)) {
-            store
-                .delete(&legacy_key, Intent::Background)
-                .await
-                .map_err(|e| e.to_string())?;
+            store.delete(&legacy_key, Intent::Background).await.map_err(|e| e.to_string())?;
             remember_legacy_name_is_empty(&legacy_key);
         }
         Ok(())
@@ -692,10 +691,7 @@ impl Worker {
         let deadline = intent.deadline();
 
         {
-            let jobs = self
-                .jobs
-                .lock()
-                .map_err(|_| SecretError::Unavailable("the keychain worker is unusable after a panic".into()))?;
+            let jobs = self.jobs.lock().map_err(|_| SecretError::Unavailable("the keychain worker is unusable after a panic".into()))?;
             jobs.send(Job { op, deadline: Instant::now() + deadline, reply })
                 .map_err(|_| SecretError::Unavailable("the keychain worker is no longer running".into()))?;
         }
@@ -743,9 +739,9 @@ impl Breaker {
         }
         let open_until = self.open_until.lock().ok()?;
         match *open_until {
-            Some(until) if Instant::now() < until => Some(SecretError::Unavailable(
-                crate::t!("der Schlüsselbund hat gerade nicht geantwortet", "the keychain did not respond"),
-            )),
+            Some(until) if Instant::now() < until => {
+                Some(SecretError::Unavailable(crate::t!("der Schlüsselbund hat gerade nicht geantwortet", "the keychain did not respond")))
+            }
             _ => None,
         }
     }
@@ -864,10 +860,9 @@ mod tests {
     /// and left the user with nowhere to go.
     #[test]
     fn a_missing_session_bus_is_explained_rather_than_quoted() {
-        let message = SecretError::Unavailable(
-            "DBus error : /usr/bin/dbus-launch terminated abnormally without any error message".to_string(),
-        )
-        .to_string();
+        let message =
+            SecretError::Unavailable("DBus error : /usr/bin/dbus-launch terminated abnormally without any error message".to_string())
+                .to_string();
 
         assert!(message.contains("Kein Schlüsselbund verfügbar"), "{message}");
         assert!(message.contains("gnome-keyring"), "{message}");

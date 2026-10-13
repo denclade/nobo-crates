@@ -56,13 +56,7 @@ fn report(app: &tauri::AppHandle, arrivals: &[Arrival]) {
     let language = configured_language();
 
     for message in messages(arrivals, presence_of(app), &language) {
-        let sent = app
-            .notification()
-            .builder()
-            .id(message.id)
-            .title(&message.title)
-            .body(&message.body)
-            .show();
+        let sent = app.notification().builder().id(message.id).title(&message.title).body(&message.body).show();
         if let Err(e) = sent {
             log::warn!("notification for '{}' not delivered: {e}", message.title);
         }
@@ -134,12 +128,7 @@ impl ProgressReporter for EventProgress {
         // ring, and nothing else. The sync itself must not care.
         let _ = self.app.emit(
             SYNC_PROGRESS_EVENT,
-            CalDavSyncProgress {
-                list_id: list_id.to_string(),
-                name: name.to_string(),
-                done: progress.done,
-                total: progress.total,
-            },
+            CalDavSyncProgress { list_id: list_id.to_string(), name: name.to_string(), done: progress.done, total: progress.total },
         );
     }
 }
@@ -158,12 +147,7 @@ pub async fn caldav_accounts() -> Result<Vec<CalDavAccountView>, String> {
 /// login must not leave a wrong one behind in the keychain.
 #[tauri::command]
 #[specta::specta]
-pub async fn caldav_add_account(
-    name: String,
-    server_url: String,
-    username: String,
-    password: String,
-) -> Result<CalDavAccountView, String> {
+pub async fn caldav_add_account(name: String, server_url: String, username: String, password: String) -> Result<CalDavAccountView, String> {
     commands::caldav_add_account(name, server_url, username, password).await
 }
 
@@ -198,9 +182,7 @@ pub async fn caldav_collections(account_id: String) -> Result<Vec<RemoteList>, S
 /// device.
 #[tauri::command]
 #[specta::specta]
-pub async fn caldav_subscriptions(
-    index_manager: State<'_, Arc<IndexManager>>,
-) -> Result<Vec<CalDavSubscriptionView>, String> {
+pub async fn caldav_subscriptions(index_manager: State<'_, Arc<IndexManager>>) -> Result<Vec<CalDavSubscriptionView>, String> {
     commands::caldav_subscriptions(index_manager.inner()).await
 }
 

@@ -9,7 +9,7 @@ pub fn extract_bracket_value(line: &str, keyword: &str, open_char: char, close_c
 
     let open_idx = rest.find(open_char)?;
     let close_idx = rest[open_idx + 1..].find(close_char)?;
-    Some(rest[open_idx + 1 .. open_idx + 1 + close_idx].to_string())
+    Some(rest[open_idx + 1..open_idx + 1 + close_idx].to_string())
 }
 
 /// Number of leading `*` characters, e.g. for org heading-level detection.

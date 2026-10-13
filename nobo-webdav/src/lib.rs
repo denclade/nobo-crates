@@ -172,8 +172,7 @@ pub fn parse_multistatus(xml: &str) -> Result<Vec<MultiStatusEntry>, String> {
                     continue;
                 }
                 let decoded = t.decode().map_err(|e| format!("failed to parse WebDAV response: {e}"))?;
-                let unescaped = quick_xml::escape::unescape(&decoded)
-                    .map_err(|e| format!("failed to parse WebDAV response: {e}"))?;
+                let unescaped = quick_xml::escape::unescape(&decoded).map_err(|e| format!("failed to parse WebDAV response: {e}"))?;
                 // Trimmed only at the ends of the whole value, not per
                 // fragment: "Haus " + "& " + "Garten" must keep its spaces.
                 if text.is_empty() {
@@ -227,10 +226,7 @@ pub fn parse_multistatus(xml: &str) -> Result<Vec<MultiStatusEntry>, String> {
 /// Hrefs are the only user-controlled text this crate puts into a request,
 /// and a `&` in one is enough to make the whole document unparseable.
 pub fn escape_text(value: &str) -> String {
-    value
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
+    value.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
 }
 
 /// Handles one opening element. Returns the local name when the element
@@ -283,9 +279,7 @@ fn local_name(raw: &[u8]) -> String {
 }
 
 fn attribute(element: &quick_xml::events::BytesStart, name: &[u8]) -> Option<String> {
-    element.attributes().flatten().find(|a| a.key.local_name().as_ref() == name).map(|a| {
-        String::from_utf8_lossy(&a.value).to_string()
-    })
+    element.attributes().flatten().find(|a| a.key.local_name().as_ref() == name).map(|a| String::from_utf8_lossy(&a.value).to_string())
 }
 
 #[cfg(test)]

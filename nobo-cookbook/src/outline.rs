@@ -41,14 +41,7 @@ pub fn read(text: &str) -> Vec<Node> {
         let heading_here = if in_block[index] { None } else { vault::parse_heading_line(line) };
         if let Some(heading) = heading_here {
             let (level, title, tags) = (heading.level, heading.title, heading.tags);
-            nodes.push(Node {
-                level,
-                line_no: index + 1,
-                title,
-                tags,
-                properties: HashMap::new(),
-                content: String::new(),
-            });
+            nodes.push(Node { level, line_no: index + 1, title, tags, properties: HashMap::new(), content: String::new() });
             in_drawer = false;
             continue;
         }

@@ -10,13 +10,13 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex as StdMutex};
 
-use nobo_core::core::merge::{MergeHandler, MergeInput};
-use super::model::{ConflictInfo, SyncSummary};
 use super::crypto::{self, MasterKey};
 use super::diff::{compute_diff, SyncAction};
 use super::index::{IndexEntry, SyncIndex};
+use super::model::{ConflictInfo, SyncSummary};
 use super::providers::{IndexVersion, SyncProvider};
 use super::{hashing, rescan, store};
+use nobo_core::core::merge::{MergeHandler, MergeInput};
 
 /// How many times to silently retry one file transfer before giving up and
 /// surfacing the error to the user (1 initial attempt + this many retries).
@@ -164,7 +164,9 @@ async fn fetch_blob_by_hash(
             let mut plaintext = Vec::new();
             crypto::decrypt_stream(&file_key, &mut reader, &mut plaintext)?;
             Ok(plaintext)
-        }).await.map_err(|e| format!("decryption task panicked: {e}"))??
+        })
+        .await
+        .map_err(|e| format!("decryption task panicked: {e}"))??
     } else {
         tokio::fs::read(temp.path()).await.map_err(|e| e.to_string())?
     };
@@ -175,7 +177,8 @@ async fn fetch_blob_by_hash(
     // data and returns Ok, which the caller then writes to disk and
     // re-uploads. Failing here falls back to manual resolution for exactly
     // the files automatic merging was never sound for.
-    String::from_utf8(bytes).map_err(|e| format!("blob {content_hash} is not valid UTF-8 text (likely a binary file) -- cannot auto-merge: {e}"))
+    String::from_utf8(bytes)
+        .map_err(|e| format!("blob {content_hash} is not valid UTF-8 text (likely a binary file) -- cannot auto-merge: {e}"))
 }
 
 /// orchestrates the 3 way merge
@@ -211,8 +214,8 @@ async fn auto_merge_conflict(
     // (successfully-existing, just-not-read) local file. Propagating the
     // error instead makes this fall back to manual conflict resolution,
     // same as any other unmergeable case.
-    let local_text = tokio::fs::read_to_string(vault_root.join(path)).await
-        .map_err(|e| format!("failed to read local {path} for merge: {e}"))?;
+    let local_text =
+        tokio::fs::read_to_string(vault_root.join(path)).await.map_err(|e| format!("failed to read local {path} for merge: {e}"))?;
 
     // The one place this feature merges anything. Which handler that is
     // belongs to the sync, not to the merge (see core::merge): another
@@ -337,8 +340,7 @@ pub async fn run_sync(
 
     // What the diff below is computed from, kept so a destructive action can
     // re-check it right before it acts -- see local_matches_diff_snapshot.
-    let diff_snapshot: HashMap<String, Option<String>> =
-        local_rows.iter().map(|r| (r.path.clone(), r.local_hash.clone())).collect();
+    let diff_snapshot: HashMap<String, Option<String>> = local_rows.iter().map(|r| (r.path.clone(), r.local_hash.clone())).collect();
 
     let actions = compute_diff(&local_rows, &remote_index.to_remote_entries());
     let mut working_index = remote_index;
@@ -386,7 +388,9 @@ pub async fn run_sync(
                 // Overwrites the local file wholesale, so it must not act on
                 // a snapshot the user has edited past since this run started.
                 if !local_matches_diff_snapshot(vault_root, &path, diff_snapshot.get(&path).and_then(|h| h.as_deref())) {
-                    log::warn!("sync: {path} changed locally while this run was in flight -- skipping the download, the next run re-diffs it");
+                    log::warn!(
+                        "sync: {path} changed locally while this run was in flight -- skipping the download, the next run re-diffs it"
+                    );
                     summary.skipped_locally_changed += 1;
                     continue;
                 }
@@ -399,7 +403,10 @@ pub async fn run_sync(
                     match download_one(provider, vault_root, master_key, work_dir, &entry).await {
                         Ok(()) => break,
                         Err(e) if is_missing_remotely_error(&e) => {
-                            log::warn!("sync: {path} (content_hash {}) is gone remotely, dropping the stale index entry: {e}", entry.content_hash);
+                            log::warn!(
+                                "sync: {path} (content_hash {}) is gone remotely, dropping the stale index entry: {e}",
+                                entry.content_hash
+                            );
                             missing_remotely = true;
                             break;
                         }
@@ -452,7 +459,9 @@ pub async fn run_sync(
                 // recreated or edited since the rescan is not the file the
                 // remote deletion was decided against.
                 if !local_matches_diff_snapshot(vault_root, &path, diff_snapshot.get(&path).and_then(|h| h.as_deref())) {
-                    log::warn!("sync: {path} changed locally while this run was in flight -- skipping the local delete, the next run re-diffs it");
+                    log::warn!(
+                        "sync: {path} changed locally while this run was in flight -- skipping the local delete, the next run re-diffs it"
+                    );
                     summary.skipped_locally_changed += 1;
                     continue;
                 }
@@ -512,12 +521,10 @@ pub async fn run_sync(
                             // a legitimate thing to receive.
                             let written = {
                                 let abs_path = abs_path.clone();
-                                tokio::task::spawn_blocking(move || {
-                                    nobo_core::utils::fs_utils::write_atomic(&abs_path, &merged_text)
-                                })
-                                .await
-                                .map_err(|e| format!("write task panicked: {e}"))
-                                .and_then(|r| r.map_err(|e| e.to_string()))
+                                tokio::task::spawn_blocking(move || nobo_core::utils::fs_utils::write_atomic(&abs_path, &merged_text))
+                                    .await
+                                    .map_err(|e| format!("write task panicked: {e}"))
+                                    .and_then(|r| r.map_err(|e| e.to_string()))
                             };
                             if let Err(e) = written {
                                 log::error!("sync: failed to write auto-merged file {}: {}", path, e);
@@ -538,10 +545,8 @@ pub async fn run_sync(
 
                                 match entry_result {
                                     Ok(entry) => {
-                                        pending_state_updates.push(PendingSyncState::MarkSynced {
-                                            path: path.clone(),
-                                            hash: entry.content_hash.clone()
-                                        });
+                                        pending_state_updates
+                                            .push(PendingSyncState::MarkSynced { path: path.clone(), hash: entry.content_hash.clone() });
                                         working_index.upsert(entry);
                                         summary.uploaded += 1;
                                         auto_merged = true;
@@ -552,10 +557,10 @@ pub async fn run_sync(
                                     }
                                 }
                             }
-                        },
+                        }
                         Ok(None) => {
                             // No base hash, merge not possible
-                        },
+                        }
                         Err(e) => {
                             log::warn!("sync: auto-merge failed for {}, falling back to manual conflict: {}", path, e);
                         }
@@ -677,8 +682,8 @@ async fn upload_one(
         let mut writer = std::fs::File::create(&temp_path).map_err(|e| e.to_string())?;
         crypto::encrypt_stream(&file_key_for_blocking, &mut reader, &mut writer)
     })
-        .await
-        .map_err(|e| format!("encryption task panicked: {e}"))??;
+    .await
+    .map_err(|e| format!("encryption task panicked: {e}"))??;
 
     let encrypted_len = std::fs::metadata(temp.path()).map(|m| m.len()).unwrap_or(0);
     log::info!("upload_one: {path} encrypted to {encrypted_len} bytes (plaintext size={size}, content_hash={content_hash})");
@@ -731,8 +736,8 @@ async fn download_one(
         // file that the next scan then hashes and uploads as the truth.
         nobo_core::utils::fs_utils::write_atomic_bytes(&target_path, &plaintext).map_err(|e| e.to_string())
     })
-        .await
-        .map_err(|e| format!("decryption task panicked: {e}"))??;
+    .await
+    .map_err(|e| format!("decryption task panicked: {e}"))??;
 
     Ok(())
 }
@@ -768,8 +773,8 @@ pub async fn fetch_remote_content(
                 crypto::decrypt_stream(&file_key, &mut reader, &mut plaintext)?;
                 Ok(plaintext)
             })
-                .await
-                .map_err(|e| format!("decryption task panicked: {e}"))??
+            .await
+            .map_err(|e| format!("decryption task panicked: {e}"))??
         }
         // Unencrypted opt-out (see index.rs's module doc comment) -- the
         // downloaded bytes already ARE the plaintext.
@@ -969,8 +974,12 @@ mod tests {
         async fn list_remote_files(&self) -> Result<Vec<String>, String> {
             self.inner.list_remote_files().await
         }
-        fn label(&self) -> String { "mid-run-edit-mock".to_string() }
-        fn account_label(&self) -> String { self.inner.account_label() }
+        fn label(&self) -> String {
+            "mid-run-edit-mock".to_string()
+        }
+        fn account_label(&self) -> String {
+            self.inner.account_label()
+        }
         async fn remote_storage_bytes(&self) -> Result<u64, String> {
             self.inner.remote_storage_bytes().await
         }
@@ -1029,10 +1038,7 @@ mod tests {
         // And the next run reconciles it properly rather than losing it:
         // both sides changed since base, so this is a real conflict.
         let next = run_sync(&provider, &local_db, vault.path(), Some(&master), work.path(), |_| {}).await.unwrap();
-        assert!(
-            next.conflicts.len() == 1 || next.uploaded == 1,
-            "must resolve into a real conflict or an upload, not silence: {next:?}"
-        );
+        assert!(next.conflicts.len() == 1 || next.uploaded == 1, "must resolve into a real conflict or an upload, not silence: {next:?}");
         assert!(std::fs::read_to_string(&file).unwrap().contains("Gerade angelegt"));
     }
 
@@ -1050,12 +1056,7 @@ mod tests {
         let master = master_key();
 
         // Device B "reads" the index at the start of its own sync run.
-        let stale_version = provider
-            .download_index()
-            .await
-            .unwrap()
-            .map(|(_, v)| v)
-            .unwrap_or(IndexVersion::Absent);
+        let stale_version = provider.download_index().await.unwrap().map(|(_, v)| v).unwrap_or(IndexVersion::Absent);
         assert_eq!(stale_version, IndexVersion::Absent, "nothing synced yet");
 
         // Device A completes a full, real sync in the meantime.
@@ -1123,10 +1124,7 @@ mod tests {
         {
             let conn = db.lock().unwrap();
             let row = store::get(&conn, "a.org").unwrap();
-            assert!(
-                row.is_none_or(|r| r.base_hash.is_none()),
-                "must not be marked synced when its own index publish failed"
-            );
+            assert!(row.is_none_or(|r| r.base_hash.is_none()), "must not be marked synced when its own index publish failed");
         }
 
         // Concretely, the danger this guards against: a later sync must
@@ -1612,8 +1610,8 @@ mod tests {
     }
 
     /* --- auto-merge structural safety -- must never corrupt/bleed content
-       across headings, and must fail closed (manual conflict) rather than
-       guess whenever it can't safely reconcile something --- */
+    across headings, and must fail closed (manual conflict) rather than
+    guess whenever it can't safely reconcile something --- */
 
     fn encrypted_blob(master: &MasterKey, content: &str) -> (String, Vec<u8>) {
         let hash = hashing::hash_bytes(content.as_bytes());
@@ -1711,7 +1709,11 @@ mod tests {
         let summary_b = run_sync(&provider, &db_b, vault_b.path(), Some(&master), work_b.path(), |_| {}).await.unwrap();
 
         assert_eq!(summary_b.conflicts.len(), 1, "no CUSTOM_ID anywhere -- must fall back to manual resolution, not guess");
-        assert_eq!(std::fs::read_to_string(&file_b).unwrap(), "* Task A\n* Task B Edited\n", "local edit untouched pending manual resolution");
+        assert_eq!(
+            std::fs::read_to_string(&file_b).unwrap(),
+            "* Task A\n* Task B Edited\n",
+            "local edit untouched pending manual resolution"
+        );
     }
 
     #[tokio::test(flavor = "multi_thread")]

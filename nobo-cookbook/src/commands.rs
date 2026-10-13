@@ -8,19 +8,19 @@
 
 use crate::model::Recipe;
 use crate::repair::CollapsedProperties;
+use nobo_core::config::settings::Config;
 use nobo_core::core::file_kind;
 use nobo_core::core::history::record_best_effort;
-use nobo_core::core::vault_write;
+use nobo_core::core::indexer::IndexManager;
 use nobo_core::core::models::{FileSnapshot, HistoryEntryKind};
+use nobo_core::core::vault::Vault;
+use nobo_core::core::vault_write;
+use nobo_core::utils::fs_utils;
 #[cfg(feature = "import")]
 use nobo_core::utils::fs_utils::filename_of;
+use nobo_core::utils::note_utils;
 use rusqlite::Connection;
 use std::sync::Mutex;
-use nobo_core::config::settings::Config;
-use nobo_core::core::indexer::IndexManager;
-use nobo_core::core::vault::Vault;
-use nobo_core::utils::fs_utils;
-use nobo_core::utils::note_utils;
 
 /// One org file the user could turn into a cookbook, and whether it
 /// already is one.
@@ -80,15 +80,8 @@ pub fn create_cookbook(index_manager: &IndexManager, db: &Mutex<Connection>) -> 
     let title = nobo_core::t!("Kochbuch", "Cookbook");
     let author = Config::load().and_then(|config| config.default_author).unwrap_or_default();
     let declaration = format!("{} {}", file_kind::KIND_KEYWORD, crate::KIND.keyword());
-    let filename = note_utils::create_note_file(
-        &vault_root.to_string_lossy(),
-        &title,
-        &[],
-        &author,
-        &[declaration],
-        "",
-    )
-    .map_err(|e| e.to_string())?;
+    let filename =
+        note_utils::create_note_file(&vault_root.to_string_lossy(), &title, &[], &author, &[declaration], "").map_err(|e| e.to_string())?;
 
     let path = vault_root.join(&filename);
     let path_string = path.to_string_lossy().into_owned();
@@ -116,21 +109,17 @@ pub fn create_cookbook(index_manager: &IndexManager, db: &Mutex<Connection>) -> 
 /// which files are cookbooks is a property of their content (see
 /// file_kind), and that content is exactly what is cached.
 pub fn cookbook_recipes(index_manager: &IndexManager) -> Result<Vec<Recipe>, String> {
+    let vault_root = Config::require_vault_root()?;
+    let mut bodies: Vec<(String, String)> = Vault::new(index_manager, &vault_root)
+        .files_of_kind(crate::KIND)
+        .into_iter()
+        .map(|(path, text)| (path.to_string_lossy().into_owned(), text))
+        .collect();
+    // Files in path order, which is the one order a list of everything
+    // can be relied on to keep between runs.
+    bodies.sort_by(|(a, _), (b, _)| a.cmp(b));
 
-let vault_root = Config::require_vault_root()?;
-let mut bodies: Vec<(String, String)> = Vault::new(index_manager, &vault_root)
-    .files_of_kind(crate::KIND)
-    .into_iter()
-    .map(|(path, text)| (path.to_string_lossy().into_owned(), text))
-    .collect();
-// Files in path order, which is the one order a list of everything
-// can be relied on to keep between runs.
-bodies.sort_by(|(a, _), (b, _)| a.cmp(b));
-
-Ok(bodies
-    .iter()
-    .flat_map(|(path, text)| crate::parse::recipes_of(path, text))
-    .collect())
+    Ok(bodies.iter().flat_map(|(path, text)| crate::parse::recipes_of(path, text)).collect())
 }
 
 /// Every cookbook in the vault whose first recipe is holding everybody
@@ -138,13 +127,12 @@ Ok(bodies
 ///
 /// Read-only, and cheap: it is the same text the index already has.
 pub fn collapsed_properties(index_manager: &IndexManager) -> Result<Vec<CollapsedProperties>, String> {
-
-let vault_root = Config::require_vault_root()?;
-Ok(Vault::new(index_manager, &vault_root)
-    .files_of_kind(crate::KIND)
-    .into_iter()
-    .filter_map(|(path, text)| crate::repair::find(&path.to_string_lossy(), &text))
-    .collect())
+    let vault_root = Config::require_vault_root()?;
+    Ok(Vault::new(index_manager, &vault_root)
+        .files_of_kind(crate::KIND)
+        .into_iter()
+        .filter_map(|(path, text)| crate::repair::find(&path.to_string_lossy(), &text))
+        .collect())
 }
 
 /// Every cookbook file, and what is wrong with it (see `crate::check`).
@@ -167,36 +155,29 @@ pub fn check_cookbooks(index_manager: &IndexManager) -> Result<Vec<crate::check:
 /// a repair the user did not want is one undo away, which is what makes
 /// it safe to do without asking (see `crate::repair` on what it refuses
 /// to guess).
-pub fn repair_collapsed_properties(
-    index_manager: &IndexManager,
-    db: &Mutex<Connection>,
-) -> Result<Vec<CollapsedProperties>, String> {
+pub fn repair_collapsed_properties(index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<Vec<CollapsedProperties>, String> {
+    let vault_root = Config::require_vault_root()?;
+    let files: Vec<(std::path::PathBuf, String)> = Vault::new(index_manager, &vault_root).files_of_kind(crate::KIND).into_iter().collect();
 
-let vault_root = Config::require_vault_root()?;
-let files: Vec<(std::path::PathBuf, String)> = Vault::new(index_manager, &vault_root)
-    .files_of_kind(crate::KIND)
-    .into_iter()
-    .collect();
-
-let mut repaired = Vec::new();
-for (path, text) in files {
-    // Only the files that need it are opened for writing at all.
-    if crate::repair::repair(&path.to_string_lossy(), &text).is_none() {
-        continue;
+    let mut repaired = Vec::new();
+    for (path, text) in files {
+        // Only the files that need it are opened for writing at all.
+        if crate::repair::repair(&path.to_string_lossy(), &text).is_none() {
+            continue;
+        }
+        // Repaired from the text as it is when written, under the file's lock
+        // -- the index's copy may be a moment behind an edit just made.
+        let report = vault_write::edit_file(&path, Some(crate::KIND), index_manager, db, |current| {
+            Ok(match crate::repair::repair(&path.to_string_lossy(), current) {
+                Some((fixed, report)) => (fixed, Some(report)),
+                None => (current.to_string(), None),
+            })
+        })?;
+        if let Some(report) = report {
+            repaired.push(report);
+        }
     }
-    // Repaired from the text as it is when written, under the file's lock
-    // -- the index's copy may be a moment behind an edit just made.
-    let report = vault_write::edit_file(&path, Some(crate::KIND), index_manager, db, |current| {
-        Ok(match crate::repair::repair(&path.to_string_lossy(), current) {
-            Some((fixed, report)) => (fixed, Some(report)),
-            None => (current.to_string(), None),
-        })
-    })?;
-    if let Some(report) = report {
-        repaired.push(report);
-    }
-}
-Ok(repaired)
+    Ok(repaired)
 }
 
 /// The recipe on the page at URL, read but not saved anywhere -- what the
@@ -273,10 +254,9 @@ async fn save_picture(
     let (bytes, extension) = crate::import::fetch::image(url).await?;
     let folder = Config::load().map(|config| config.attachments_dir).unwrap_or_else(|| ".attachments".to_string());
     let directory = cookbook.parent().unwrap_or(std::path::Path::new("")).join(&folder);
-    let saved = fs_utils::place_attachment(&directory, &crate::import::image_filename(title, extension), |dest| {
-        std::fs::write(dest, &bytes)
-    })
-    .map_err(|e| e.to_string())?;
+    let saved =
+        fs_utils::place_attachment(&directory, &crate::import::image_filename(title, extension), |dest| std::fs::write(dest, &bytes))
+            .map_err(|e| e.to_string())?;
     index_manager.update_file(std::path::Path::new(&saved));
     record_best_effort(db, HistoryEntryKind::AttachmentAdded { filename: filename_of(&saved) }, false, vec![]);
     Ok(format!("{folder}/{}", filename_of(&saved)))

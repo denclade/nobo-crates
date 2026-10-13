@@ -20,10 +20,18 @@ pub struct RemoteEntry {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SyncAction {
-    Upload { path: String },
-    Download { path: String },
-    DeleteRemote { path: String },
-    DeleteLocal { path: String },
+    Upload {
+        path: String,
+    },
+    Download {
+        path: String,
+    },
+    DeleteRemote {
+        path: String,
+    },
+    DeleteLocal {
+        path: String,
+    },
     /// Both sides changed to genuinely different content, which needs a
     /// user decision -- last-write-wins would quietly lose edits.
     ///
@@ -31,16 +39,24 @@ pub enum SyncAction {
     /// hash is `None` exactly when it deleted the file while the other
     /// changed it; never both `None`, which is a Forget, and never both
     /// equal, which is a ResolveSame.
-    Conflict { path: String, local_hash: Option<String>, remote_hash: Option<String> },
+    Conflict {
+        path: String,
+        local_hash: Option<String>,
+        remote_hash: Option<String>,
+    },
     /// Both sides changed since the last sync, but converged on the SAME
     /// content (e.g. the same edit synced from two devices before either
     /// saw the other's upload) -- not a real conflict, just needs its
     /// `base_hash` brought up to date with no actual transfer.
-    ResolveSame { path: String },
+    ResolveSame {
+        path: String,
+    },
     /// Tracked locally but deleted again before it was ever synced, and
     /// never existed remotely either -- nothing to propagate, just drop
     /// the sync_state row.
-    Forget { path: String },
+    Forget {
+        path: String,
+    },
 }
 
 impl SyncAction {
@@ -58,8 +74,7 @@ impl SyncAction {
 }
 
 pub fn compute_diff(local: &[SyncStateRow], remote: &[RemoteEntry]) -> Vec<SyncAction> {
-    let remote_map: HashMap<&str, &RemoteEntry> =
-        remote.iter().map(|e| (e.path.as_str(), e)).collect();
+    let remote_map: HashMap<&str, &RemoteEntry> = remote.iter().map(|e| (e.path.as_str(), e)).collect();
     let local_map: HashMap<&str, &SyncStateRow> = local.iter().map(|r| (r.path.as_str(), r)).collect();
 
     let mut all_paths: BTreeSet<&str> = BTreeSet::new();
@@ -102,7 +117,11 @@ fn diff_one(path: &str, row: Option<&SyncStateRow>, remote: Option<&RemoteEntry>
                         // Never synced -- either a genuine new local file
                         // (upload it) or one that was created and deleted
                         // again before ever syncing (nothing to do).
-                        if local_deleted { Some(SyncAction::Forget { path }) } else { Some(SyncAction::Upload { path }) }
+                        if local_deleted {
+                            Some(SyncAction::Forget { path })
+                        } else {
+                            Some(SyncAction::Upload { path })
+                        }
                     } else if local_deleted {
                         // Both sides now agree it's gone -- just stop tracking it.
                         Some(SyncAction::Forget { path })
@@ -282,10 +301,7 @@ mod tests {
 
     #[test]
     fn multiple_files_are_diffed_independently() {
-        let local = vec![
-            row("unchanged.org", Some("h1"), Some("h1"), false),
-            row("edited.org", Some("h1"), Some("h2"), false),
-        ];
+        let local = vec![row("unchanged.org", Some("h1"), Some("h1"), false), row("edited.org", Some("h1"), Some("h2"), false)];
         let remote = vec![remote("unchanged.org", "h1"), remote("edited.org", "h1"), remote("new-remote.org", "h9")];
 
         let mut actions = compute_diff(&local, &remote);
@@ -293,10 +309,7 @@ mod tests {
 
         assert_eq!(
             actions,
-            vec![
-                SyncAction::Upload { path: "edited.org".into() },
-                SyncAction::Download { path: "new-remote.org".into() },
-            ]
+            vec![SyncAction::Upload { path: "edited.org".into() }, SyncAction::Download { path: "new-remote.org".into() },]
         );
     }
 }

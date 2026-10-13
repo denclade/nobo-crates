@@ -78,36 +78,23 @@ fn format_range(event: &CalendarEvent) -> String {
         // through Saturday is published as ending on Sunday. Org's range
         // end is inclusive, so the last real day is DTEND minus one; when
         // that lands back on the start, it was a single day all along.
-        let last_day = event
-            .end
-            .map(|e| e.date())
-            .and_then(|d| d.pred_opt())
-            .filter(|d| *d > event.start.date());
+        let last_day = event.end.map(|e| e.date()).and_then(|d| d.pred_opt()).filter(|d| *d > event.start.date());
 
         return match last_day {
-            Some(end) => format!(
-                "<{}{repeat}>--<{}>",
-                format_day(event.start),
-                format_day(end.and_hms_opt(0, 0, 0).unwrap_or(event.start))
-            ),
+            Some(end) => {
+                format!("<{}{repeat}>--<{}>", format_day(event.start), format_day(end.and_hms_opt(0, 0, 0).unwrap_or(event.start)))
+            }
             None => format!("<{}{repeat}>", format_day(event.start)),
         };
     }
 
     match event.end {
-        Some(end) if end.date() == event.start.date() && end > event.start => format!(
-            "<{} {}-{}{repeat}>",
-            format_day(event.start),
-            format_clock(event.start),
-            format_clock(end)
-        ),
-        Some(end) if end > event.start => format!(
-            "<{} {}{repeat}>--<{} {}>",
-            format_day(event.start),
-            format_clock(event.start),
-            format_day(end),
-            format_clock(end)
-        ),
+        Some(end) if end.date() == event.start.date() && end > event.start => {
+            format!("<{} {}-{}{repeat}>", format_day(event.start), format_clock(event.start), format_clock(end))
+        }
+        Some(end) if end > event.start => {
+            format!("<{} {}{repeat}>--<{} {}>", format_day(event.start), format_clock(event.start), format_day(end), format_clock(end))
+        }
         _ => format!("<{} {}{repeat}>", format_day(event.start), format_clock(event.start)),
     }
 }
@@ -140,10 +127,10 @@ const ICS_UID_NAMESPACE: uuid::Uuid = uuid::uuid!("6f9b1e2c-4a37-4c8e-9d61-5b0d4
 mod tests {
     use super::*;
     use crate::CalendarEvent;
+    use chrono::NaiveDate;
     use nobo_core::core::models::{Repeater, RepeaterKind};
     use nobo_core::core::vault;
     use std::path::Path;
-    use chrono::NaiveDate;
 
     fn at(date: (i32, u32, u32), time: (u32, u32)) -> NaiveDateTime {
         NaiveDate::from_ymd_opt(date.0, date.1, date.2).unwrap().and_hms_opt(time.0, time.1, 0).unwrap()
@@ -211,8 +198,7 @@ mod tests {
         let headings = vault::parse_headings(Path::new("calendar.org"), &rendered);
 
         assert_eq!(headings.len(), 4, "{rendered}");
-        assert_eq!(headings.iter().map(|h| h.title.as_str()).collect::<Vec<_>>(),
-                   ["Termin 0", "Termin 1", "Termin 2", "Termin 3"]);
+        assert_eq!(headings.iter().map(|h| h.title.as_str()).collect::<Vec<_>>(), ["Termin 0", "Termin 1", "Termin 2", "Termin 3"]);
     }
 
     /// Same event, later refresh: the identity has to survive, or every
@@ -324,7 +310,4 @@ mod tests {
         assert!(rendered.contains("Ort: Raum 3"), "{rendered}");
         assert!(rendered.contains("Zoom-Link: https://example.com"), "{rendered}");
     }
-
 }
-
-

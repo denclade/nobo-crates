@@ -17,12 +17,12 @@ use rusqlite::Connection;
 use std::path::Path;
 use std::sync::Mutex;
 
-use nobo_core::core::history::record_best_effort;
-use nobo_core::core::models::{FileSnapshot, HistoryEntryKind};
 use crate::model::BabelLanguage;
 use crate::model::{ExecuteBabelBlockPayload, ExecutionResult, InterpreterInfo, Settings};
 use crate::SessionRegistry;
 use crate::{exec, interpreters, trust};
+use nobo_core::core::history::record_best_effort;
+use nobo_core::core::models::{FileSnapshot, HistoryEntryKind};
 use nobo_core::utils::fs_utils::filename_of;
 use nobo_core::utils::ToCmdResult;
 
@@ -48,10 +48,7 @@ pub fn babel_trust_file(file_path: String, content: String) -> Result<(), String
 /// after `exec::TIMEOUT` and its process killed. Without that, moving off
 /// the main thread would only trade a frozen window for an invisible
 /// runaway interpreter.
-pub fn babel_execute_block(
-    payload: ExecuteBabelBlockPayload,
-    session_registry: &SessionRegistry,
-) -> Result<ExecutionResult, String> {
+pub fn babel_execute_block(payload: ExecuteBabelBlockPayload, session_registry: &SessionRegistry) -> Result<ExecutionResult, String> {
     let settings = crate::SETTINGS.load();
     let interpreter_path = match payload.language {
         BabelLanguage::Python => settings.interpreter_path,
@@ -64,32 +61,18 @@ pub fn babel_execute_block(
     // Where the note is. A session takes the same directory from its own
     // key (see SessionRegistry::send), so both paths resolve a relative
     // path the same way -- which is the whole point.
-    let working_dir = Path::new(&payload.file_path)
-        .parent()
-        .filter(|p| !p.as_os_str().is_empty())
-        .map(|p| p.to_path_buf());
+    let working_dir = Path::new(&payload.file_path).parent().filter(|p| !p.as_os_str().is_empty()).map(|p| p.to_path_buf());
 
     match payload.session {
         Some(session_name) => {
             let key = (payload.file_path, session_name);
             session_registry.send(key, payload.language, interpreter_path.as_deref(), &code).to_cmd()
         }
-        None => exec::run(
-            payload.language,
-            interpreter_path.as_deref(),
-            &code,
-            working_dir.as_deref(),
-            payload.use_cache,
-        )
-        .to_cmd(),
+        None => exec::run(payload.language, interpreter_path.as_deref(), &code, working_dir.as_deref(), payload.use_cache).to_cmd(),
     }
 }
 
-pub fn babel_kill_session(
-    file_path: String,
-    session_name: String,
-    session_registry: &SessionRegistry,
-) {
+pub fn babel_kill_session(file_path: String, session_name: String, session_registry: &SessionRegistry) {
     session_registry.kill(&(file_path, session_name));
 }
 
@@ -169,7 +152,11 @@ pub fn babel_tangle_write(
     // which outside the vault is a different kind of failure -- see
     // `grant_went_stale`.
     let report = |e: std::io::Error| {
-        if grant_went_stale(in_vault, &e) { needs_folder_grant(&target) } else { e.to_string() }
+        if grant_went_stale(in_vault, &e) {
+            needs_folder_grant(&target)
+        } else {
+            e.to_string()
+        }
     };
 
     if let Some(parent) = path.parent() {
@@ -182,8 +169,12 @@ pub fn babel_tangle_write(
     // atomicity as any other whole-content write.
     nobo_core::utils::fs_utils::write_atomic_checked(path, &code).map_err(report)?;
 
-    record_best_effort(db, HistoryEntryKind::TangleWrite { filename: filename_of(path) }, false,
-        vec![FileSnapshot { path: target_path, before, after: Some(code) }]);
+    record_best_effort(
+        db,
+        HistoryEntryKind::TangleWrite { filename: filename_of(path) },
+        false,
+        vec![FileSnapshot { path: target_path, before, after: Some(code) }],
+    );
 
     Ok(())
 }
@@ -332,10 +323,7 @@ mod tangle_grant_tests {
         std::fs::create_dir_all(&projekte).unwrap();
         let bashrc = home.path().join(".bashrc");
 
-        let refused = babel_grant_tangle_root(
-            projekte.to_string_lossy().into_owned(),
-            bashrc.to_string_lossy().into_owned(),
-        );
+        let refused = babel_grant_tangle_root(projekte.to_string_lossy().into_owned(), bashrc.to_string_lossy().into_owned());
 
         assert!(refused.is_err(), "granting must be refused: {refused:?}");
         assert!(

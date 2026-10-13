@@ -11,8 +11,7 @@ use std::path::PathBuf;
 
 fn sample(name: &str) -> Vec<Recipe> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../testdata").join(name);
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|e| panic!("sample file {}: {e}", path.display()));
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("sample file {}: {e}", path.display()));
     recipes_of(&path.to_string_lossy(), &text)
 }
 
@@ -42,9 +41,7 @@ fn named<'a>(recipes: &'a [Recipe], title: &str) -> &'a Recipe {
 }
 
 fn flat_items(recipe: &Recipe) -> Vec<&str> {
-    recipe.sections.as_ref().unwrap().ingredients.iter()
-        .flat_map(|group| group.items.iter().map(|item| item.text.as_str()))
-        .collect()
+    recipe.sections.as_ref().unwrap().ingredients.iter().flat_map(|group| group.items.iter().map(|item| item.text.as_str())).collect()
 }
 
 /* --- what counts as a recipe --- */
@@ -63,10 +60,7 @@ fn reads_recipes_that_sit_on_the_top_level() {
 #[test]
 fn reads_recipes_grouped_under_a_course() {
     let recipes = by_category();
-    assert_eq!(
-        recipes.iter().map(|r| r.title.as_str()).collect::<Vec<_>>(),
-        vec!["Tiramisu", "Apfelkuchen", "Linsencurry"],
-    );
+    assert_eq!(recipes.iter().map(|r| r.title.as_str()).collect::<Vec<_>>(), vec!["Tiramisu", "Apfelkuchen", "Linsencurry"],);
     assert_eq!(named(&recipes, "Tiramisu").categories, vec!["Desserts"]);
     assert_eq!(named(&recipes, "Linsencurry").categories, vec!["Hauptgerichte"]);
 }
@@ -212,8 +206,7 @@ fn a_note_that_merely_mentions_ingredients_is_not_parsed_here() {
 /// courtesy to people, not a second standard.
 #[test]
 fn org_chef_writes_ingredients_and_directions_at_level_two_and_nothing_else() {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../testdata/20240404T113000--org-chef-recipes__kochen_rezepte.org");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../testdata/20240404T113000--org-chef-recipes__kochen_rezepte.org");
     let text = std::fs::read_to_string(path).unwrap();
     // The Pancakes entry is the one written the way org-chef writes; the
     // file's other recipes exercise what people type by hand.
@@ -336,8 +329,7 @@ fn a_drawer_with_a_key_repeated_answers_with_one_value() {
 /* --- giving a collapsed drawer back --- */
 
 fn import_text() -> String {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../testdata/20240406T101500--rezepte-aus-dem-import__kochen_rezepte.org");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../testdata/20240406T101500--rezepte-aus-dem-import__kochen_rezepte.org");
     std::fs::read_to_string(path).unwrap()
 }
 
@@ -361,10 +353,8 @@ fn every_recipe_gets_its_own_values_back() {
     let (fixed, _) = repair::repair("k.org", &import_text()).unwrap();
     let recipes = recipes_of("k.org", &fixed);
 
-    let got: Vec<(&str, Option<&str>, Option<&str>)> = recipes
-        .iter()
-        .map(|r| (r.title.as_str(), r.servings.as_deref(), r.cook_time.as_deref()))
-        .collect();
+    let got: Vec<(&str, Option<&str>, Option<&str>)> =
+        recipes.iter().map(|r| (r.title.as_str(), r.servings.as_deref(), r.cook_time.as_deref())).collect();
     assert_eq!(
         got,
         vec![
@@ -410,8 +400,7 @@ fn a_repaired_file_is_not_repaired_again() {
 /// An ordinary cookbook has nothing to give back.
 #[test]
 fn a_file_with_one_drawer_per_recipe_is_left_alone() {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../testdata/20240404T113000--org-chef-recipes__kochen_rezepte.org");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../testdata/20240404T113000--org-chef-recipes__kochen_rezepte.org");
     let text = std::fs::read_to_string(path).unwrap();
 
     assert!(repair::find("k.org", &text).is_none());
@@ -461,7 +450,12 @@ fn reads_a_range_whichever_dash_was_used() {
 }
 
 fn named_item<'a>(recipe: &'a Recipe, item: &str) -> &'a Amount {
-    recipe.sections.as_ref().unwrap().ingredients.iter()
+    recipe
+        .sections
+        .as_ref()
+        .unwrap()
+        .ingredients
+        .iter()
         .flat_map(|group| group.items.iter())
         .find_map(|i| i.amount.as_ref().filter(|a| a.item == item))
         .unwrap_or_else(|| panic!("no ingredient {item:?}"))
@@ -473,8 +467,7 @@ fn named_item<'a>(recipe: &'a Recipe, item: &str) -> &'a Amount {
 
 fn sample_text(name: &str) -> (String, String) {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../testdata").join(name);
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|e| panic!("sample file {}: {e}", path.display()));
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("sample file {}: {e}", path.display()));
     (path.to_string_lossy().into_owned(), text)
 }
 
@@ -490,9 +483,14 @@ fn the_import_fixture_is_found_collapsed_and_fixable_and_the_repair_clears_it() 
     assert!(!after.is_fixable(), "{:?}", after.findings);
     // What it cannot hand back -- four sources for six recipes -- is still
     // said, rather than vanishing along with the rest.
-    assert!(after.findings.iter().any(|finding| finding.kind == crate::check::Kind::RepeatedProperty
-                                                && finding.keys == vec!["source-url".to_string()]),
-            "{:?}", after.findings);
+    assert!(
+        after
+            .findings
+            .iter()
+            .any(|finding| finding.kind == crate::check::Kind::RepeatedProperty && finding.keys == vec!["source-url".to_string()]),
+        "{:?}",
+        after.findings
+    );
 }
 
 #[test]

@@ -92,12 +92,8 @@ pub async fn sync_calendar(
         }
     }
 
-    let urls: Vec<String> = transport
-        .list_objects(&subscription.url, subscription.kind.component())
-        .await?
-        .into_iter()
-        .map(|object| object.url)
-        .collect();
+    let urls: Vec<String> =
+        transport.list_objects(&subscription.url, subscription.kind.component()).await?.into_iter().map(|object| object.url).collect();
 
     let mut events: Vec<CalendarEvent> = Vec::new();
     for batch in urls.chunks(BATCH) {
@@ -154,10 +150,7 @@ pub async fn sync_calendar(
 /// heading to answer a question about one property line.
 fn mirrored_uids(text: &str) -> std::collections::HashSet<String> {
     let prefix = format!(":{}:", org::ICS_UID_PROPERTY);
-    text.lines()
-        .filter_map(|line| line.trim().strip_prefix(&prefix))
-        .map(|uid| uid.trim().to_string())
-        .collect()
+    text.lines().filter_map(|line| line.trim().strip_prefix(&prefix)).map(|uid| uid.trim().to_string()).collect()
 }
 
 #[cfg(test)]
@@ -165,7 +158,7 @@ mod tests {
     use super::*;
     use crate::client::{Precondition, RemoteObject};
     use crate::model::CalDavKind;
-use crate::registry;
+    use crate::registry;
     use async_trait::async_trait;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -198,18 +191,10 @@ DTSTART:{start}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
             // with nothing, and nothing is not an error anywhere.
             assert_eq!(component, "VEVENT", "a calendar must be listed by its own component");
             self.fetches.fetch_add(1, Ordering::SeqCst);
-            Ok(self
-                .objects
-                .iter()
-                .map(|(url, _)| RemoteObject { url: url.clone(), etag: "\"e\"".into() })
-                .collect())
+            Ok(self.objects.iter().map(|(url, _)| RemoteObject { url: url.clone(), etag: "\"e\"".into() }).collect())
         }
         async fn get_object(&self, url: &str) -> Result<String, String> {
-            self.objects
-                .iter()
-                .find(|(candidate, _)| candidate == url)
-                .map(|(_, body)| body.clone())
-                .ok_or_else(|| "404".to_string())
+            self.objects.iter().find(|(candidate, _)| candidate == url).map(|(_, body)| body.clone()).ok_or_else(|| "404".to_string())
         }
         async fn put_object(&self, _url: &str, _ics: &str, _pre: Precondition<'_>) -> Result<Option<String>, String> {
             unreachable!("a calendar mirror never writes")
@@ -260,10 +245,7 @@ DTSTART:{start}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
     async fn the_events_land_in_the_file_as_ordinary_calendar_entries() {
         let fixture = Fixture::new();
         let server = server(
-            &[
-                ("a.ics", vevent("a", "Zahnarzt", "20260821T140000")),
-                ("b.ics", vevent("b", "Elternabend", "20260820T190000")),
-            ],
+            &[("a.ics", vevent("a", "Zahnarzt", "20260821T140000")), ("b.ics", vevent("b", "Elternabend", "20260820T190000"))],
             "ctag-1",
         );
 
@@ -330,9 +312,7 @@ DTSTART:{start}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
         let fixture = Fixture::new();
         fixture.sync(&server(&[("a.ics", vevent("a", "Zahnarzt", "20260821T140000"))], "ctag-1")).await;
 
-        let outcome = fixture
-            .sync(&server(&[("a.ics", vevent("a", "Zahnarzt verschoben", "20260822T140000"))], "ctag-2"))
-            .await;
+        let outcome = fixture.sync(&server(&[("a.ics", vevent("a", "Zahnarzt verschoben", "20260822T140000"))], "ctag-2")).await;
 
         assert_eq!(outcome.event_count, 1);
         assert!(fixture.content().contains("Zahnarzt verschoben"));
@@ -343,13 +323,8 @@ DTSTART:{start}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn one_unreadable_entry_does_not_lose_the_others() {
         let fixture = Fixture::new();
-        let server = server(
-            &[
-                ("a.ics", "not an icalendar at all".to_string()),
-                ("b.ics", vevent("b", "Elternabend", "20260820T190000")),
-            ],
-            "ctag-1",
-        );
+        let server =
+            server(&[("a.ics", "not an icalendar at all".to_string()), ("b.ics", vevent("b", "Elternabend", "20260820T190000"))], "ctag-1");
 
         let outcome = fixture.sync(&server).await;
 
@@ -386,19 +361,14 @@ DTSTART:{start}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
     #[tokio::test]
     async fn only_entries_the_mirror_did_not_have_count_as_arrived() {
         let fixture = Fixture::new();
-        let first = fixture
-            .sync(&server(&[("a.ics", vevent("a", "Zahnarzt", "20260821T140000"))], "ctag-1"))
-            .await;
+        let first = fixture.sync(&server(&[("a.ics", vevent("a", "Zahnarzt", "20260821T140000"))], "ctag-1")).await;
         // Nothing to compare against on a first sync -- everything is new
         // there, and saying so tells the user nothing.
         assert_eq!(first.arrived, 0);
 
         let second = fixture
             .sync(&server(
-                &[
-                    ("a.ics", vevent("a", "Zahnarzt", "20260821T140000")),
-                    ("b.ics", vevent("b", "Elternabend", "20260820T190000")),
-                ],
+                &[("a.ics", vevent("a", "Zahnarzt", "20260821T140000")), ("b.ics", vevent("b", "Elternabend", "20260820T190000"))],
                 "ctag-2",
             ))
             .await;
@@ -418,14 +388,9 @@ DTSTART:{start}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
         let series = String::from(
             "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:b\r\nSUMMARY:Chor\r\n\
 DTSTART:20260820T190000\r\nRRULE:FREQ=WEEKLY;COUNT=3\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:b\r\n\
-SUMMARY:Chor\r\nDTSTART:20260827T200000\r\nRECURRENCE-ID:20260827T190000\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+SUMMARY:Chor\r\nDTSTART:20260827T200000\r\nRECURRENCE-ID:20260827T190000\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n",
         );
-        let second = fixture
-            .sync(&server(
-                &[("a.ics", vevent("a", "Zahnarzt", "20260821T140000")), ("b.ics", series)],
-                "ctag-2",
-            ))
-            .await;
+        let second = fixture.sync(&server(&[("a.ics", vevent("a", "Zahnarzt", "20260821T140000")), ("b.ics", series)], "ctag-2")).await;
 
         assert_eq!(second.arrived, 1, "one new appointment, however many VEVENTs describe it");
     }
@@ -435,9 +400,7 @@ SUMMARY:Chor\r\nDTSTART:20260827T200000\r\nRECURRENCE-ID:20260827T190000\r\nEND:
         let fixture = Fixture::new();
         fixture.sync(&server(&[("a.ics", vevent("a", "Zahnarzt", "20260821T140000"))], "ctag-1")).await;
 
-        let second = fixture
-            .sync(&server(&[("a.ics", vevent("a", "Zahnarzt verschoben", "20260822T140000"))], "ctag-2"))
-            .await;
+        let second = fixture.sync(&server(&[("a.ics", vevent("a", "Zahnarzt verschoben", "20260822T140000"))], "ctag-2")).await;
 
         assert_eq!(second.arrived, 0);
     }

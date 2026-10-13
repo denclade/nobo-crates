@@ -115,11 +115,7 @@ impl<'a> Vault<'a> {
     }
 
     fn collect(&self, keep: impl Fn(&str) -> bool) -> Vec<(PathBuf, String)> {
-        self.index
-            .org_file_bodies_where(keep)
-            .into_iter()
-            .map(|(path, text)| (PathBuf::from(path), text))
-            .collect()
+        self.index.org_file_bodies_where(keep).into_iter().map(|(path, text)| (PathBuf::from(path), text)).collect()
     }
 }
 
@@ -165,7 +161,14 @@ pub fn format_heading(heading: &HeadingLine) -> String {
         Some(cookie) => format!("{} {cookie}", heading.title),
         None => heading.title.clone(),
     };
-    crate::core::heading_utils::format_new_heading_line(heading.level, &heading.state, heading.priority.as_deref(), &title, &heading.tags, None)
+    crate::core::heading_utils::format_new_heading_line(
+        heading.level,
+        &heading.state,
+        heading.priority.as_deref(),
+        &title,
+        &heading.tags,
+        None,
+    )
 }
 
 /// One org heading line.
@@ -274,10 +277,7 @@ mod tests {
     /// The question features actually ask: which files are mine?
     #[test]
     fn it_finds_the_files_of_one_kind() {
-        let (dir, index) = vault_with(&[
-            ("meins.org", "#+NOBO_TYPE: vault-test-kind\n* Etwas\n"),
-            ("notizen.org", "* Etwas anderes\n"),
-        ]);
+        let (dir, index) = vault_with(&[("meins.org", "#+NOBO_TYPE: vault-test-kind\n* Etwas\n"), ("notizen.org", "* Etwas anderes\n")]);
         let vault = Vault::new(&index, dir.path());
 
         let mine = vault.files_of_kind(KIND);

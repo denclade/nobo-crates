@@ -6,8 +6,8 @@
 
 use reqwest::{Client, StatusCode};
 
-use nobo_webdav::MultiStatusEntry;
 use super::model::RemoteList;
+use nobo_webdav::MultiStatusEntry;
 
 /// What a write is allowed to overwrite.
 ///
@@ -60,17 +60,14 @@ impl CalDavClient {
         use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 
         let mut headers = HeaderMap::new();
-        let mut auth = HeaderValue::from_str(&nobo_webdav::basic_auth_header(username, password))
-            .map_err(|e| format!("invalid credentials: {e}"))?;
+        let mut auth =
+            HeaderValue::from_str(&nobo_webdav::basic_auth_header(username, password)).map_err(|e| format!("invalid credentials: {e}"))?;
         auth.set_sensitive(true);
         headers.insert(AUTHORIZATION, auth);
 
         let builder = nobo_http::builder().default_headers(headers).timeout(nobo_http::ONE_FETCH);
 
-        Ok(Self {
-            client: builder.build().map_err(|e| nobo_http::describe_error(&e))?,
-            base: base_url.trim_end_matches('/').to_string(),
-        })
+        Ok(Self { client: builder.build().map_err(|e| nobo_http::describe_error(&e))?, base: base_url.trim_end_matches('/').to_string() })
     }
 
     /// Every collection under `base` that holds VTODOs.
@@ -120,10 +117,8 @@ impl CalDavClient {
         // listing of a calendar returns that calendar plus its objects,
         // so only ever one list. Recognizing that and asking one level up
         // is the difference between "you have one list" and the truth.
-        let target_is_a_calendar = entries
-            .iter()
-            .find(|e| same_collection(&e.href, &base))
-            .is_some_and(|e| e.has_child_element("resourcetype", "calendar"));
+        let target_is_a_calendar =
+            entries.iter().find(|e| same_collection(&e.href, &base)).is_some_and(|e| e.has_child_element("resourcetype", "calendar"));
         let entries = match parent_url(&base).filter(|_| target_is_a_calendar) {
             Some(parent) => self.propfind(&parent, "1", BODY).await.unwrap_or(entries),
             None => entries,
@@ -188,17 +183,12 @@ impl CalDavClient {
 </c:calendar-query>"#,
             nobo_webdav::escape_text(component)
         );
-        let xml = self
-            .request(nobo_webdav::method("REPORT"), list_url, Some(("1", &body)))
-            .await?;
+        let xml = self.request(nobo_webdav::method("REPORT"), list_url, Some(("1", &body))).await?;
         Ok(nobo_webdav::parse_multistatus(&xml)?
             .into_iter()
             // The collection answers for itself too, without an ETag.
             .filter(|e| e.prop("getetag").is_some())
-            .map(|e| RemoteObject {
-                etag: e.prop("getetag").unwrap_or_default().to_string(),
-                url: self.absolute(&e.href),
-            })
+            .map(|e| RemoteObject { etag: e.prop("getetag").unwrap_or_default().to_string(), url: self.absolute(&e.href) })
             .collect())
     }
 
@@ -225,8 +215,7 @@ impl CalDavClient {
 
         let mut fetched = Vec::with_capacity(urls.len());
         for batch in urls.chunks(BATCH) {
-            let hrefs: String =
-                batch.iter().map(|url| format!("  <d:href>{}</d:href>\n", nobo_webdav::escape_text(url))).collect();
+            let hrefs: String = batch.iter().map(|url| format!("  <d:href>{}</d:href>\n", nobo_webdav::escape_text(url))).collect();
             let body = format!(
                 r#"<?xml version="1.0" encoding="utf-8"?>
 <c:calendar-multiget xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
@@ -253,17 +242,8 @@ impl CalDavClient {
     ///
     /// `Ok(None)` when the server accepted the write but returned no ETag,
     /// which is legal -- the next sync then simply re-reads the object.
-    pub async fn put_object(
-        &self,
-        url: &str,
-        ics: &str,
-        precondition: Precondition<'_>,
-    ) -> Result<Option<String>, String> {
-        let mut request = self
-            .client
-            .put(url)
-            .header(reqwest::header::CONTENT_TYPE, "text/calendar; charset=utf-8")
-            .body(ics.to_string());
+    pub async fn put_object(&self, url: &str, ics: &str, precondition: Precondition<'_>) -> Result<Option<String>, String> {
+        let mut request = self.client.put(url).header(reqwest::header::CONTENT_TYPE, "text/calendar; charset=utf-8").body(ics.to_string());
         request = match precondition {
             Precondition::New => request.header(reqwest::header::IF_NONE_MATCH, "*"),
             Precondition::Version(etag) => request.header(reqwest::header::IF_MATCH, etag),
@@ -277,11 +257,7 @@ impl CalDavClient {
         if !response.status().is_success() {
             return Err(format!("could not save the task: HTTP {}", response.status()));
         }
-        Ok(response
-            .headers()
-            .get(reqwest::header::ETAG)
-            .and_then(|v| v.to_str().ok())
-            .map(String::from))
+        Ok(response.headers().get(reqwest::header::ETAG).and_then(|v| v.to_str().ok()).map(String::from))
     }
 
     /// Conditional as well, for the same reason: a task edited elsewhere
@@ -426,12 +402,7 @@ impl CalDavClient {
         nobo_webdav::parse_multistatus(&xml)
     }
 
-    async fn request(
-        &self,
-        method: reqwest::Method,
-        url: &str,
-        body: Option<(&str, &str)>,
-    ) -> Result<String, String> {
+    async fn request(&self, method: reqwest::Method, url: &str, body: Option<(&str, &str)>) -> Result<String, String> {
         let mut request = self.client.request(method, url);
         if let Some((depth, xml)) = body {
             request = request
@@ -476,9 +447,7 @@ fn describe(error: reqwest::Error) -> String {
 /// both the slash and whether the href is absolute.
 fn same_collection(href: &str, url: &str) -> bool {
     let path_of = |value: &str| {
-        let without_scheme = value.split_once("://").map_or(value, |(_, rest)| {
-            rest.find('/').map_or("", |index| &rest[index..])
-        });
+        let without_scheme = value.split_once("://").map_or(value, |(_, rest)| rest.find('/').map_or("", |index| &rest[index..]));
         without_scheme.trim_end_matches('/').to_string()
     };
     !href.is_empty() && path_of(href) == path_of(url)
@@ -503,11 +472,7 @@ fn last_segment(href: &str) -> String {
 
 /// Adds every `calendar-home-set` in ENTRIES to HOMES, without
 /// duplicates.
-fn collect_homes(
-    entries: &[MultiStatusEntry],
-    homes: &mut Vec<String>,
-    absolute: impl Fn(&str) -> String,
-) {
+fn collect_homes(entries: &[MultiStatusEntry], homes: &mut Vec<String>, absolute: impl Fn(&str) -> String) {
     for entry in entries {
         if let Some(home) = entry.prop_href("calendar-home-set") {
             let home = absolute(home);
@@ -541,9 +506,7 @@ fn origin_of(url: &str) -> String {
 /// A UID is server-chosen and may contain anything; a path segment may
 /// not. Everything outside a conservative set becomes `-`.
 fn sanitize_segment(uid: &str) -> String {
-    uid.chars()
-        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.') { c } else { '-' })
-        .collect()
+    uid.chars().map(|c| if c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.') { c } else { '-' }).collect()
 }
 
 #[cfg(test)]
@@ -650,8 +613,7 @@ mod tests {
             .mount(&server)
             .await;
 
-        let client =
-            CalDavClient::new(&format!("{}/dav/calendars/dennis/einkauf", server.uri()), "dennis", "hunter2").unwrap();
+        let client = CalDavClient::new(&format!("{}/dav/calendars/dennis/einkauf", server.uri()), "dennis", "hunter2").unwrap();
         let lists: Vec<_> = client.list_collections().await.unwrap().into_iter().filter(|l| l.supports_tasks).collect();
 
         assert_eq!(lists.iter().map(|l| l.display_name.as_str()).collect::<Vec<_>>(), ["Einkauf", "Vorrat"]);
@@ -896,7 +858,11 @@ END:VCALENDAR
             .await;
 
         let etag = client(&server)
-            .put_object(&format!("{}/dav/calendars/dennis/einkauf/abc.ics", server.uri()), "BEGIN:VCALENDAR\r\n", Precondition::Version("\"v1\""))
+            .put_object(
+                &format!("{}/dav/calendars/dennis/einkauf/abc.ics", server.uri()),
+                "BEGIN:VCALENDAR\r\n",
+                Precondition::Version("\"v1\""),
+            )
             .await
             .unwrap();
 
@@ -908,11 +874,7 @@ END:VCALENDAR
     #[tokio::test]
     async fn creating_a_task_refuses_to_overwrite_an_existing_one() {
         let server = MockServer::start().await;
-        Mock::given(http_method("PUT"))
-            .and(header("If-None-Match", "*"))
-            .respond_with(ResponseTemplate::new(201))
-            .mount(&server)
-            .await;
+        Mock::given(http_method("PUT")).and(header("If-None-Match", "*")).respond_with(ResponseTemplate::new(201)).mount(&server).await;
 
         let result = client(&server)
             .put_object(&format!("{}/dav/calendars/dennis/einkauf/new.ics", server.uri()), "BEGIN:VCALENDAR\r\n", Precondition::New)
@@ -926,10 +888,7 @@ END:VCALENDAR
     #[tokio::test]
     async fn a_rejected_precondition_is_reported_as_a_conflict() {
         let server = MockServer::start().await;
-        Mock::given(http_method("PUT"))
-            .respond_with(ResponseTemplate::new(412))
-            .mount(&server)
-            .await;
+        Mock::given(http_method("PUT")).respond_with(ResponseTemplate::new(412)).mount(&server).await;
 
         let error = client(&server)
             .put_object(&format!("{}/dav/calendars/dennis/einkauf/abc.ics", server.uri()), "x", Precondition::Version("\"v1\""))
@@ -942,24 +901,15 @@ END:VCALENDAR
     #[tokio::test]
     async fn deleting_something_already_gone_counts_as_success() {
         let server = MockServer::start().await;
-        Mock::given(http_method("DELETE"))
-            .respond_with(ResponseTemplate::new(404))
-            .mount(&server)
-            .await;
+        Mock::given(http_method("DELETE")).respond_with(ResponseTemplate::new(404)).mount(&server).await;
 
-        client(&server)
-            .delete_object(&format!("{}/dav/calendars/dennis/einkauf/abc.ics", server.uri()), Some("\"v1\""))
-            .await
-            .unwrap();
+        client(&server).delete_object(&format!("{}/dav/calendars/dennis/einkauf/abc.ics", server.uri()), Some("\"v1\"")).await.unwrap();
     }
 
     #[tokio::test]
     async fn a_rejected_login_says_so_instead_of_reporting_a_status_code() {
         let server = MockServer::start().await;
-        Mock::given(http_method("PROPFIND"))
-            .respond_with(ResponseTemplate::new(401))
-            .mount(&server)
-            .await;
+        Mock::given(http_method("PROPFIND")).respond_with(ResponseTemplate::new(401)).mount(&server).await;
 
         let error = client(&server).list_collections().await.unwrap_err();
 
@@ -1008,11 +958,7 @@ END:VCALENDAR
     #[tokio::test]
     async fn a_bare_server_address_is_resolved_through_well_known() {
         let server = MockServer::start().await;
-        Mock::given(http_method("PROPFIND"))
-            .and(path("/"))
-            .respond_with(ResponseTemplate::new(405))
-            .mount(&server)
-            .await;
+        Mock::given(http_method("PROPFIND")).and(path("/")).respond_with(ResponseTemplate::new(405)).mount(&server).await;
         Mock::given(http_method("PROPFIND"))
             .and(path("/.well-known/caldav"))
             .respond_with(ResponseTemplate::new(207).set_body_string(HOME_RESPONSE))
@@ -1031,16 +977,10 @@ END:VCALENDAR
     #[tokio::test]
     async fn a_wrong_address_still_reports_its_own_failure() {
         let server = MockServer::start().await;
-        Mock::given(http_method("PROPFIND"))
-            .respond_with(ResponseTemplate::new(404))
-            .mount(&server)
-            .await;
+        Mock::given(http_method("PROPFIND")).respond_with(ResponseTemplate::new(404)).mount(&server).await;
 
-        let error = CalDavClient::new(&format!("{}/nope", server.uri()), "dennis", "hunter2")
-            .unwrap()
-            .list_collections()
-            .await
-            .unwrap_err();
+        let error =
+            CalDavClient::new(&format!("{}/nope", server.uri()), "dennis", "hunter2").unwrap().list_collections().await.unwrap_err();
 
         assert!(error.contains("no such calendar"), "{error}");
     }
@@ -1087,11 +1027,7 @@ END:VCALENDAR
             .mount(&server)
             .await;
 
-        let collections = CalDavClient::new(&server.uri(), "dennis", "hunter2")
-            .unwrap()
-            .list_collections()
-            .await
-            .unwrap();
+        let collections = CalDavClient::new(&server.uri(), "dennis", "hunter2").unwrap().list_collections().await.unwrap();
 
         assert_eq!(collections.len(), 2, "{collections:?}");
         assert!(collections.iter().any(|c| c.supports_tasks));
@@ -1172,11 +1108,8 @@ END:VCALENDAR
                 .await;
         }
 
-        let collections = CalDavClient::new(&format!("{}/SOGo/dav/", server.uri()), "dennis", "hunter2")
-            .unwrap()
-            .list_collections()
-            .await
-            .unwrap();
+        let collections =
+            CalDavClient::new(&format!("{}/SOGo/dav/", server.uri()), "dennis", "hunter2").unwrap().list_collections().await.unwrap();
 
         let names: Vec<&str> = collections.iter().map(|c| c.display_name.as_str()).collect();
         assert!(names.contains(&"Privat"), "{names:?}");
@@ -1205,10 +1138,7 @@ END:VCALENDAR
             .mount(&server)
             .await;
 
-        let objects = client(&server)
-            .list_objects(&format!("{}/dav/calendars/dennis/familie/", server.uri()), "VEVENT")
-            .await
-            .unwrap();
+        let objects = client(&server).list_objects(&format!("{}/dav/calendars/dennis/familie/", server.uri()), "VEVENT").await.unwrap();
 
         assert_eq!(objects.len(), 1);
     }
@@ -1266,10 +1196,6 @@ END:VCALENDAR
             .mount(&server)
             .await;
 
-        CalDavClient::new(&format!("{}/dav", server.uri()), "me", "hunter2")
-            .unwrap()
-            .list_collections()
-            .await
-            .unwrap();
+        CalDavClient::new(&format!("{}/dav", server.uri()), "me", "hunter2").unwrap().list_collections().await.unwrap();
     }
 }

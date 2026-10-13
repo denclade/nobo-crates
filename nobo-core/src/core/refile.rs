@@ -15,7 +15,10 @@ pub fn validate_target_not_within_source(
 ) -> Result<(), String> {
     if let Some(p_line) = target_parent_line {
         if same_file && heading_utils::is_within_range(p_line, start_line, end_line) {
-            return Err(crate::t!("Ziel liegt innerhalb der zu verschiebenden Überschrift", "The target is inside the heading being moved"));
+            return Err(crate::t!(
+                "Ziel liegt innerhalb der zu verschiebenden Überschrift",
+                "The target is inside the heading being moved"
+            ));
         }
     }
     Ok(())
@@ -24,18 +27,11 @@ pub fn validate_target_not_within_source(
 /// Resolves the heading level the moved subtree's root should end up at,
 /// based on the target parent (if any) and where relative to it it's
 /// inserted.
-pub fn resolve_target_level(
-    tgt_flat: &[Heading],
-    target_parent_line: Option<usize>,
-    position: RefilePosition,
-) -> Result<usize, String> {
+pub fn resolve_target_level(tgt_flat: &[Heading], target_parent_line: Option<usize>, position: RefilePosition) -> Result<usize, String> {
     match target_parent_line {
         None => Ok(1),
         Some(p_line) => {
-            let p_idx = tgt_flat
-                .iter()
-                .position(|h| h.line_no == p_line)
-                .ok_or_else(|| not_found_at_line("Ziel-Überschrift", p_line))?;
+            let p_idx = tgt_flat.iter().position(|h| h.line_no == p_line).ok_or_else(|| not_found_at_line("Ziel-Überschrift", p_line))?;
             Ok(match position {
                 RefilePosition::Into => tgt_flat[p_idx].level + 1,
                 RefilePosition::Before | RefilePosition::After => tgt_flat[p_idx].level,
@@ -68,8 +64,7 @@ pub fn splice_refile(
     tgt_path: &Path,
     mut tgt_lines: Vec<String>,
 ) -> Result<(Vec<String>, Vec<String>), String> {
-    let mut extracted_lines: Vec<String> =
-        src_lines.drain((params.start_line - 1)..params.end_line).collect();
+    let mut extracted_lines: Vec<String> = src_lines.drain((params.start_line - 1)..params.end_line).collect();
 
     if let Some(state) = params.default_state.as_deref() {
         ensure_heading_state(&mut extracted_lines, state);
@@ -85,21 +80,19 @@ pub fn splice_refile(
     }
 
     let removed_count = params.end_line - params.start_line + 1;
-    let shifted_parent_line = target_parent_line.map(|p_line| {
-        if same_file {
-            heading_utils::shift_line_no(p_line, params.end_line, removed_count)
-        } else {
-            p_line
-        }
-    });
+    let shifted_parent_line =
+        target_parent_line.map(
+            |p_line| {
+                if same_file {
+                    heading_utils::shift_line_no(p_line, params.end_line, removed_count)
+                } else {
+                    p_line
+                }
+            },
+        );
 
     let tgt_flat_fresh = parse_headings_from_lines(tgt_path, &tgt_lines);
-    let insert_idx = heading_utils::compute_insert_index(
-        &tgt_flat_fresh,
-        shifted_parent_line,
-        position,
-        tgt_lines.len(),
-    )?;
+    let insert_idx = heading_utils::compute_insert_index(&tgt_flat_fresh, shifted_parent_line, position, tgt_lines.len())?;
     let actual_insert_idx = std::cmp::min(insert_idx, tgt_lines.len());
 
     tgt_lines.splice(actual_insert_idx..actual_insert_idx, extracted_lines);
@@ -152,22 +145,16 @@ pub fn splice_bulk_refile(
 ) -> Result<(Vec<String>, Vec<String>, u32), String> {
     let mut idx_state: Vec<(usize, Option<String>)> = sources
         .iter()
-        .filter_map(|(line_no, state)| {
-            flat.iter()
-                .position(|h| h.line_no == *line_no)
-                .map(|idx| (idx, state.clone()))
-        })
+        .filter_map(|(line_no, state)| flat.iter().position(|h| h.line_no == *line_no).map(|idx| (idx, state.clone())))
         .collect();
     idx_state.sort_unstable_by_key(|&(idx, _)| idx);
     idx_state.dedup_by_key(|&mut (idx, _)| idx);
 
     let selected: std::collections::BTreeSet<usize> = idx_state.iter().map(|&(idx, _)| idx).collect();
     idx_state.retain(|&(idx, _)| {
-        !heading_utils::ancestors_of(flat, idx).iter().any(|a| {
-            flat.iter()
-                .position(|h| h.line_no == a.line_no)
-                .is_some_and(|a_idx| selected.contains(&a_idx))
-        })
+        !heading_utils::ancestors_of(flat, idx)
+            .iter()
+            .any(|a| flat.iter().position(|h| h.line_no == a.line_no).is_some_and(|a_idx| selected.contains(&a_idx)))
     });
 
     let mut ranges: Vec<(usize, usize, usize, Option<String>)> = idx_state
@@ -215,12 +202,7 @@ pub fn splice_bulk_refile(
     });
 
     let tgt_flat_fresh = parse_headings_from_lines(tgt_path, &tgt_lines);
-    let mut insert_idx = heading_utils::compute_insert_index(
-        &tgt_flat_fresh,
-        shifted_parent_line,
-        RefilePosition::Into,
-        tgt_lines.len(),
-    )?;
+    let mut insert_idx = heading_utils::compute_insert_index(&tgt_flat_fresh, shifted_parent_line, RefilePosition::Into, tgt_lines.len())?;
 
     for (_, block) in extracted {
         let at = std::cmp::min(insert_idx, tgt_lines.len());
@@ -257,16 +239,8 @@ mod tests {
             default_state: None,
         };
 
-        let (new_src, new_tgt) = splice_refile(
-            src,
-            &params,
-            Some(1),
-            RefilePosition::Into,
-            false,
-            &PathBuf::from("target.org"),
-            tgt,
-        )
-        .unwrap();
+        let (new_src, new_tgt) =
+            splice_refile(src, &params, Some(1), RefilePosition::Into, false, &PathBuf::from("target.org"), tgt).unwrap();
 
         assert_eq!(new_src, vec!["* Task B".to_string(), "Other body".to_string()]);
         assert_eq!(new_tgt[0], "* Project");
@@ -279,24 +253,9 @@ mod tests {
         let src = lines("* Task A\nBody");
         let tgt = lines("* Other");
 
-        let params = RefileParams {
-            start_line: 1,
-            end_line: 2,
-            src_level: 1,
-            target_level: 1,
-            default_state: None,
-        };
+        let params = RefileParams { start_line: 1, end_line: 2, src_level: 1, target_level: 1, default_state: None };
 
-        let (_, new_tgt) = splice_refile(
-            src,
-            &params,
-            None,
-            RefilePosition::Into,
-            false,
-            &PathBuf::from("target.org"),
-            tgt,
-        )
-        .unwrap();
+        let (_, new_tgt) = splice_refile(src, &params, None, RefilePosition::Into, false, &PathBuf::from("target.org"), tgt).unwrap();
 
         assert!(new_tgt.contains(&"* Task A".to_string()));
     }
@@ -307,19 +266,9 @@ mod tests {
     fn dropping_an_entry_just_above_the_one_it_already_precedes_changes_nothing() {
         let src = lines("* TODO A\n* TODO B\n* TODO C\n* TODO D");
 
-        let params =
-            RefileParams { start_line: 3, end_line: 3, src_level: 1, target_level: 1, default_state: None };
+        let params = RefileParams { start_line: 3, end_line: 3, src_level: 1, target_level: 1, default_state: None };
 
-        let (_, out) = splice_refile(
-            src,
-            &params,
-            Some(4),
-            RefilePosition::Before,
-            true,
-            &PathBuf::from("same.org"),
-            Vec::new(),
-        )
-        .unwrap();
+        let (_, out) = splice_refile(src, &params, Some(4), RefilePosition::Before, true, &PathBuf::from("same.org"), Vec::new()).unwrap();
 
         assert_eq!(out, vec!["* TODO A", "* TODO B", "* TODO C", "* TODO D"]);
     }
@@ -329,19 +278,9 @@ mod tests {
     fn dropping_an_entry_below_the_last_one_puts_it_last() {
         let src = lines("* TODO A\n* TODO B\n* TODO C\n* TODO D");
 
-        let params =
-            RefileParams { start_line: 3, end_line: 3, src_level: 1, target_level: 1, default_state: None };
+        let params = RefileParams { start_line: 3, end_line: 3, src_level: 1, target_level: 1, default_state: None };
 
-        let (_, out) = splice_refile(
-            src,
-            &params,
-            Some(4),
-            RefilePosition::After,
-            true,
-            &PathBuf::from("same.org"),
-            Vec::new(),
-        )
-        .unwrap();
+        let (_, out) = splice_refile(src, &params, Some(4), RefilePosition::After, true, &PathBuf::from("same.org"), Vec::new()).unwrap();
 
         assert_eq!(out, vec!["* TODO A", "* TODO B", "* TODO D", "* TODO C"]);
     }
@@ -357,34 +296,12 @@ mod tests {
         // on computing correctly.
         let src = lines("* Parent\n* Task A\nBody\n* TODO Task C");
 
-        let params = RefileParams {
-            start_line: 2,
-            end_line: 3,
-            src_level: 1,
-            target_level: 2,
-            default_state: None,
-        };
+        let params = RefileParams { start_line: 2, end_line: 3, src_level: 1, target_level: 2, default_state: None };
 
-        let (_, new_tgt) = splice_refile(
-            src,
-            &params,
-            Some(1),
-            RefilePosition::Into,
-            true,
-            &PathBuf::from("same.org"),
-            Vec::new(),
-        )
-        .unwrap();
+        let (_, new_tgt) =
+            splice_refile(src, &params, Some(1), RefilePosition::Into, true, &PathBuf::from("same.org"), Vec::new()).unwrap();
 
-        assert_eq!(
-            new_tgt,
-            vec![
-                "* Parent".to_string(),
-                "** Task A".to_string(),
-                "Body".to_string(),
-                "* TODO Task C".to_string(),
-            ]
-        );
+        assert_eq!(new_tgt, vec!["* Parent".to_string(), "** Task A".to_string(), "Body".to_string(), "* TODO Task C".to_string(),]);
     }
 
     /// Same-file, Before/After refile is exactly what the Projects sidebar's
@@ -402,13 +319,7 @@ mod tests {
         // already opened the heading before them).
         let src = lines("* Project\n** TODO Task A\n** TODO Task B\n** TODO Task C");
 
-        let params = RefileParams {
-            start_line: 4,
-            end_line: 4,
-            src_level: 2,
-            target_level: 2,
-            default_state: None,
-        };
+        let params = RefileParams { start_line: 4, end_line: 4, src_level: 2, target_level: 2, default_state: None };
 
         let (_, new_tgt) = splice_refile(
             src,
@@ -423,12 +334,7 @@ mod tests {
 
         assert_eq!(
             new_tgt,
-            vec![
-                "* Project".to_string(),
-                "** TODO Task A".to_string(),
-                "** TODO Task C".to_string(),
-                "** TODO Task B".to_string(),
-            ]
+            vec!["* Project".to_string(), "** TODO Task A".to_string(), "** TODO Task C".to_string(), "** TODO Task B".to_string(),]
         );
     }
 
@@ -455,19 +361,14 @@ mod tests {
         let sources = vec![(line_of("Task C"), None), (line_of("Task A"), None)];
 
         let tgt = lines("* Project");
-        let (new_src, new_tgt, count) = splice_bulk_refile(
-            &flat, &sources, lines(src_text), Some(1), false, 2, &PathBuf::from("tgt.org"), tgt,
-        ).unwrap();
+        let (new_src, new_tgt, count) =
+            splice_bulk_refile(&flat, &sources, lines(src_text), Some(1), false, 2, &PathBuf::from("tgt.org"), tgt).unwrap();
 
         assert_eq!(count, 2);
         assert_eq!(new_src, vec!["* TODO Task B".to_string()], "only B remains in the source file");
         assert_eq!(
             new_tgt,
-            vec![
-                "* Project".to_string(),
-                "** TODO Task A".to_string(),
-                "** TODO Task C".to_string(),
-            ],
+            vec!["* Project".to_string(), "** TODO Task A".to_string(), "** TODO Task C".to_string(),],
             "A before C at the target, matching their original relative order in the source file"
         );
     }
@@ -484,19 +385,14 @@ mod tests {
         let sources = vec![(line_of("Project A"), None), (line_of("Subtask"), None)];
 
         let tgt = lines("* Target");
-        let (new_src, new_tgt, count) = splice_bulk_refile(
-            &flat, &sources, lines(src_text), Some(1), false, 2, &PathBuf::from("tgt.org"), tgt,
-        ).unwrap();
+        let (new_src, new_tgt, count) =
+            splice_bulk_refile(&flat, &sources, lines(src_text), Some(1), false, 2, &PathBuf::from("tgt.org"), tgt).unwrap();
 
         assert_eq!(count, 1, "the subtask doesn't count separately -- it's covered by Project A's own subtree move");
         assert_eq!(new_src, vec!["* Project B :project:".to_string()]);
         assert_eq!(
             new_tgt,
-            vec![
-                "* Target".to_string(),
-                "** Project A :project:".to_string(),
-                "*** TODO Subtask".to_string(),
-            ],
+            vec!["* Target".to_string(), "** Project A :project:".to_string(), "*** TODO Subtask".to_string(),],
             "the subtask travels along with its parent, both level-shifted"
         );
     }
@@ -516,26 +412,15 @@ mod tests {
 
         let sources = vec![(line_of("Task A"), None), (line_of("Task B"), None)];
 
-        let (new_src, new_tgt, count) = splice_bulk_refile(
-            &flat, &sources, lines(src_text), Some(target_line), true, 2, &PathBuf::from("src.org"), Vec::new(),
-        ).unwrap();
+        let (new_src, new_tgt, count) =
+            splice_bulk_refile(&flat, &sources, lines(src_text), Some(target_line), true, 2, &PathBuf::from("src.org"), Vec::new())
+                .unwrap();
 
         assert_eq!(count, 2);
-        assert_eq!(
-            new_src,
-            vec![
-                "* Later Project :project:".to_string(),
-                "Intro".to_string(),
-            ]
-        );
+        assert_eq!(new_src, vec!["* Later Project :project:".to_string(), "Intro".to_string(),]);
         assert_eq!(
             new_tgt,
-            vec![
-                "* Later Project :project:".to_string(),
-                "Intro".to_string(),
-                "** TODO Task A".to_string(),
-                "** TODO Task B".to_string(),
-            ],
+            vec!["* Later Project :project:".to_string(), "Intro".to_string(), "** TODO Task A".to_string(), "** TODO Task B".to_string(),],
             "both tasks appended at the end of Later Project's own content (after Intro), in original order"
         );
     }
@@ -548,14 +433,10 @@ mod tests {
 
         // Mirrors useRefile.ts's own per-item rule (source.state ? null :
         // "TODO"): only the stateless item gets a default state.
-        let sources = vec![
-            (line_of("Task A"), Some("TODO".to_string())),
-            (line_of("Task B"), None),
-        ];
+        let sources = vec![(line_of("Task A"), Some("TODO".to_string())), (line_of("Task B"), None)];
 
-        let (_, new_tgt, count) = splice_bulk_refile(
-            &flat, &sources, lines(src_text), None, false, 1, &PathBuf::from("tgt.org"), Vec::new(),
-        ).unwrap();
+        let (_, new_tgt, count) =
+            splice_bulk_refile(&flat, &sources, lines(src_text), None, false, 1, &PathBuf::from("tgt.org"), Vec::new()).unwrap();
 
         assert_eq!(count, 2);
         assert_eq!(new_tgt, vec!["* TODO Task A".to_string(), "* TODO Task B".to_string()]);
@@ -614,9 +495,8 @@ mod tests {
 
         let sources = vec![(line_of("Task A"), None), (9999, None)];
 
-        let (_, new_tgt, count) = splice_bulk_refile(
-            &flat, &sources, lines(src_text), None, false, 1, &PathBuf::from("tgt.org"), Vec::new(),
-        ).unwrap();
+        let (_, new_tgt, count) =
+            splice_bulk_refile(&flat, &sources, lines(src_text), None, false, 1, &PathBuf::from("tgt.org"), Vec::new()).unwrap();
 
         assert_eq!(count, 1, "the stale entry is silently skipped, not an error");
         assert_eq!(new_tgt, vec!["* Task A".to_string()]);

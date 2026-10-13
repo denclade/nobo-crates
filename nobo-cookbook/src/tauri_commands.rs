@@ -79,9 +79,7 @@ pub async fn cookbook_recipes(index_manager: State<'_, Arc<IndexManager>>) -> Re
 /// Read-only, and cheap: it is the same text the index already has.
 #[tauri::command]
 #[specta::specta]
-pub async fn cookbook_collapsed_properties(
-    index_manager: State<'_, Arc<IndexManager>>,
-) -> Result<Vec<CollapsedProperties>, String> {
+pub async fn cookbook_collapsed_properties(index_manager: State<'_, Arc<IndexManager>>) -> Result<Vec<CollapsedProperties>, String> {
     commands::collapsed_properties(index_manager.inner())
 }
 
@@ -110,7 +108,10 @@ pub async fn cookbook_import_preview(url: String) -> Result<crate::import::Impor
     #[cfg(feature = "import")]
     return commands::import_preview(url).await;
     #[cfg(not(feature = "import"))]
-    return { let _ = url; Err(crate::import_unavailable()) };
+    return {
+        let _ = url;
+        Err(crate::import_unavailable())
+    };
 }
 
 /// RECIPE (as the preview gave it) into the cookbook FILE_PATH, under
@@ -129,5 +130,8 @@ pub async fn cookbook_import_save(
     #[cfg(feature = "import")]
     return commands::import_save(recipe, file_path, category, with_image, index_manager.inner(), db.inner()).await;
     #[cfg(not(feature = "import"))]
-    return { let _ = (recipe, file_path, category, with_image, index_manager, db); Err(crate::import_unavailable()) };
+    return {
+        let _ = (recipe, file_path, category, with_image, index_manager, db);
+        Err(crate::import_unavailable())
+    };
 }

@@ -1,8 +1,8 @@
 use crate::core::heading_identity;
 use crate::core::heading_utils::format_new_heading_line;
 use crate::core::models::{
-    is_real_structure, property_value, Heading, OrgTimestamp, ORG_CLOSED, ORG_DEADLINE, ORG_PROPERTIES_END,
-    ORG_PROPERTIES_START, ORG_SCHEDULED, ORG_STATE_LOG, TODO_STATES,
+    is_real_structure, property_value, Heading, OrgTimestamp, ORG_CLOSED, ORG_DEADLINE, ORG_PROPERTIES_END, ORG_PROPERTIES_START,
+    ORG_SCHEDULED, ORG_STATE_LOG, TODO_STATES,
 };
 use crate::core::task_utils;
 use crate::utils::clock_utils;
@@ -96,11 +96,7 @@ pub fn parse_heading_line(line: &str) -> Option<ParsedHeadingLine> {
             && tail.chars().all(|c| c == ':' || c.is_alphanumeric() || "_@#%".contains(c))
             && tail[1..tail.len() - 1].split(':').any(|tag| !tag.is_empty());
         if is_tag_group {
-            tags = tail[1..tail.len() - 1]
-                .split(':')
-                .filter(|s| !s.is_empty())
-                .map(|s| s.to_string())
-                .collect();
+            tags = tail[1..tail.len() - 1].split(':').filter(|s| !s.is_empty()).map(|s| s.to_string()).collect();
             title_part = title_part[..last_ws_pos].trim_end().to_string();
         }
     }
@@ -185,7 +181,11 @@ pub(crate) fn block_begin_name(line: &str) -> Option<&str> {
         return None;
     }
     let name = line[BLOCK_BEGIN_PREFIX.len()..].split_whitespace().next().unwrap_or("");
-    if name.is_empty() { None } else { Some(name) }
+    if name.is_empty() {
+        None
+    } else {
+        Some(name)
+    }
 }
 
 /// "#+END_EXAMPLE" -> Some("EXAMPLE"); see block_begin_name's own doc
@@ -196,7 +196,11 @@ pub(crate) fn block_end_name(line: &str) -> Option<&str> {
         return None;
     }
     let name = line[BLOCK_END_PREFIX.len()..].trim();
-    if name.is_empty() { None } else { Some(name) }
+    if name.is_empty() {
+        None
+    } else {
+        Some(name)
+    }
 }
 
 /// The blocks of a FILE's lines, as org reads them: each `#+BEGIN_<name>`
@@ -325,8 +329,7 @@ fn finalize_heading(heading: &mut Heading, last_line: usize) {
     heading.last_line = last_line;
     heading.occurrence = first_bare_active_timestamp(&heading.content);
 
-    heading.effort_minutes = property_value(&heading.properties, ORG_EFFORT_PROPERTY)
-        .and_then(effort_utils::parse_effort);
+    heading.effort_minutes = property_value(&heading.properties, ORG_EFFORT_PROPERTY).and_then(effort_utils::parse_effort);
 
     if heading.content.ends_with('\n') {
         heading.content.pop();
@@ -370,10 +373,7 @@ fn has_upcoming_custom_id<S: AsRef<str>>(lines: &[S], heading_index: usize) -> b
     let mut i = heading_index + 1;
     while i < lines.len() {
         let trimmed = lines[i].as_ref().trim();
-        if trimmed.is_empty()
-            || trimmed.starts_with(ORG_SCHEDULED)
-            || trimmed.starts_with(ORG_DEADLINE)
-            || trimmed.starts_with(ORG_CLOSED)
+        if trimmed.is_empty() || trimmed.starts_with(ORG_SCHEDULED) || trimmed.starts_with(ORG_DEADLINE) || trimmed.starts_with(ORG_CLOSED)
         {
             i += 1;
             continue;
@@ -421,9 +421,7 @@ fn is_statistics_cookie(inner: &str) -> bool {
         return done.chars().all(|c| c.is_ascii_digit());
     }
     match inner.split_once('/') {
-        Some((done, total)) => {
-            done.chars().all(|c| c.is_ascii_digit()) && total.chars().all(|c| c.is_ascii_digit())
-        }
+        Some((done, total)) => done.chars().all(|c| c.is_ascii_digit()) && total.chars().all(|c| c.is_ascii_digit()),
         None => false,
     }
 }
@@ -623,9 +621,7 @@ where
             // line was consumed here and then written back by nothing,
             // because the writer emits planning from the typed fields.
             if in_metadata_prefix
-                && (trimmed.starts_with(ORG_CLOSED)
-                    || trimmed.starts_with(ORG_SCHEDULED)
-                    || trimmed.starts_with(ORG_DEADLINE))
+                && (trimmed.starts_with(ORG_CLOSED) || trimmed.starts_with(ORG_SCHEDULED) || trimmed.starts_with(ORG_DEADLINE))
             {
                 let mut recognised = false;
                 if let Some(closed) = extract_bracket_value(trimmed, ORG_CLOSED, '[', ']') {
@@ -633,8 +629,7 @@ where
                     recognised = true;
                 }
                 if let Some(sched) = extract_bracket_value(trimmed, ORG_SCHEDULED, '<', '>') {
-                    heading.scheduled = timestamp_utils::parse_timestamp(&sched)
-                        .or_else(|| Some(OrgTimestamp::unparsed(&sched)));
+                    heading.scheduled = timestamp_utils::parse_timestamp(&sched).or_else(|| Some(OrgTimestamp::unparsed(&sched)));
                     recognised = true;
                 }
                 if let Some(dl) = extract_bracket_value(trimmed, ORG_DEADLINE, '<', '>') {
@@ -642,8 +637,7 @@ where
                     // SCHEDULED above. Dropping it deleted the user's
                     // deadline on the next rewrite -- a timestamp this
                     // build does not understand is still the user's.
-                    heading.deadline = timestamp_utils::parse_timestamp(&dl)
-                        .or_else(|| Some(OrgTimestamp::unparsed(&dl)));
+                    heading.deadline = timestamp_utils::parse_timestamp(&dl).or_else(|| Some(OrgTimestamp::unparsed(&dl)));
                     recognised = true;
                 }
                 // Nothing usable in it, so it is not a planning line at
@@ -655,8 +649,7 @@ where
             }
 
             // History (Logbook)
-            let in_log_position = in_metadata_prefix
-                || in_drawer.as_deref().is_some_and(|n| n.eq_ignore_ascii_case(LOGBOOK_DRAWER_NAME));
+            let in_log_position = in_metadata_prefix || in_drawer.as_deref().is_some_and(|n| n.eq_ignore_ascii_case(LOGBOOK_DRAWER_NAME));
 
             if in_log_position && trimmed.starts_with(ORG_STATE_LOG) {
                 heading.history.push(line.trim_end().to_string());
@@ -966,11 +959,7 @@ mod tests {
 
     #[test]
     fn a_todo_keyword_makes_a_star_line_real_structure_even_deep_in_a_description() {
-        let file = write_temp_org(concat!(
-            "* TODO Real task\n",
-            "Some notes.\n",
-            "*** NEXT A genuine nested subtask\n",
-        ));
+        let file = write_temp_org(concat!("* TODO Real task\n", "Some notes.\n", "*** NEXT A genuine nested subtask\n",));
         let headings = extract_headings_from_file(file.path());
         assert_eq!(headings.len(), 2);
         assert_eq!(headings[1].title, "A genuine nested subtask");
@@ -980,10 +969,7 @@ mod tests {
 
     #[test]
     fn a_project_tag_makes_a_star_line_real_structure_even_without_a_state() {
-        let file = write_temp_org(concat!(
-            "* TODO Real task\n",
-            "* A state-less heading tagged :project:\n",
-        ));
+        let file = write_temp_org(concat!("* TODO Real task\n", "* A state-less heading tagged :project:\n",));
         let headings = extract_headings_from_file(file.path());
         assert_eq!(headings.len(), 2);
         assert_eq!(headings[1].title, "A state-less heading tagged");
@@ -1132,13 +1118,7 @@ mod tests {
 
     #[test]
     fn example_block_matching_is_case_insensitive_and_requires_a_matching_name() {
-        let file = write_temp_org(concat!(
-            "* TODO A\n",
-            "#+begin_quote\n",
-            "* Not a heading\n",
-            "#+END_QUOTE\n",
-            "* TODO B\n",
-        ));
+        let file = write_temp_org(concat!("* TODO A\n", "#+begin_quote\n", "* Not a heading\n", "#+END_QUOTE\n", "* TODO B\n",));
         let headings = extract_headings_from_file(file.path());
         assert_eq!(headings.len(), 2, "lowercase #+begin_/#+END_ still pair up correctly");
         assert_eq!(headings[1].title, "B");
@@ -1149,13 +1129,8 @@ mod tests {
         // #+END_QUOTE doesn't close a #+BEGIN_EXAMPLE -- real org-mode
         // requires the names to match, so a heading-looking line between
         // them (even another #+END_ of the wrong kind) stays protected.
-        let file = write_temp_org(concat!(
-            "* TODO A\n",
-            "#+BEGIN_EXAMPLE\n",
-            "#+END_QUOTE\n",
-            "* Still not a heading\n",
-            "#+END_EXAMPLE\n",
-        ));
+        let file =
+            write_temp_org(concat!("* TODO A\n", "#+BEGIN_EXAMPLE\n", "#+END_QUOTE\n", "* Still not a heading\n", "#+END_EXAMPLE\n",));
         let headings = extract_headings_from_file(file.path());
         assert_eq!(headings.len(), 1);
         assert!(headings[0].content.contains("#+END_QUOTE"));
@@ -1167,10 +1142,7 @@ mod tests {
         let file = write_temp_org("* Projekt X :work:urgent:\n");
         let headings = extract_headings_from_file(file.path());
 
-        assert_eq!(
-            headings[0].tags,
-            vec!["work".to_string(), "urgent".to_string()]
-        );
+        assert_eq!(headings[0].tags, vec!["work".to_string(), "urgent".to_string()]);
         assert_eq!(headings[0].title, "Projekt X");
     }
 
@@ -1207,14 +1179,7 @@ mod tests {
 
     #[test]
     fn ensure_heading_state_preserves_tags_and_realigns() {
-        let mut lines = vec![format_new_heading_line(
-            2,
-            &None,
-            None,
-            "Etwas",
-            &["work".to_string()],
-            None
-        )];
+        let mut lines = vec![format_new_heading_line(2, &None, None, "Etwas", &["work".to_string()], None)];
         ensure_heading_state(&mut lines, "TODO");
         assert!(lines[0].starts_with("** TODO Etwas"));
         assert!(lines[0].ends_with(":work:"));
@@ -1230,9 +1195,7 @@ mod tests {
 
     #[test]
     fn parses_effort_property_for_all_headings() {
-        let file = write_temp_org(
-            "* TODO Erste\n:PROPERTIES:\n:Effort: 1:30\n:END:\n* TODO Zweite\n:PROPERTIES:\n:Effort: 0:45\n:END:\n"
-        );
+        let file = write_temp_org("* TODO Erste\n:PROPERTIES:\n:Effort: 1:30\n:END:\n* TODO Zweite\n:PROPERTIES:\n:Effort: 0:45\n:END:\n");
         let headings = extract_headings_from_file(file.path());
 
         assert_eq!(headings[0].effort_minutes, Some(90));
@@ -1249,10 +1212,7 @@ mod tests {
     #[test]
     fn heading_without_effort_has_none() {
         let file = write_temp_org("* TODO A\n");
-        assert_eq!(
-            extract_headings_from_file(file.path())[0].effort_minutes,
-            None
-        );
+        assert_eq!(extract_headings_from_file(file.path())[0].effort_minutes, None);
     }
 
     #[test]
@@ -1270,10 +1230,7 @@ mod tests {
     #[test]
     fn parses_scheduled_date_only() {
         let file = write_temp_org("* TODO A\nSCHEDULED: <2026-08-05 Wed>\n");
-        let ts = extract_headings_from_file(file.path())[0]
-            .scheduled
-            .clone()
-            .unwrap();
+        let ts = extract_headings_from_file(file.path())[0].scheduled.clone().unwrap();
 
         assert_eq!(ts.start_date, "2026-08-05");
         assert!(ts.start_time.is_none());
@@ -1315,10 +1272,7 @@ mod tests {
     #[test]
     fn parses_scheduled_with_repeater() {
         let file = write_temp_org("* TODO Wiederkehrend\nSCHEDULED: <2026-08-05 Wed +1w>\n");
-        let ts = extract_headings_from_file(file.path())[0]
-            .scheduled
-            .clone()
-            .unwrap();
+        let ts = extract_headings_from_file(file.path())[0].scheduled.clone().unwrap();
 
         assert!(ts.repeater.is_some());
         assert_eq!(ts.repeater.as_ref().unwrap().unit, 'w');
@@ -1327,9 +1281,7 @@ mod tests {
     #[test]
     fn heading_without_scheduled_has_none() {
         let file = write_temp_org("* TODO A\n");
-        assert!(extract_headings_from_file(file.path())[0]
-            .scheduled
-            .is_none());
+        assert!(extract_headings_from_file(file.path())[0].scheduled.is_none());
     }
 
     #[test]
@@ -1338,9 +1290,7 @@ mod tests {
         let h = &extract_headings_from_file(file.path())[0];
 
         let block = heading_utils::build_org_heading_block(h, &HeadingUpdatePayload::default());
-        assert!(block
-            .iter()
-            .any(|l| l == "SCHEDULED: <2026-08-05 Wed 14:00-15:30>"));
+        assert!(block.iter().any(|l| l == "SCHEDULED: <2026-08-05 Wed 14:00-15:30>"));
     }
 
     /// A hand-written outline inside a heading's body must survive a
@@ -1403,11 +1353,7 @@ mod tests {
 
     #[test]
     fn a_real_cookie_is_still_recognised() {
-        for (heading, title) in [
-            ("* Projekt [33%]", "Projekt"),
-            ("* Projekt [1/3]", "Projekt"),
-            ("* Projekt [/]", "Projekt"),
-        ] {
+        for (heading, title) in [("* Projekt [33%]", "Projekt"), ("* Projekt [1/3]", "Projekt"), ("* Projekt [/]", "Projekt")] {
             let file = write_temp_org(&format!("{heading}\n:PROPERTIES:\n:CUSTOM_ID: h:x\n:END:\n"));
             assert_eq!(extract_headings_from_file(file.path())[0].title, title, "{heading}");
         }
@@ -1509,9 +1455,6 @@ mod tests {
         let h = &extract_headings_from_file(file.path())[0];
 
         let block = heading_utils::build_org_heading_block(h, &HeadingUpdatePayload::default());
-        assert!(
-            block.iter().any(|l| l.contains("irgendwas seltsames")),
-            "the deadline must not be dropped: {block:?}"
-        );
+        assert!(block.iter().any(|l| l.contains("irgendwas seltsames")), "the deadline must not be dropped: {block:?}");
     }
 }
