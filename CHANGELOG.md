@@ -13,6 +13,23 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+### Geändert (Hosts passen an)
+
+- Befehle tragen den Namen ihres Plugins: `babel_discover_bash`, `babel_discover_python_interpreters`, `babel_execute_block`, `babel_kill_session` (vorher ohne `babel_`-Präfix bzw. `execute_babel_block`/`kill_babel_session`), `cookbook_set_file` (vorher `set_cookbook`, nimmt jetzt die Datenbank für den Verlauf), `review_state`, `review_save_state`, `review_save_settings` (vorher `get_review_state`, `save_review_state`, `save_review_settings`).
+- `bookmarks_set_file` und `cookbook_set_file` schreiben über `vault_write` und landen im Verlauf.
+- Lesezeichen und Kochbuch registrieren alle Befehle in jedem Build; ohne Netzwerk antworten Seitenabruf und Rezept-Import mit einem Grund.
+
+### Neu
+
+- `core::vault_write`: ein Schreibweg für alles, was im Verlauf landet (`edit_file`, `edit_files`, `recorded`), eine Sperre je Datei (wiedereintrittsfähig), `write_generated` für Spiegel, `declare_kind`, `app_dir`.
+- `org_syntax`: gemeinsames Lesen und Schreiben von Property-Drawern im Format von Org; `Vault::kind_candidates` für die Dateiauswahl der Features.
+
+### Geändert
+
+- Alle Schreibstellen (Überschriften, Uhr, Notiz löschen, Checkboxen, Kochbuch, CalDAV-Spiegel) laufen über `vault_write`.
+- `commands_headings` und `fs_utils` nach Aufgaben aufgeteilt; öffentliche Pfade unverändert.
+- Einheitlich mit `rustfmt` formatiert (`rustfmt.toml`); `.git-blame-ignore-revs` überspringt den Formatierungs-Commit.
+
 ## [0.16.0] – 2026-10-12
 
 ### Behoben
