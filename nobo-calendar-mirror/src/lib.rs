@@ -84,7 +84,7 @@ inventory::submit! {
 
 /// Where the mirrors live, for every kind of calendar.
 pub fn dir(vault_root: &Path) -> PathBuf {
-    vault_root.join(".nobo").join("calendars")
+    nobo_core::core::vault_write::app_dir(vault_root).join("calendars")
 }
 
 /// The extension a mirror file has.

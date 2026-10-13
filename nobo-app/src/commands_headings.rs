@@ -1,5 +1,6 @@
 use nobo_core::config::settings::Config;
-use nobo_core::core::history::{self, record_best_effort};
+use nobo_core::core::history::record_best_effort;
+use nobo_core::core::vault_write;
 use nobo_core::core::indexer::IndexManager;
 use nobo_core::core::models::{BulkHeadingUpdate, BulkRefileSource, CustomIdBackfillPreview, EmptyPropertiesDrawer, FileSnapshot, Heading, HeadingCreatePayload, HeadingLocation, HeadingTarget, HeadingUpdatePayload, HistoryEntryKind, Note, OrphanedCustomId, RefilePosition, TimeTrackingSummary, UnpromotedOrgFile};
 use nobo_core::core::{clock, file_kind, heading_identity, heading_utils, task_utils, refile};
@@ -261,7 +262,8 @@ pub fn update_heading_in_file(
     // doc comment), so one snapshot pair here already captures any
     // trigger-cascaded changes too, no multi-file tracking needed.
     let new_block = heading_utils::build_org_heading_block(&heading, &payload);
-    let (before, result, after) = history::snapshot_around(&target_path, || {
+    let entry = HistoryEntryKind::HeadingUpdated { filename: filename_of(&target_path), title };
+    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
         edit.replace(new_block)?;
         // A subtask's own state/tags/content changing also bumps its
         // enclosing project's (and every ancestor's) LAST_ACTIVITY, so it
@@ -269,17 +271,13 @@ pub fn update_heading_in_file(
         // opened itself.
         edit.touch_ancestors()?;
         edit.commit()?;
-        index_manager.update_file(&target_path);
         if state_changed {
+            // The triggers read the file as it is now.
+            index_manager.update_file(&target_path);
             edna::apply_triggers(&target_path, line_no, &index_manager)?;
         }
         Ok(())
-    });
-
-    record_best_effort(&db, HistoryEntryKind::HeadingUpdated { filename: filename_of(&target_path), title }, false,
-        vec![FileSnapshot { path: file_path, before, after }]);
-
-    result
+    })
 }
 
 /// Stamps a CUSTOM_ID onto exactly one heading, but only if it doesn't
@@ -312,16 +310,11 @@ pub fn ensure_custom_id_for_heading(
     let id = heading_identity::custom_id_of(&heading).unwrap().to_string();
 
     let block = heading_utils::stamp_custom_id_only(&heading);
-    let (before, result, after) = history::snapshot_around(&target_path, || {
+    let entry = HistoryEntryKind::CustomIdsBackfilled { filename: filename_of(&target_path), count: 1 };
+    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
         edit.replace(block)?;
-        edit.commit()?;
-        index_manager.update_file(&target_path);
-        Ok(())
-    });
-    result?;
-
-    record_best_effort(&db, HistoryEntryKind::CustomIdsBackfilled { filename: filename_of(&target_path), count: 1 }, false,
-        vec![FileSnapshot { path: file_path, before, after }]);
+        edit.commit()
+    })?;
 
     Ok(id)
 }
@@ -556,7 +549,9 @@ pub fn bulk_update_headings(
 ) -> Result<u32, String> {
     let target_path = PathBuf::from(&file_path);
 
-    let (before, result, after) = history::snapshot_around(&target_path, || {
+    let filename = filename_of(&target_path);
+    let entry = |result: &Result<u32, String>| HistoryEntryKind::HeadingsBulkUpdated { filename, count: *result.as_ref().unwrap_or(&0) };
+    vault_write::recorded(&target_path, entry, index_manager, db, || {
         // Both halves from one read: the line numbers below are spliced
         // into exactly the text they were parsed out of (see
         // heading_utils::read_and_parse).
@@ -564,20 +559,9 @@ pub fn bulk_update_headings(
         let count = heading_utils::apply_bulk_update(&flat, &updates, &mut lines)?;
         if count > 0 {
             fs_utils::write_lines(&target_path, &lines).to_cmd()?;
-            index_manager.update_file(&target_path);
         }
         Ok(count)
-    });
-
-    if let Ok(count) = result {
-        if count > 0 {
-            record_best_effort(&db, HistoryEntryKind::HeadingsBulkUpdated { filename: filename_of(&target_path), count }, false,
-                vec![FileSnapshot { path: file_path, before, after }]);
-        }
-        Ok(count)
-    } else {
-        result
-    }
+    })
 }
 
 /// Deletes each of `targets`' subtrees from one file -- the batched
@@ -595,7 +579,9 @@ pub fn bulk_delete_headings(
 ) -> Result<u32, String> {
     let target_path = PathBuf::from(&file_path);
 
-    let (before, result, after) = history::snapshot_around(&target_path, || {
+    let filename = filename_of(&target_path);
+    let entry = |result: &Result<u32, String>| HistoryEntryKind::HeadingsBulkDeleted { filename, count: *result.as_ref().unwrap_or(&0) };
+    vault_write::recorded(&target_path, entry, index_manager, db, || {
         // Both halves from one read: the line numbers below are spliced
         // into exactly the text they were parsed out of (see
         // heading_utils::read_and_parse).
@@ -603,20 +589,9 @@ pub fn bulk_delete_headings(
         let count = heading_utils::apply_bulk_delete(&flat, &targets, &mut lines)?;
         if count > 0 {
             fs_utils::write_lines(&target_path, &lines).to_cmd()?;
-            index_manager.update_file(&target_path);
         }
         Ok(count)
-    });
-
-    if let Ok(count) = result {
-        if count > 0 {
-            record_best_effort(&db, HistoryEntryKind::HeadingsBulkDeleted { filename: filename_of(&target_path), count }, false,
-                vec![FileSnapshot { path: file_path, before, after }]);
-        }
-        Ok(count)
-    } else {
-        result
-    }
+    })
 }
 
 pub fn create_heading_in_file(
@@ -644,7 +619,8 @@ pub fn create_heading_in_file(
     let level = parent_edit.as_ref().map_or(1, |edit| edit.heading().level + 1);
     let new_lines = heading_utils::build_new_heading_block(&payload, level);
 
-    let (before, result, after) = history::snapshot_around(&target_path, || {
+    let entry = HistoryEntryKind::HeadingCreated { filename: filename_of(&target_path), title };
+    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
         match parent_edit {
             Some(mut edit) => {
                 edit.insert_after_subtree(new_lines)?;
@@ -674,14 +650,8 @@ pub fn create_heading_in_file(
                 fs_utils::append_lines(&target_path, new_lines).to_cmd()?;
             }
         }
-        index_manager.update_file(&target_path);
         Ok(())
-    });
-
-    record_best_effort(&db, HistoryEntryKind::HeadingCreated { filename: filename_of(&target_path), title }, false,
-        vec![FileSnapshot { path: payload.file_path, before, after }]);
-
-    result
+    })
 }
 
 pub fn delete_heading_in_file(
@@ -698,19 +668,13 @@ pub fn delete_heading_in_file(
     let mut edit = heading_utils::open_edit(&target_path, &target, &nobo_core::core::errors::subject::heading())?;
     let title = edit.heading().title.clone();
 
-    let (before, result, after) = history::snapshot_around(&target_path, || {
+    let entry = HistoryEntryKind::HeadingDeleted { filename: filename_of(&target_path), title };
+    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
         edit.delete_subtree()?;
         // Deleting/completing a subtask is a change to its project too.
         edit.touch_ancestors()?;
-        edit.commit()?;
-        index_manager.update_file(&target_path);
-        Ok(())
-    });
-
-    record_best_effort(&db, HistoryEntryKind::HeadingDeleted { filename: filename_of(&target_path), title }, false,
-        vec![FileSnapshot { path: file_path, before, after }]);
-
-    result
+        edit.commit()
+    })
 }
 
 /// Reorders a heading among its siblings.
@@ -747,7 +711,7 @@ pub fn move_heading_in_file(
         None => None,
     };
 
-    reorder(edit, anchor, &target_path, file_path, index_manager, db)
+    reorder(edit, anchor, &target_path, index_manager, db)
 }
 
 /// The tail every reorder shares: the move, the write, the reindex, the
@@ -759,7 +723,6 @@ fn reorder(
     mut edit: heading_utils::HeadingEdit,
     anchor: Option<usize>,
     path: &Path,
-    file_path: String,
     index_manager: &IndexManager,
     db: &Mutex<Connection>,
 ) -> Result<(), String> {
@@ -768,16 +731,8 @@ fn reorder(
         return Ok(());
     }
 
-    let (snapshot_before, result, snapshot_after) = history::snapshot_around(path, || {
-        edit.commit()?;
-        index_manager.update_file(path);
-        Ok(())
-    });
-
-    record_best_effort(&db, HistoryEntryKind::FileEdited { filename: filename_of(path) }, false,
-        vec![FileSnapshot { path: file_path, before: snapshot_before, after: snapshot_after }]);
-
-    result
+    let entry = HistoryEntryKind::FileEdited { filename: filename_of(path) };
+    vault_write::recorded(path, |_| entry, index_manager, db, || edit.commit())
 }
 
 pub fn archive_done_tasks(
@@ -1030,7 +985,7 @@ pub fn refile_heading(
                     RefilePosition::Before => Some(other),
                     _ => edit.next_sibling_of(other),
                 };
-                return reorder(edit, anchor, &src_path, source_file, index_manager, db);
+                return reorder(edit, anchor, &src_path, index_manager, db);
             }
         }
     }

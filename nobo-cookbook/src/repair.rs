@@ -24,8 +24,7 @@
 
 use std::collections::HashMap;
 
-use nobo_core::core::models::{ORG_PROPERTIES_END, ORG_PROPERTIES_START};
-use nobo_core::core::vault;
+use nobo_core::core::org_syntax;
 
 /// A cookbook file whose first recipe holds everybody's properties.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
@@ -198,47 +197,24 @@ impl Plan {
     }
 }
 
+/// A drawer as org writes it (see org_syntax::drawer_lines).
 fn drawer_lines(entries: &[(String, String)]) -> Vec<String> {
-    let mut lines = vec![ORG_PROPERTIES_START.to_string()];
-    lines.extend(entries.iter().map(|(key, value)| format!(":{key}: {value}")));
-    lines.push(ORG_PROPERTIES_END.to_string());
-    lines
+    let pairs: Vec<(&str, &str)> = entries.iter().map(|(key, value)| (key.as_str(), value.as_str())).collect();
+    org_syntax::drawer_lines(&pairs)
 }
 
 /// Where a drawer would go for the heading on line HEADING: directly
-/// after it, or after its planning line if it has one -- org's own rule.
+/// after it, or after its one planning line -- org's own rule.
 fn drawer_position(lines: &[&str], heading: usize) -> usize {
-    let mut at = heading + 1;
-    while at < lines.len() && is_planning(lines[at]) {
-        at += 1;
-    }
-    at
+    let at = heading + 1;
+    if at < lines.len() && org_syntax::is_planning_line(lines[at]) { at + 1 } else { at }
 }
 
-/// The drawer belonging to the heading on line HEADING, if it has one.
+/// The drawer belonging to the heading on line HEADING, if it has one and
+/// it holds nothing but properties -- anything else in it would be lost
+/// by rewriting it whole.
 fn drawer_of(lines: &[&str], heading: usize) -> Option<Drawer> {
-    let start = drawer_position(lines, heading);
-    if start >= lines.len() || !lines[start].trim().eq_ignore_ascii_case(ORG_PROPERTIES_START) {
-        return None;
-    }
-    let mut entries = Vec::new();
-    for (offset, line) in lines[start + 1..].iter().enumerate() {
-        let trimmed = line.trim();
-        if trimmed.eq_ignore_ascii_case(ORG_PROPERTIES_END) {
-            return Some(Drawer { start, end: start + 1 + offset, entries });
-        }
-        if let Some((key, value)) = vault::parse_property(trimmed) {
-            entries.push((key, value));
-        } else {
-            // Not a property and not the end: this is not a drawer that
-            // can be rewritten safely.
-            return None;
-        }
-    }
-    None
-}
-
-fn is_planning(line: &str) -> bool {
-    let trimmed = line.trim_start();
-    ["SCHEDULED:", "DEADLINE:", "CLOSED:"].iter().any(|word| trimmed.starts_with(word))
+    let drawer = org_syntax::property_drawer(lines, heading).filter(|drawer| drawer.clean)?;
+    let entries = drawer.properties.into_iter().map(|property| (property.key, property.value)).collect();
+    Some(Drawer { start: drawer.start, end: drawer.end, entries })
 }

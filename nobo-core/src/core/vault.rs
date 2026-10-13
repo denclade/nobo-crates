@@ -90,6 +90,30 @@ impl<'a> Vault<'a> {
         self.collect(move |text| file_kind::from_lines(&text.lines().collect::<Vec<_>>()) == kind)
     }
 
+    /// Every file that is, or could be declared, a KIND file -- what a
+    /// feature's "which files are mine" settings list offers. Out are the
+    /// files the app generates (a mirror would be undone on its next
+    /// refresh) and the app's own files in hidden folders (`.nobo/`: the
+    /// GTD lists, the archive) unless they already are KIND files. Each
+    /// with its text, its note title if it has one, and whether it is a
+    /// KIND file now; in no particular order.
+    pub fn kind_candidates(&self, kind: FileKind) -> Vec<KindCandidate> {
+        let titles: std::collections::HashMap<String, String> = self.notes().into_iter().map(|note| (note.path, note.title)).collect();
+        self.org_files()
+            .into_iter()
+            .filter_map(|(path, text)| {
+                let found = file_kind::from_lines(&text.lines().collect::<Vec<_>>());
+                let is_kind = found == kind;
+                let hidden = crate::utils::fs_utils::has_hidden_ancestor(path.strip_prefix(self.root).unwrap_or(&path));
+                if !file_kind::capabilities(found).editable || (hidden && !is_kind) {
+                    return None;
+                }
+                let title = titles.get(path.to_string_lossy().as_ref()).cloned();
+                Some(KindCandidate { path, text, title, is_kind })
+            })
+            .collect()
+    }
+
     fn collect(&self, keep: impl Fn(&str) -> bool) -> Vec<(PathBuf, String)> {
         self.index
             .org_file_bodies_where(keep)
@@ -97,6 +121,15 @@ impl<'a> Vault<'a> {
             .map(|(path, text)| (PathBuf::from(path), text))
             .collect()
     }
+}
+
+/// One file `Vault::kind_candidates` offers.
+pub struct KindCandidate {
+    pub path: PathBuf,
+    pub text: String,
+    /// Its note title, when the index knows it as a note.
+    pub title: Option<String>,
+    pub is_kind: bool,
 }
 
 /// Headings out of text that is not in the vault (yet).
@@ -194,6 +227,27 @@ mod tests {
         let index = IndexManager::new();
         index.scan_directory(dir.path());
         (dir, index)
+    }
+
+    /// Candidates for a kind: ordinary notes and the KIND files, not the
+    /// app's own files in `.nobo/`.
+    #[test]
+    fn kind_candidates_leave_out_the_apps_own_files() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join(".nobo")).unwrap();
+        std::fs::write(dir.path().join("notiz.org"), "* A\n").unwrap();
+        std::fs::write(dir.path().join(".nobo/actions.org"), "* TODO x\n").unwrap();
+        std::fs::write(dir.path().join(".nobo/mine.org"), "#+NOBO_TYPE: vault-test-kind\n").unwrap();
+        let index = IndexManager::new();
+        index.scan_directory(dir.path());
+
+        let mut found: Vec<(String, bool)> = Vault::new(&index, dir.path())
+            .kind_candidates(KIND)
+            .into_iter()
+            .map(|c| (c.path.file_name().unwrap().to_string_lossy().into_owned(), c.is_kind))
+            .collect();
+        found.sort();
+        assert_eq!(found, [("mine.org".to_string(), true), ("notiz.org".to_string(), false)]);
     }
 
     #[test]

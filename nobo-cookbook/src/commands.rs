@@ -9,7 +9,8 @@
 use crate::model::Recipe;
 use crate::repair::CollapsedProperties;
 use nobo_core::core::file_kind;
-use nobo_core::core::history::{self, record_best_effort};
+use nobo_core::core::history::record_best_effort;
+use nobo_core::core::vault_write;
 use nobo_core::core::models::{FileSnapshot, HistoryEntryKind};
 use nobo_core::utils::fs_utils::filename_of;
 use rusqlite::Connection;
@@ -38,37 +39,20 @@ pub struct CookbookFile {
 /// rewritten wholesale by its own sync, so declaring one a cookbook would
 /// be undone on the next refresh -- and its kind is already taken.
 pub fn cookbook_files(index_manager: &IndexManager) -> Result<Vec<CookbookFile>, String> {
-
-let vault_root = Config::require_vault_root()?;
-let vault = Vault::new(index_manager, &vault_root);
-let titles: std::collections::HashMap<String, String> =
-    vault.notes().into_iter().map(|note| (note.path, note.title)).collect();
-let mut files: Vec<CookbookFile> = vault
-    .org_files()
-    .into_iter()
-    .map(|(path, text)| (path.to_string_lossy().into_owned(), text))
-    .filter_map(|(path, text)| {
-        let kind = file_kind::from_lines(&text.lines().collect::<Vec<_>>());
-        // Anything the app generates and rewrites wholesale is out:
-        // declaring one a cookbook would be undone on its next
-        // refresh. Asked as a capability rather than by naming the
-        // mirrors, so this holds for whatever the build has (see
-        // core::file_kind).
-        if !file_kind::capabilities(kind).editable {
-            return None;
-        }
-        Some(CookbookFile {
-            title: titles
-                .get(&path)
-                .cloned()
-                .unwrap_or_else(|| fs_utils::filename_of(&path)),
-            path,
-            is_cookbook: kind == crate::KIND,
+    let vault_root = Config::require_vault_root()?;
+    // What could be a cookbook: no mirror (declaring one would be undone on
+    // its next refresh), none of the app's own files (see
+    // Vault::kind_candidates).
+    let mut files: Vec<CookbookFile> = Vault::new(index_manager, &vault_root)
+        .kind_candidates(crate::KIND)
+        .into_iter()
+        .map(|candidate| {
+            let path = candidate.path.to_string_lossy().into_owned();
+            CookbookFile { title: candidate.title.unwrap_or_else(|| fs_utils::filename_of(&path)), path, is_cookbook: candidate.is_kind }
         })
-    })
-    .collect();
-files.sort_by_key(|file| file.title.to_lowercase());
-Ok(files)
+        .collect();
+    files.sort_by_key(|file| file.title.to_lowercase());
+    Ok(files)
 }
 
 /// Declares a file a cookbook, or takes the declaration back.
@@ -78,13 +62,8 @@ Ok(files)
 /// also how a file stops being one. Undeclaring only removes what this
 /// wrote; the recipes themselves are the user's text and are never
 /// touched.
-pub fn set_cookbook(path: String, cookbook: bool, index_manager: &IndexManager) -> Result<(), String> {
-
-let path = std::path::PathBuf::from(&path);
-let value = cookbook.then(|| crate::KIND.keyword().to_string());
-file_kind::set_leading_keyword(&path, file_kind::KIND_KEYWORD, value.as_deref())?;
-index_manager.update_file(&path);
-Ok(())
+pub fn set_cookbook(path: String, cookbook: bool, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
+    vault_write::declare_kind(std::path::Path::new(&path), crate::KIND, cookbook, index_manager, db)
 }
 
 /// A new, empty cookbook at the top of the vault, for a vault that has
@@ -200,22 +179,21 @@ let files: Vec<(std::path::PathBuf, String)> = Vault::new(index_manager, &vault_
 
 let mut repaired = Vec::new();
 for (path, text) in files {
-    let Some((fixed, report)) = crate::repair::repair(&path.to_string_lossy(), &text) else {
+    // Only the files that need it are opened for writing at all.
+    if crate::repair::repair(&path.to_string_lossy(), &text).is_none() {
         continue;
-    };
-    let (before, result, after) = history::snapshot_around(&path, || {
-        fs_utils::write_atomic_checked(&path, &fixed).map_err(|e| e.to_string())?;
-        index_manager.update_file(&path);
-        Ok(())
-    });
-    record_best_effort(
-        db,
-        HistoryEntryKind::FileEdited { filename: filename_of(&path) },
-        false,
-        vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before, after }],
-    );
-    result?;
-    repaired.push(report);
+    }
+    // Repaired from the text as it is when written, under the file's lock
+    // -- the index's copy may be a moment behind an edit just made.
+    let report = vault_write::edit_file(&path, Some(crate::KIND), index_manager, db, |current| {
+        Ok(match crate::repair::repair(&path.to_string_lossy(), current) {
+            Some((fixed, report)) => (fixed, Some(report)),
+            None => (current.to_string(), None),
+        })
+    })?;
+    if let Some(report) = report {
+        repaired.push(report);
+    }
 }
 Ok(repaired)
 }
@@ -275,25 +253,9 @@ pub async fn import_save(
     // it overwrote whatever happened to the cookbook in between -- an
     // edit in the other pane, a sync pull. Only the in-memory insert lies
     // between this read and the write now.
-    let text = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    if !is_cookbook(&text) {
-        return Err(not_a_cookbook());
-    }
-
-    let (updated, line_no) =
-        crate::import::insert(&text, &category, |level| crate::import::to_org(&recipe, level, image_link.as_deref()));
-    let (before, result, after) = history::snapshot_around(&path, || {
-        fs_utils::write_atomic_checked(&path, &updated).map_err(|e| e.to_string())?;
-        index_manager.update_file(&path);
-        Ok(())
-    });
-    record_best_effort(
-        db,
-        HistoryEntryKind::FileEdited { filename: filename_of(&file_path) },
-        false,
-        vec![FileSnapshot { path: file_path.clone(), before, after }],
-    );
-    result?;
+    let line_no = vault_write::edit_file(&path, Some(crate::KIND), index_manager, db, |text| {
+        Ok(crate::import::insert(text, &category, |level| crate::import::to_org(&recipe, level, image_link.as_deref())))
+    })?;
     Ok(ImportedAt { file_path, line_no })
 }
 

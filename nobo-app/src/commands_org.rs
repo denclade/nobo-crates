@@ -16,14 +16,11 @@ use std::sync::Mutex;
 
 use rusqlite::Connection;
 
-use nobo_core::core::history::{self, record_best_effort};
+use nobo_core::core::vault_write;
 use nobo_core::core::indexer::IndexManager;
-use nobo_core::core::models::{FileSnapshot, HistoryEntryKind};
 use nobo_core::core::org_ast;
 use nobo_core::core::org_edit::{self, Edit};
 use nobo_core::core::org_sort::{self, SortKey, SortTarget};
-use nobo_core::utils::fs_utils;
-use nobo_core::utils::ToCmdResult;
 
 /// Ticks or clears the checkbox on LINE_NO (1-based) of FILE_PATH and
 /// brings every parent checkbox above it up to date.
@@ -38,26 +35,12 @@ pub fn toggle_checkbox_in_file(
     index_manager: &IndexManager,
     db: &Mutex<Connection>,
 ) -> Result<Option<String>, String> {
-    let path = PathBuf::from(&file_path);
-    let original = std::fs::read_to_string(&path).to_cmd()?;
-    let Some(updated) = org_ast::toggle_checkbox(&original, line_no) else {
-        return Ok(None);
-    };
-
-    let (before, result, after) = history::snapshot_around(&path, || {
-        fs_utils::write_atomic_checked(&path, &updated).to_cmd()?;
-        index_manager.update_file_with(&path, &updated);
-        Ok(())
-    });
-    result?;
-
-    record_best_effort(
-        db,
-        HistoryEntryKind::FileEdited { filename: fs_utils::filename_of(&path) },
-        false,
-        vec![FileSnapshot { path: file_path, before, after }],
-    );
-    Ok(Some(updated))
+    vault_write::edit_file(&PathBuf::from(&file_path), None, index_manager, db, |original| {
+        Ok(match org_ast::toggle_checkbox(original, line_no) {
+            Some(updated) => (updated.clone(), Some(updated)),
+            None => (original.to_string(), None),
+        })
+    })
 }
 
 /// What would be sorted at CURSOR (a UTF-16 offset into TEXT) -- a table

@@ -25,7 +25,7 @@ pub struct ReviewState {
 }
 
 fn store_path(vault_root: &Path) -> PathBuf {
-    vault_root.join(".nobo").join("review-state.json")
+    nobo_core::core::vault_write::app_dir(vault_root).join("review-state.json")
 }
 
 /// Missing or corrupted file both read as "never reviewed yet" (the default)

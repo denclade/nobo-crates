@@ -1,7 +1,6 @@
 //! The bookmarks files themselves -- the categories: which files there
 //! are, which could become one, a new one, declaring one.
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -34,27 +33,17 @@ pub fn bookmark_files(index_manager: &IndexManager) -> Result<Vec<(String, Strin
 /// marked. Generated mirrors are left out -- their own sync rewrites them.
 pub fn bookmarks_files(index_manager: &IndexManager) -> Result<Vec<BookmarkFile>, String> {
     let root = Config::require_vault_root()?;
-    let vault = Vault::new(index_manager, &root);
-    let titles: HashMap<String, String> = vault.notes().into_iter().map(|note| (note.path, note.title)).collect();
-    let mut files: Vec<BookmarkFile> = vault
-        .org_files()
+    let mut files: Vec<BookmarkFile> = Vault::new(index_manager, &root)
+        .kind_candidates(crate::KIND)
         .into_iter()
-        .filter_map(|(path, text)| {
-            let kind = file_kind::from_lines(&text.lines().collect::<Vec<_>>());
-            let is_bookmarks = kind == crate::KIND;
-            // The app's own files (in `.nobo/`) other than bookmarks files
-            // are no candidates: the GTD lists, the mirrors, the archive.
-            let hidden = fs_utils::has_hidden_ancestor(path.strip_prefix(&root).unwrap_or(&path));
-            if !file_kind::capabilities(kind).editable || (!is_bookmarks && hidden) {
-                return None;
-            }
-            let path = path.to_string_lossy().into_owned();
-            let title = if is_bookmarks {
-                parse::category_title(&path, &text)
+        .map(|candidate| {
+            let path = candidate.path.to_string_lossy().into_owned();
+            let title = if candidate.is_kind {
+                parse::category_title(&path, &candidate.text)
             } else {
-                titles.get(&path).cloned().unwrap_or_else(|| fs_utils::filename_of(&path).trim_end_matches(".org").to_string())
+                candidate.title.unwrap_or_else(|| fs_utils::filename_of(&path).trim_end_matches(".org").to_string())
             };
-            Some(BookmarkFile { title, path, is_bookmarks })
+            BookmarkFile { title, path, is_bookmarks: candidate.is_kind }
         })
         .collect();
     files.sort_by_key(|file| file.title.to_lowercase());
@@ -65,15 +54,7 @@ pub fn bookmarks_files(index_manager: &IndexManager) -> Result<Vec<BookmarkFile>
 /// Only the declaration is written; the bookmarks are the user's text and
 /// stay where they are either way. One undo away, like every other write.
 pub fn bookmarks_set_file(path: String, bookmarks: bool, index_manager: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
-    let value = bookmarks.then(|| crate::KIND.keyword().to_string());
-    vault_write::edit_file(&PathBuf::from(&path), None, index_manager, db, |text| {
-        let lines: Vec<String> = text.lines().map(str::to_string).collect();
-        let updated = match file_kind::splice_leading_keyword(lines, file_kind::KIND_KEYWORD, value.as_deref()) {
-            Some(lines) => lines.join("\n") + if text.ends_with('\n') || text.is_empty() { "\n" } else { "" },
-            None => text.to_string(),
-        };
-        Ok((updated, ()))
-    })
+    vault_write::declare_kind(&PathBuf::from(&path), crate::KIND, bookmarks, index_manager, db)
 }
 
 /// The file name a category is kept under: `bookmarks-work.org` for

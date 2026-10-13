@@ -1,4 +1,5 @@
-use nobo_core::core::history::{self, record_best_effort};
+use nobo_core::core::history::record_best_effort;
+use nobo_core::core::vault_write;
 use nobo_core::core::indexer::IndexManager;
 use nobo_core::core::models::{DiffChunk, FileSnapshot, HistoryEntryKind, Note, NoteLoadResult};
 use nobo_core::utils::note_utils::{FilenameSyncStatus, IdentifierChange};
@@ -128,17 +129,11 @@ pub fn delete_note(
     // The index is updated explicitly, like every other mutating command:
     // history's undo path needs it in sync without waiting for the
     // filesystem watcher round-trip.
-    let (before, result, after) = history::snapshot_around(target, || {
+    vault_write::recorded(target, |_| HistoryEntryKind::FileDeleted { filename: filename_of(&path) }, index_state, db, || {
         fs_utils::remove_file(target).to_cmd()?;
         let _ = temp_file_utils::remove_temp_if_exists(&path);
-        index_state.remove_file(target);
         Ok(())
-    });
-
-    record_best_effort(&db, HistoryEntryKind::FileDeleted { filename: filename_of(&path) }, false,
-        vec![FileSnapshot { path, before, after }]);
-
-    result
+    })
 }
 
 /// Every favourited file in the vault, wherever it lives -- what the

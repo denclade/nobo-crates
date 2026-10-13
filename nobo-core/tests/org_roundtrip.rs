@@ -453,7 +453,6 @@ fn a_property_drawer_keeps_the_order_the_file_had() {
 /// deterministic place.
 #[test]
 fn a_new_property_sorts_in_after_the_remembered_ones() {
-    use nobo_core::core::models::HeadingUpdatePayload;
     use nobo_core::core::org_parser::parse_headings_from_lines;
 
     let text = "* TODO Aufgabe\n:PROPERTIES:\n:ZWEITENS: b\n:ERSTENS: a\n:END:\n";

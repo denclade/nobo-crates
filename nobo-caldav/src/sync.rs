@@ -1177,11 +1177,7 @@ fn write_file(target: &ListTarget<'_>, tasks: &[CalDavTask], read_as: Option<&st
         return Ok(false);
     }
 
-    if let Some(parent) = target.file.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| format!("could not create {}: {e}", parent.display()))?;
-    }
-    nobo_core::utils::fs_utils::write_atomic(target.file, &rendered)
-        .map_err(|e| format!("could not write {}: {e}", target.file.display()))?;
+    nobo_core::core::vault_write::write_generated(target.file, &rendered)?;
     Ok(true)
 }
 

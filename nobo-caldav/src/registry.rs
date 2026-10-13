@@ -37,7 +37,7 @@ impl CalDavKind {
     /// it arrived over, and the agenda reads that one directory.
     pub fn dir(self, vault_root: &Path) -> PathBuf {
         match self {
-            CalDavKind::Tasks => vault_root.join(".nobo").join("caldav"),
+            CalDavKind::Tasks => nobo_core::core::vault_write::app_dir(vault_root).join("caldav"),
             CalDavKind::Events => nobo_calendar_mirror::dir(vault_root),
         }
     }
@@ -132,11 +132,7 @@ pub fn subscription_for(kind: CalDavKind, name: &str, username: &str, url: &str)
 /// is what carries the subscription to the other devices, and what keeps
 /// it here if the server is unreachable right now.
 pub fn write_empty(vault_root: &Path, subscription: &CalDavSubscription) -> Result<(), String> {
-    let target = subscription.file(vault_root);
-    if let Some(parent) = target.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| format!("could not create {}: {e}", parent.display()))?;
-    }
-    nobo_core::utils::fs_utils::write_atomic(&target, &header(subscription)).map_err(|e| format!("could not write {}: {e}", target.display()))
+    nobo_core::core::vault_write::write_generated(&subscription.file(vault_root), &header(subscription))
 }
 
 /// The header every mirror of this subscription starts with -- the part

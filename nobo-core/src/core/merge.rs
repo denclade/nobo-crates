@@ -575,7 +575,6 @@ pub fn merge_text(base: &str, local: &str, remote: &str) -> Result<String, Strin
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
 
     fn make_heading(id: &str, title: &str) -> Heading {
         Heading {

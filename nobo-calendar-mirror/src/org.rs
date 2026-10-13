@@ -47,10 +47,8 @@ pub fn render_events(events: &[CalendarEvent]) -> String {
 
 fn render_event(event: &CalendarEvent) -> String {
     let mut lines = vec![format!("* {}", org_syntax::sanitize_title(&event.summary))];
-    lines.push(":PROPERTIES:".to_string());
-    lines.push(format!(":{}: {}", heading_identity::CUSTOM_ID_PROPERTY, custom_id_for(&event.uid)));
-    lines.push(format!(":{ICS_UID_PROPERTY}: {}", event.uid));
-    lines.push(":END:".to_string());
+    let custom_id = custom_id_for(&event.uid);
+    lines.extend(org_syntax::drawer_lines(&[(heading_identity::CUSTOM_ID_PROPERTY, &custom_id), (ICS_UID_PROPERTY, &event.uid)]));
     lines.push(format_range(event));
 
     if let Some(location) = &event.location {
@@ -138,10 +136,6 @@ fn custom_id_for(uid: &str) -> String {
 /// has to never change, or every event in every vault gets a new identity.
 const ICS_UID_NAMESPACE: uuid::Uuid = uuid::uuid!("6f9b1e2c-4a37-4c8e-9d61-5b0d4f2a7c13");
 
-/// A newline in a SUMMARY would end the heading line and turn the rest
-/// into body text; a leading `*` is not a problem here, since the heading
-/// line already starts with one.
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -180,7 +174,7 @@ mod tests {
 
         assert!(rendered.contains("* Team-Meeting Backend\n"), "{rendered}");
         assert!(rendered.contains("<2026-08-21 Fri 14:00-15:00>"), "{rendered}");
-        assert!(rendered.contains(":ICS_UID: abc123@example.com"), "{rendered}");
+        assert!(rendered.contains(":ICS_UID:  abc123@example.com"), "aligned as org writes it: {rendered}");
     }
 
     /// A todo keyword would put every meeting into Next Actions. The

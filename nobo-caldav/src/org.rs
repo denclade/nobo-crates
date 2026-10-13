@@ -124,10 +124,8 @@ fn render_task_at(task: &CalDavTask, level: usize) -> String {
         lines.push(planning.join(" "));
     }
 
-    lines.push(":PROPERTIES:".to_string());
-    lines.push(format!(":{}: {}", heading_identity::CUSTOM_ID_PROPERTY, custom_id_for(&task.uid)));
-    lines.push(format!(":{CALDAV_UID_PROPERTY}: {}", task.uid));
-    lines.push(":END:".to_string());
+    let custom_id = custom_id_for(&task.uid);
+    lines.extend(org_syntax::drawer_lines(&[(heading_identity::CUSTOM_ID_PROPERTY, &custom_id), (CALDAV_UID_PROPERTY, &task.uid)]));
 
     if let Some(description) = task.description.as_ref().filter(|d| !d.trim().is_empty()) {
         lines.extend(description.lines().map(org_syntax::escape_body_line));

@@ -333,7 +333,6 @@ pub fn time_tracking_summary(headings_by_file: &HashMap<String, Vec<Heading>>) -
 mod tests {
     use super::*;
     use crate::core::history;
-    use std::collections::HashMap;
     use tempfile::TempDir;
 
     /* --- archive_ranges --- */

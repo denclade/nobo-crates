@@ -3,9 +3,9 @@
 //! wrapper. Distinct from `utils::clock_utils`, which is pure line parsing
 //! and formatting with no I/O -- this is I/O orchestration built on it.
 
-use crate::core::history::{self, record_best_effort};
+use crate::core::vault_write;
 use crate::core::indexer::IndexManager;
-use crate::core::models::{FileSnapshot, HeadingTarget, HeadingUpdatePayload, HistoryEntryKind};
+use crate::core::models::{HeadingTarget, HeadingUpdatePayload, HistoryEntryKind};
 use crate::core::heading_utils;
 use crate::utils::clock_utils;
 use crate::utils::fs_utils::filename_of;
@@ -70,22 +70,12 @@ pub fn clock_out(
 
     let payload = HeadingUpdatePayload { clocks: Some(clocks), ..Default::default() };
 
-    let (before, result, after) = history::snapshot_around(&target_path, || {
+    let entry = HistoryEntryKind::ClockStopped { filename: filename_of(&target_path), title };
+    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
         edit.write(&payload)?;
         edit.touch_ancestors()?;
-        edit.commit()?;
-        index_manager.update_file(&target_path);
-        Ok(())
-    });
-
-    record_best_effort(
-        db,
-        HistoryEntryKind::ClockStopped { filename: filename_of(&target_path), title },
-        false,
-        vec![FileSnapshot { path: file_path.to_string(), before, after }],
-    );
-
-    result
+        edit.commit()
+    })
 }
 
 /// Starts an open CLOCK entry, closing whatever else was running first --
@@ -125,22 +115,12 @@ pub fn clock_in(
 
     let payload = HeadingUpdatePayload { clocks: Some(clocks), ..Default::default() };
 
-    let (before, result, after) = history::snapshot_around(&target_path, || {
+    let entry = HistoryEntryKind::ClockStarted { filename: filename_of(&target_path), title };
+    vault_write::recorded(&target_path, |_| entry, index_manager, db, || {
         edit.write(&payload)?;
         edit.touch_ancestors()?;
-        edit.commit()?;
-        index_manager.update_file(&target_path);
-        Ok(())
-    });
-
-    record_best_effort(
-        db,
-        HistoryEntryKind::ClockStarted { filename: filename_of(&target_path), title },
-        false,
-        vec![FileSnapshot { path: file_path.to_string(), before, after }],
-    );
-
-    result
+        edit.commit()
+    })
 }
 
 #[cfg(test)]

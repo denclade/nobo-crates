@@ -17,6 +17,20 @@
 //! - **Nothing outside the vault.** A path from the frontend is a string;
 //!   the write refuses one that does not lie in the vault.
 //!
+//! Which door for which file:
+//!
+//! - **A file the user owns** (a note, a bookmarks file, a cookbook):
+//!   `edit_file` / `edit_files` when the change is a function of the text,
+//!   `recorded` when the caller reads and writes itself (a heading edit
+//!   with its own checks). Locked, checked, indexed, one undo away.
+//! - **A file the app generates** (a CalDAV or calendar mirror):
+//!   `write_generated`. Locked and atomic, but no history and no kind
+//!   check -- the generator rewrites what it generated, and the next sync
+//!   would undo an undo anyway.
+//! - **Not a vault org file at all** (app state, settings, babel's tangled
+//!   code, what sync brings in): `fs_utils::write_atomic`, outside this
+//!   module.
+//!
 //! ```ignore
 //! let line = vault_write::edit_file(&path, Some(KIND), &index, &db, |text| {
 //!     let (text, line) = my_change(text)?;
@@ -24,15 +38,16 @@
 //! })?;
 //! ```
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Condvar, Mutex, OnceLock};
+use std::thread::ThreadId;
 
 use rusqlite::Connection;
 
 use crate::config::settings::Config;
 use crate::core::file_kind::{self, FileKind};
-use crate::core::history::record_best_effort;
+use crate::core::history::{self, record_best_effort};
 use crate::core::indexer::IndexManager;
 use crate::core::models::{FileSnapshot, HistoryEntryKind};
 use crate::utils::fs_utils;
@@ -129,6 +144,34 @@ pub fn edit_files_in<T>(
     }
 }
 
+/// Writes TEXT as the file at PATH, which the app generates and owns --
+/// a mirror (see the module doc on which door is which). Under the
+/// file's lock, so it never interleaves with another write of the same
+/// file through this module; its folder is made if missing. The index is the caller's to update,
+/// usually once for a whole sync run.
+pub fn write_generated(path: &Path, text: &str) -> Result<(), String> {
+    let _locks = lock_all(&[path]);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("could not create {}: {e}", parent.display()))?;
+    }
+    fs_utils::write_atomic(path, text).map_err(|e| format!("could not write {}: {e}", path.display()))
+}
+
+/// Declares the file at PATH a KIND file (`#+NOBO_TYPE:`), or takes that
+/// back -- only the declaration line changes, the rest is the user's text.
+/// One undo away, like every other write; already so, nothing is written.
+pub fn declare_kind(path: &Path, kind: FileKind, declared: bool, index: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
+    let value = declared.then(|| kind.keyword().to_string());
+    edit_file(path, None, index, db, |text| {
+        let lines: Vec<String> = text.lines().map(str::to_string).collect();
+        let updated = match file_kind::splice_leading_keyword(lines, file_kind::KIND_KEYWORD, value.as_deref()) {
+            Some(lines) => lines.join("\n") + if text.ends_with('\n') || text.is_empty() { "\n" } else { "" },
+            None => text.to_string(),
+        };
+        Ok((updated, ()))
+    })
+}
+
 /// Refuses PATH unless it lies inside ROOT -- after resolving `..` and
 /// links, so `vault/../elsewhere` is not inside.
 pub fn require_in_vault(root: &Path, path: &Path) -> Result<(), String> {
@@ -150,18 +193,20 @@ fn require_kind(path: &Path, text: &str, kind: Option<FileKind>) -> Result<(), S
     Err(crate::t!("{name} ist keine Datei der Art „{wanted}“", "{name} is not a {wanted} file"))
 }
 
-/// The files being written right now. A writer takes all of its paths
-/// at once, or waits until it can -- never one now and one later, so two
-/// moves in opposite directions cannot each hold one file and wait for
-/// the other.
+/// The files being written right now, by which thread and how deep. A
+/// writer takes all of its paths at once, or waits until it can -- never
+/// one now and one later, so two moves in opposite directions cannot each
+/// hold one file and wait for the other. A thread that already holds a
+/// file may take it again (a state change whose triggers write into the
+/// same file): waiting for itself would never end.
 struct Busy {
-    paths: Mutex<HashSet<PathBuf>>,
+    paths: Mutex<HashMap<PathBuf, (ThreadId, usize)>>,
     freed: Condvar,
 }
 
 fn busy() -> &'static Busy {
     static BUSY: OnceLock<Busy> = OnceLock::new();
-    BUSY.get_or_init(|| Busy { paths: Mutex::new(HashSet::new()), freed: Condvar::new() })
+    BUSY.get_or_init(|| Busy { paths: Mutex::new(HashMap::new()), freed: Condvar::new() })
 }
 
 /// Held while the files are read, changed and written; frees them on
@@ -169,13 +214,18 @@ fn busy() -> &'static Busy {
 struct Locks(Vec<PathBuf>);
 
 fn lock_all(paths: &[&Path]) -> Locks {
-    let keys: Vec<PathBuf> = paths.iter().map(|path| std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())).collect();
+    let mut keys: Vec<PathBuf> = paths.iter().map(|path| std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())).collect();
+    keys.sort();
+    keys.dedup();
+    let me = std::thread::current().id();
     let busy = busy();
     let mut held = busy.paths.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
-    while keys.iter().any(|key| held.contains(key)) {
+    while keys.iter().any(|key| held.get(key).is_some_and(|(owner, _)| *owner != me)) {
         held = busy.freed.wait(held).unwrap_or_else(|poisoned| poisoned.into_inner());
     }
-    held.extend(keys.iter().cloned());
+    for key in &keys {
+        held.entry(key.clone()).or_insert((me, 0)).1 += 1;
+    }
     Locks(keys)
 }
 
@@ -184,10 +234,42 @@ impl Drop for Locks {
         let busy = busy();
         let mut held = busy.paths.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         for key in &self.0 {
-            held.remove(key);
+            if let Some((_, depth)) = held.get_mut(key) {
+                *depth -= 1;
+                if *depth == 0 {
+                    held.remove(key);
+                }
+            }
         }
         busy.freed.notify_all();
     }
+}
+
+/// The frame every recorded write shares, for a caller that reads and
+/// writes PATH itself -- a heading edit with its own checks, a delete:
+/// WRITE runs while the file is locked, and whatever it changed goes into
+/// the index and into the history as what ENTRY makes of WRITE's result
+/// (a bulk edit names its count, which only the write knows). Recorded even when WRITE
+/// fails partway: what did land on disk has to be one undo away too. A
+/// write that changed nothing leaves no entry.
+pub fn recorded<T>(
+    path: &Path,
+    entry: impl FnOnce(&Result<T, String>) -> HistoryEntryKind,
+    index: &IndexManager,
+    db: &Mutex<Connection>,
+    write: impl FnOnce() -> Result<T, String>,
+) -> Result<T, String> {
+    let _locks = lock_all(&[path]);
+    let (before, result, after) = history::snapshot_around(path, write);
+    if before != after {
+        match &after {
+            Some(text) => index.update_file_with(path, text),
+            None => index.remove_file(path),
+        }
+        let entry = entry(&result);
+        record_best_effort(db, entry, false, vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before, after }]);
+    }
+    result
 }
 
 #[cfg(test)]
@@ -254,6 +336,36 @@ mod tests {
         let path = dir.path().join("a.org");
         let err = edit_files_in(dir.path(), &[&path], Some(FileKind::new("vault-write-test")), &index, &db, |texts| Ok((texts.to_vec(), ()))).unwrap_err();
         assert!(err.contains("a.org"), "{err}");
+    }
+
+    /// A write inside a write of the same file, on the same thread (a
+    /// trigger writing back into the file it fired in), does not wait for
+    /// itself.
+    #[test]
+    fn a_nested_write_of_the_same_file_does_not_deadlock() {
+        let (dir, index, db) = setup(&[("a.org", "a\n")]);
+        let path = dir.path().join("a.org");
+        let out = recorded(&path, |_| HistoryEntryKind::FileEdited { filename: "a.org".into() }, &index, &db, || {
+            edit_files_in(dir.path(), &[&path], None, &index, &db, |_| Ok((vec!["b\n".into()], ())))?;
+            Ok(())
+        });
+        assert!(out.is_ok());
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "b\n");
+    }
+
+    #[test]
+    fn recorded_puts_what_changed_into_the_history() {
+        let (dir, index, db) = setup(&[("a.org", "a\n")]);
+        let path = dir.path().join("a.org");
+        let kind = || |_: &Result<(), String>| HistoryEntryKind::FileEdited { filename: "a.org".into() };
+        recorded(&path, kind(), &index, &db, || Ok(())).unwrap();
+        assert_eq!(entries(&db), 0, "nothing changed");
+        let failed: Result<(), String> = recorded(&path, kind(), &index, &db, || {
+            std::fs::write(&path, "b\n").unwrap();
+            Err("danach schiefgegangen".into())
+        });
+        assert!(failed.is_err());
+        assert_eq!(entries(&db), 1, "what landed is undoable");
     }
 
     /// Two writers of one file: the second sees what the first wrote.

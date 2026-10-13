@@ -136,11 +136,8 @@ pub async fn sync_calendar(
         Err(_) => 0,
     };
 
-    if let Some(parent) = file.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| format!("could not create {}: {e}", parent.display()))?;
-    }
     let text = format!("{}{}", super::registry::header(subscription), org::render_events(&events));
-    nobo_core::utils::fs_utils::write_atomic(file, &text).map_err(|e| format!("could not write {}: {e}", file.display()))?;
+    nobo_core::core::vault_write::write_generated(file, &text)?;
 
     {
         let conn = db.lock().map_err(|_| "database lock poisoned".to_string())?;

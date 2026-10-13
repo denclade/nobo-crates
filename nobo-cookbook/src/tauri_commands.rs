@@ -43,8 +43,9 @@ pub async fn set_cookbook(
     path: String,
     cookbook: bool,
     index_manager: State<'_, Arc<IndexManager>>,
+    db: State<'_, Arc<Mutex<Connection>>>,
 ) -> Result<(), String> {
-    commands::set_cookbook(path, cookbook, index_manager.inner())
+    commands::set_cookbook(path, cookbook, index_manager.inner(), db.inner())
 }
 
 /// A new, empty cookbook at the top of the vault -- for a vault without

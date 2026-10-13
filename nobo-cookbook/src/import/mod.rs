@@ -24,6 +24,7 @@ mod sites;
 #[cfg(feature = "import")]
 pub mod fetch;
 
+use nobo_core::core::org_syntax::one_line;
 use nobo_core::t;
 
 
@@ -134,14 +135,12 @@ pub fn to_org(recipe: &ImportedRecipe, level: usize, image_link: Option<&str>) -
         ("cook-time", &recipe.cook_time),
         ("ready-in", &recipe.ready_in),
     ];
-    out.push_str(":PROPERTIES:\n");
-    out.push_str(&format!(":source-url: {}\n", one_line(&recipe.source_url)));
-    for (key, value) in properties {
-        if let Some(value) = value {
-            out.push_str(&format!(":{key}: {}\n", one_line(value)));
-        }
+    let mut drawer: Vec<(&str, &str)> = vec![("source-url", recipe.source_url.as_str())];
+    drawer.extend(properties.into_iter().filter_map(|(key, value)| value.as_deref().map(|value| (key, value))));
+    for line in nobo_core::core::org_syntax::drawer_lines(&drawer) {
+        out.push_str(&line);
+        out.push('\n');
     }
-    out.push_str(":END:\n");
 
     if let Some(link) = image_link {
         out.push_str(&format!("[[file:{link}]]\n"));
@@ -182,12 +181,6 @@ fn section(
             out.push('\n');
         }
     }
-}
-
-/// Org text is line-based: a line break inside a title or a list item
-/// would end it, and a property value cannot have one at all.
-fn one_line(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// A paragraph that cannot be mistaken for structure: a line starting
