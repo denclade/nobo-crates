@@ -13,6 +13,8 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+## [0.17.0] – 2026-10-13
+
 ### Geändert (Hosts passen an)
 
 - Befehle tragen den Namen ihres Plugins: `babel_discover_bash`, `babel_discover_python_interpreters`, `babel_execute_block`, `babel_kill_session` (vorher ohne `babel_`-Präfix bzw. `execute_babel_block`/`kill_babel_session`), `cookbook_set_file` (vorher `set_cookbook`, nimmt jetzt die Datenbank für den Verlauf), `review_state`, `review_save_state`, `review_save_settings` (vorher `get_review_state`, `save_review_state`, `save_review_settings`).
