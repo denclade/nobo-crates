@@ -550,6 +550,7 @@ where
             // exactly that offset again before it reaches heading.content.
             if level >= INLINETASK_MIN_LEVEL || (!is_real_structure(&state, &tags) && !has_upcoming_custom_id(&lines, i)) {
                 if let Some(ref mut heading) = current_heading {
+                    in_metadata_prefix = false;
                     let stripped = strip_content_heading_offset(line, heading.level);
                     heading.content.push_str(&stripped);
                     heading.content.push('\n');
@@ -592,7 +593,7 @@ where
         }
 
         if let Some(ref mut heading) = current_heading {
-            if trimmed.eq_ignore_ascii_case(ORG_PROPERTIES_START) {
+            if in_metadata_prefix && trimmed.eq_ignore_ascii_case(ORG_PROPERTIES_START) && drawer_closes_before_next_heading(&lines, i) {
                 in_properties = true;
                 continue;
             } else if trimmed.eq_ignore_ascii_case(ORG_PROPERTIES_END) && in_properties {
@@ -704,7 +705,7 @@ where
                         }
                         continue;
                     }
-                } else if drawer_closes_before_next_heading(&lines, i) {
+                } else if in_metadata_prefix && drawer_closes_before_next_heading(&lines, i) {
                     if !name.eq_ignore_ascii_case(LOGBOOK_DRAWER_NAME) {
                         raw_drawer.push(line.trim_end().to_string());
                     }
@@ -1456,5 +1457,37 @@ mod tests {
 
         let block = heading_utils::build_org_heading_block(h, &HeadingUpdatePayload::default());
         assert!(block.iter().any(|l| l.contains("irgendwas seltsames")), "the deadline must not be dropped: {block:?}");
+    }
+
+    /// A `:PROPERTIES:` drawer belonging to an absorbed sub-heading (e.g. a
+    /// bookmark entry `*** Title` with `:URL:` under a `* Collection`
+    /// heading, or a recipe in a multi-recipe file) must stay in place
+    /// under its own sub-heading rather than being swallowed into the
+    /// first heading's `properties` / `repeated_properties` and hoisted
+    /// to the top of the file on `stamp_custom_id_only`.
+    #[test]
+    fn properties_drawers_under_absorbed_sub_headings_stay_in_place() {
+        let original = concat!(
+            "* Rust\n",
+            "** Async\n",
+            "*** Beitrag 1 :rust:\n",
+            ":PROPERTIES:\n",
+            ":URL: https://example.org/1\n",
+            ":END:\n",
+            "Notiz 1\n",
+            "*** Beitrag 2 :rust:\n",
+            ":PROPERTIES:\n",
+            ":URL: https://example.org/2\n",
+            ":END:\n",
+        );
+        let file = write_temp_org(original);
+        let headings = extract_headings_from_file(file.path());
+        assert_eq!(headings.len(), 1);
+        assert!(!headings[0].properties.contains_key("URL"), "sub-heading URLs do not belong to the top heading");
+        assert!(headings[0].repeated_properties.is_empty());
+
+        let stamped = heading_utils::stamp_custom_id_only(&headings[0]).join("\n");
+        assert!(stamped.contains("*** Beitrag 1 :rust:\n:PROPERTIES:\n:URL: https://example.org/1\n:END:"), "{stamped}");
+        assert!(stamped.contains("*** Beitrag 2 :rust:\n:PROPERTIES:\n:URL: https://example.org/2\n:END:"), "{stamped}");
     }
 }

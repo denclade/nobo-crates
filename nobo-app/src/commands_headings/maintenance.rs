@@ -51,6 +51,7 @@ pub fn check_missing_custom_ids(index_manager: &IndexManager) -> Result<CustomId
     let missing: Vec<Heading> = index_manager
         .headings_by_file()
         .iter()
+        .filter(|(path_str, _)| nobo_core::core::file_kind::of_path(Path::new(path_str)) == nobo_core::core::file_kind::FileKind::NOTES)
         .flat_map(|(path_str, headings)| {
             let is_gtd = is_configured_gtd_file(Path::new(path_str), &config);
             headings.iter().filter(move |h| !heading_identity::has_custom_id(h) && (is_gtd || h.level == 1))
@@ -79,6 +80,9 @@ pub fn backfill_custom_ids(index_manager: &IndexManager, db: &Mutex<Connection>)
         let mut total = 0u32;
         for (path_str, cached) in index_manager.headings_by_file() {
             let path = PathBuf::from(&path_str);
+            if nobo_core::core::file_kind::of_path(&path) != nobo_core::core::file_kind::FileKind::NOTES {
+                continue;
+            }
             let is_gtd = is_configured_gtd_file(&path, &config);
             let wants_stamp = |h: &Heading| !heading_identity::has_custom_id(h) && (is_gtd || h.level == 1);
 
