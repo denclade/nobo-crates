@@ -5,14 +5,13 @@
 //! else has to be chosen the same way, and this is where those choices are
 //! remembered.
 //!
-//! **A prompt we draw ourselves grants nothing.** Under Flatpak this app
-//! ships with no `--filesystem=` at all (see com.nobo.app.yml), so the
-//! sandbox permits its own data directory and whatever a desktop portal
-//! hands over at runtime -- nothing else. A modal reading "may nobo write
-//! to /home/u/.bashrc?" would be answered yes and then fail with EACCES
-//! there, while on an unpackaged build the very same yes would succeed.
-//! Same dialog, two different meanings, and on the build where it works it
-//! is the ONLY thing standing between a shared vault and `~/.bashrc`.
+//! **A prompt we draw ourselves grants nothing.** Nothing outside this
+//! module stops a tangle into `~/.bashrc`: an unpackaged build can write
+//! anywhere the user can, and the Flatpak ships with `--filesystem=home`
+//! (the vault is typed in as a path, see de.dencla.nobo.yml in the app),
+//! so it can write there too. A modal reading "may nobo write to
+//! /home/u/.bashrc?" would be answered yes by habit, and that yes would be
+//! the ONLY thing standing between a shared vault and `~/.bashrc`.
 //!
 //! So the ask is the operating system's own directory picker (see
 //! `babel_grant_tangle_root` and the modal that calls it). The picking IS
