@@ -58,8 +58,7 @@ VM access and host integration.
 
 ## Contributing and license
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [releases](docs/releasing.md) and the
-[publication audit](docs/publication.md). Source files carry SPDX notices;
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [releases](docs/releasing.md). Source files carry SPDX notices;
 `REUSE.toml` covers fixtures and generated lockfiles. Check with `reuse lint`.
 
 Copyright 2026 Dennis Burgermeister. [GPL-3.0-or-later](LICENSE).

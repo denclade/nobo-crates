@@ -55,9 +55,3 @@ relevant files, formatting, history integrity,
 18 mise task definitions, CI YAML/shell syntax and secret scans of both
 the history and current sources were checked. All 78 Cookbook tests passed
 with the synthetic fixtures. The complete Tauri build was not repeated.
-
-## Publication
-
-Commit the remaining working-tree changes, provision the public repository
-and verify an unauthenticated clone. Then update the consumer's submodule
-URL and pin. Nothing has been pushed or uploaded to a package registry.
