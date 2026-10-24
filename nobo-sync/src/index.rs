@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The one per-account index blob every device downloads and uploads: the
 //! sole record of path, content hash and file key. Normally encrypted, so
 //! this is the only place those mappings exist at all.

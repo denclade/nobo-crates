@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Android-only TLS certificate verification override.
 //!
 //! Certificate verification normally goes through the platform verifier,

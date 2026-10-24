@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The bookmarks files themselves -- the categories: which files there
 //! are, which could become one, a new one, declaring one.
 

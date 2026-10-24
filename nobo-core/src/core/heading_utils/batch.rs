@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use super::serialize::{build_org_heading_block, touch_last_activity};
 use super::tree::{ancestors_of, subtree_line_range};
 use crate::core::heading_identity;

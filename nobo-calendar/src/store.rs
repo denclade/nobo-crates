@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What the last fetch of a feed left behind, so the next one can ask the
 //! server "has this changed?" instead of downloading it again.
 //!

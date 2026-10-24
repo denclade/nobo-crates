@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What nobo's commands do, without a host.
 //!
 //! Every function here was the body of a `#[tauri::command]` in

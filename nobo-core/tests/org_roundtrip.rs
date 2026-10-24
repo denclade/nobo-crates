@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What happens to org syntax this build does not model.
 //!
 //! A vault is shared with Emacs, with other org tools, and with the user's

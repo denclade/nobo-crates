@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Placing an attachment next to a note under a name nothing else has.
 
 use std::path::{Path, PathBuf};

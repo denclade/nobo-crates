@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The subscribed calendars, read out of the mirrored files themselves.
 //!
 //! There is deliberately no list of calendars in settings.json. A feed

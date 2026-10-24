@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Adding an entry under a heading path, without disturbing the rest.
 //!
 //! What a feature does when it files something into an org file the user

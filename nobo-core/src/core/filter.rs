@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! `@home cat:Arbeit -(status:DONE|time:<15m)` -- the filter, as a
 //! boolean expression over facets.
 //!

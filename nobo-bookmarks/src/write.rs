@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Writing bookmarks: a new entry, an edit, a move, a removal.
 //!
 //! Each one changes the lines of the one bookmark it is about and leaves

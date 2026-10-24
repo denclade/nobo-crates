@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /*
 LINE is e.g. CLOSED: [2025-07-28 Mon 15:17] SCHEDULED: <2025-07-26 Sa>
 searches for OPEN_CHAR after KEYWORD. If found searches for CLOSE_CHAR in the string after start string.

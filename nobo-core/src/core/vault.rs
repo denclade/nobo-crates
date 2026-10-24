@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The vault, as a feature is allowed to see it.
 //!
 //! A feature needs to read what is in the vault -- the headings of a

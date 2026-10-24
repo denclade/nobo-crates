@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Sorting what the caret is in, the way `org-sort` does: a table's rows
 //! by a column, a list's items, a heading's children.
 //!

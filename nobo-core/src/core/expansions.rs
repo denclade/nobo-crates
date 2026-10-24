@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! org-tempo-style text expansions: `<s` and a tab becomes a source block.
 //!
 //! Lifted from nobo's `features/expansions`, where it is a feature the

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! CalDAV subscriptions: connecting a server, subscribing to its task
 //! lists and calendars, and running the sync.
 //!

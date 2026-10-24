@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Reading a quantity out of an ingredient line, for display only.
 //!
 //! Ingredients in an org-chef file are plain list items -- "200 g Mehl",

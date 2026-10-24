@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What could come next where the caret is.
 //!
 //! One place decides *that* something can be completed and *what* is

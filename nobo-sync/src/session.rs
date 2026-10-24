@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! App-level state for being logged in to a sync account, in two layers:
 //! `SyncSession`, in-memory only, holding a live provider that cannot be
 //! serialized, and `StoredSession`, the remembered form persisted in the

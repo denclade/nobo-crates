@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What the user is told when somebody else adds something, everywhere.
 //!
 //! In the core rather than among the features, because it is not one: no

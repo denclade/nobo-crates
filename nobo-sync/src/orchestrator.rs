@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Ties crypto (Module 1), local state (Module 2), and a provider
 //! (Module 3) together into one actual sync run. The one thing this file
 //! deliberately does NOT do: auto-resolve a `Conflict` -- those are

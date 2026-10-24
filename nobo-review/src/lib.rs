@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The GTD weekly review: a checklist, and how often it is due.
 //!
 //! A feature rather than part of the core, and the split says which half

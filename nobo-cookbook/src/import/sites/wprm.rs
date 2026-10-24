@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! WP Recipe Maker, the WordPress plugin behind a large share of food
 //! blogs (biancazapatka.com among them).
 //!

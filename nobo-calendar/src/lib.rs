@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Read-only ICS calendar subscriptions.
 //!
 //! Each subscribed calendar is fetched, translated to org and written to

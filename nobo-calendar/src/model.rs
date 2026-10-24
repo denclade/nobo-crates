@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! One calendar entry, decoupled from both the ICS wire format and the org
 //! text it becomes.
 

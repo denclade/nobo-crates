@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2026 Dennis Burgermeister -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Eigenständige Entwicklung
 
 Der Workspace benötigt keine Nachbarverzeichnisse, kein Sailfish SDK und

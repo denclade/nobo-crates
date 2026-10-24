@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use super::*;
 
 /// The caret at the first occurrence of NEEDLE, as a UTF-16 offset.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Merging list order between the org file and the server.
 //!
 //! CalDAV has no inherent order for VTODOs. Apple invented

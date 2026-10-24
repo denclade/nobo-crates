@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What this plugin can be asked to do, without a host.
 //!
 //! Plain functions: no `#[tauri::command]`, no `State<...>`, no

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What is wrong with a cookbook file, as far as it can be told from the
 //! file alone -- and which of it can be put right without guessing.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The tests of the file system helpers, as they were beside the code.
 
 use std::path::{Path, PathBuf};

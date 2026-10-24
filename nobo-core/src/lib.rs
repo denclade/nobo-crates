@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Everything the app is made of that is not a feature.
 //!
 //! Its own crate for one reason: what used to be a rule is now a compile

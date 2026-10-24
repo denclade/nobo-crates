@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Running SRC blocks: org-babel, as a Tauri plugin.
 //!
 //! A crate of its own, and that is the whole design. A build that does

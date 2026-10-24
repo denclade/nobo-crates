@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Bookmarks out of a file's text, the way org reads an outline.
 //!
 //! Not the core's heading list: that one takes a `*`-line for structure

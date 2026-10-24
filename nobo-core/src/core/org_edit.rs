@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What a toolbar button does to org text.
 //!
 //! Every function here is pure: text and a selection in, a replacement

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Pure 3-way diff logic -- deliberately DB- and network-free (takes plain
 //! data in, returns plain data out) so every case in the table below has a
 //! direct, fast unit test with no sqlite/HTTP involved. See docs/sync.md

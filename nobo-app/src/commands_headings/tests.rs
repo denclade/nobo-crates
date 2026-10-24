@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use super::maintenance::{is_configured_gtd_file, EXAMPLE_TITLE_LIMIT};
 use super::read::resolve_effort_presets;
 use super::*;

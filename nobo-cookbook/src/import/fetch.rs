@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The page and its picture, over HTTP.
 //!
 //! The only part of the import that talks to anything (see the module

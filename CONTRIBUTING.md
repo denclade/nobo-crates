@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2026 Dennis Burgermeister -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Beitragen
 
 Im Root dieses Workspaces arbeiten; keine App oder Submodule sind nötig.
@@ -22,6 +25,12 @@ Testdaten müssen veröffentlichbare Beispiele bleiben. Keine persönlichen
 Vaults, Konten, Tokens, Schlüssel oder private Infrastruktur hinzufügen.
 Neue Regressionen sollen mit kleinen lokalen Fixtures auskommen.
 `.env`, lokale mise-Overrides, VM-Zustand und `target/` sind ignoriert.
+
+Neue Quellen und Konfigurationen erhalten `SPDX-FileCopyrightText` und
+`SPDX-License-Identifier` für GPL-3.0-or-later mit der jeweiligen Urheberschaft.
+Fixtures und generierte Lockfiles werden über `REUSE.toml` erfasst;
+`reuse lint` prüft die Abdeckung, auch in der CI. HTML-Import-Fixtures sind
+synthetische Beispiele, keine kopierten Rezeptseiten.
 
 Alle Crates teilen die Version in `Cargo.toml`. Versionswechsel und
 Changelog gehören zusammen; siehe [Releases](docs/releasing.md).

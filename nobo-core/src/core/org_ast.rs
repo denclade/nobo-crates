@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! One grammar for org text: what a line is, what markup it carries, and
 //! how a document groups into the blocks a reader sees.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Text that Rust produces and a person reads.
 //!
 //! Most user-facing words belong to the frontend, which has paraglide and

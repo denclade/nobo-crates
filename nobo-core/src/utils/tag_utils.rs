@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use std::collections::HashMap;
 
 pub fn search(tag_counts: &HashMap<String, usize>, query: &str, selected: &[String], limit: usize) -> Vec<String> {

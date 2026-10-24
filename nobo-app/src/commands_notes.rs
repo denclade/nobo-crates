@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use nobo_core::core::history::record_best_effort;
 use nobo_core::core::indexer::IndexManager;
 use nobo_core::core::models::{DiffChunk, FileSnapshot, HistoryEntryKind, Note, NoteLoadResult};

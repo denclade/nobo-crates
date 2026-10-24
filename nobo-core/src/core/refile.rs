@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use crate::core::errors::not_found_at_line;
 use crate::core::heading_utils;
 use crate::core::models::{Heading, RefilePosition};

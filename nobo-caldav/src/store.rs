@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! `caldav_state` -- what this device knew about a list at the end of the
 //! last sync.
 //!

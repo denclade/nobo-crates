@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Changing headings: create, update, delete, reorder, the bulk edits, the
 //! clock. Every write goes through core::vault_write::recorded -- locked,
 //! indexed, one undo away.

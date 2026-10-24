@@ -1,8 +1,9 @@
-//! The import, on real pages.
-//!
-//! The fixtures are three live recipe pages cut down to what is read from
-//! them (see the comment at the top of each): one WP Recipe Maker blog,
-//! Cookidoo, and a site with nothing but plain schema.org data.
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+//! Import regressions using synthetic pages for WP Recipe Maker,
+//! Cookidoo, Chefkoch and plain schema.org data. Fixtures retain parser
+//! edge cases without copied website prose or user comments.
 
 use super::*;
 use crate::parse::recipes_of;

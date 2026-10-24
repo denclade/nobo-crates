@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Editing org text, from outside an editor and for one.
 //!
 //! `toggle_checkbox_in_file` exists because a rendered note is not a

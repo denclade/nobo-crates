@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What a page says about itself -- read from its HTML, nothing fetched
 //! here (see `fetch` in commands). Pure, so it is tested on saved pages.
 

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use crate::config::settings::config_dir;
 use rusqlite::Connection;
 use std::path::PathBuf;

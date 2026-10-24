@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The files the app keeps for itself, and the one rule about them: they
 //! are never renamed, moved or deleted as a side effect.
 //!

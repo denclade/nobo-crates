@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Every migration in the app, registered by whoever owns the data.
 //!
 //! A migration brings one device's own stored data from the shape an

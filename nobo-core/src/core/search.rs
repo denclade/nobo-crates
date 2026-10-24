@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Search results a feature knows about and the core does not.
 //!
 //! The core searches notes and headings, which covers most of a vault --

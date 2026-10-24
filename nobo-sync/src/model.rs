@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What the sync says to the frontend.
 //!
 //! Separate from the machinery on purpose: these types appear in command

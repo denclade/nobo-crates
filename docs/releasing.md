@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2026 Dennis Burgermeister -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Eigenständige Git-Releases
 
 Alle 13 Crates verwenden `workspace.package.version` aus `Cargo.toml`.

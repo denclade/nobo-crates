@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Bringing two versions of the same file back together.
 //!
 //! The vault sync needs this the moment a file changed on two devices

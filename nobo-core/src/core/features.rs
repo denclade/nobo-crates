@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Which features this build has, and which of them are switched on.
 //!
 //! Two different questions, and the difference is the whole point:

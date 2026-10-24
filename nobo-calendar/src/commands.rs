@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! ICS calendar subscriptions: refreshing them, and the read-only rule
 //! that keeps the generated files generated.
 

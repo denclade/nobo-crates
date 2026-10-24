@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! `sync_state` -- one row per vault-relative path this device has ever
 //! seen, tracking enough to do a proper 3-way diff against the remote index
 //! (see diff.rs) instead of the naive "missing locally -> must be new

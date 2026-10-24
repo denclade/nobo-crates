@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // The `return` in every "not in this build" branch is redundant in
 // exactly the configuration where that branch is the whole function --
 // and required in the one where it is not. clippy only ever sees the

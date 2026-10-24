@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Read-only mirroring of a CalDAV calendar's events.
 //!
 //! Deliberately one-way, unlike the task lists next door. A VEVENT carries

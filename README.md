@@ -1,102 +1,65 @@
+<!-- SPDX-FileCopyrightText: 2026 Dennis Burgermeister -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # nobo-crates
 
-Die gemeinsamen Rust-Bibliotheken von nobo: Org-Dateien, Aufgaben,
-Kalender, Rezepte, Lesezeichen und verschlüsselter Vault-Sync. Ein eigener
-Cargo-Workspace, der unabhängig von einer App gebaut und getestet werden
-kann. Desktop- und Sailfish-Hosts binden dieselben Bibliotheken ein.
+Shared Rust libraries for nobo: Org files, tasks, calendars, recipes,
+bookmarks and encrypted vault sync. A standalone Cargo workspace with 13
+crates; no application checkout or live accounts required.
 
-| Kiste | Inhalt |
-|---|---|
-| `nobo-core` | Org-Dateien, Headings, Index, Suche, History, Einstellungen, Merge, Secrets, DB und Uhr |
-| `nobo-app` | gemeinsame Command-Bodies ohne Host-Verpackung |
-| `nobo-http`, `nobo-webdav`, `nobo-ical`, `nobo-calendar-mirror` | gemeinsame Protokoll- und Formatbibliotheken |
-| `nobo-babel`, `nobo-bookmarks`, `nobo-calendar`, `nobo-caldav`, `nobo-cookbook`, `nobo-review`, `nobo-sync` | optionale Features und ihre Tauri-Adapter |
-| `testdata/` | Beispieltresor und Test-Fixtures; keine Live-Konten erforderlich |
+- `nobo-core`: Org editing, indexing, search, history, settings and storage.
+- `nobo-app`: shared application commands.
+- `nobo-http`, `nobo-webdav`, `nobo-ical`, `nobo-calendar-mirror`: protocol libraries.
+- `nobo-babel`, `nobo-bookmarks`, `nobo-calendar`, `nobo-caldav`, `nobo-cookbook`,
+  `nobo-review`, `nobo-sync`: features with optional Tauri adapters.
 
-## Mit mise auf dem Host
+## Build and test
 
-Linux braucht einen C-Compiler samt Linker und `pkg-config`; die
-Babel-Tests führen außerdem Bash und Python aus. Rust einschließlich
-Clippy/rustfmt kommt aus `rust-toolchain.toml`, Python aus `mise.toml`:
+Install [mise](https://mise.jdx.dev/), a C compiler/linker, Bash and
+`pkg-config`. Rust is pinned in `rust-toolchain.toml`; Python in `mise.toml`.
 
 ```sh
 mise trust
 mise install
-mise tasks
 mise run build
 mise run test
 mise run verify
 ```
 
-Die normalen Tasks bauen alle 13 Crates ohne Tauri, mit beiden
-Sync-Providern und den Import-/Fetch-Features. Tests verwenden temporäre
-Verzeichnisse und lokale HTTP-Testserver; sie brauchen keine produktiven
-Zugangsdaten oder laufende nobo-App. `mise run verify` prüft zusätzlich
-Formatierung, Clippy, minimale Features und CalDAV in mehreren Zeitzonen.
+These tasks disable Tauri and enable both sync providers and network import
+features. `verify` also checks formatting, Clippy, minimal features and three
+CalDAV timezones. Tests use temporary files and local HTTP servers.
+Use `mise tasks` to list all tasks and `mise run doc` for API documentation.
 
-Direkt mit Cargo ist derselbe Build möglich:
+## Nix and Tauri
 
-```sh
-cargo build --locked --workspace --no-default-features \
-  --features nobo-sync/pocketbase,nobo-sync/webdav,nobo-cookbook/import,nobo-bookmarks/fetch
-cargo test --locked --workspace --no-default-features \
-  --features nobo-sync/pocketbase,nobo-sync/webdav,nobo-cookbook/import,nobo-bookmarks/fetch
-```
-
-## Mit Nix
-
-`flake.lock` pinnt das Toolset und die nativen Bibliotheken. Die
-Entwicklungs-Shells unterstützen `x86_64-linux` und `aarch64-linux`:
+Nix supplies pinned tools and native dependencies on x86_64/aarch64 Linux;
+`mise install` is unnecessary inside these shells.
 
 ```sh
-nix develop                  # Rust, mise und native Tauri-Abhängigkeiten
-mise run verify:tauri
-
-nix develop .#headless       # kleinere Shell ohne GTK/WebKit
+nix develop .#headless
 mise run verify
+
+nix develop
+mise run verify:tauri
+mise run bindings:export                    # target/bindings/<feature>/bindings.ts
+mise run bindings:export -- /path/to/app/src/features
 ```
 
-Innerhalb der Nix-Shell verwendet mise das von Nix gelieferte Rust und
-Python. `mise install` ist dort nicht zusätzlich nötig. Cargo lädt seine
-im eingecheckten `Cargo.lock` festgelegten Bibliotheken beim ersten Build.
+Outside Nix, Tauri tasks need the [native prerequisites](https://v2.tauri.app/start/prerequisites/).
+Default tests export bindings to temporary directories. Headless and Tauri
+tasks use separate build caches. With defaults disabled, `nobo-sync`
+requires `webdav` or `pocketbase`.
 
-Die optionale x86_64-MicroVM (`nix run .` oder `mise run vm`) benutzt die
-öffentliche [nix-dev-sandbox](https://github.com/denclade/nix-dev-sandbox).
-Einrichtung und SSH-Zugang stehen in [docs/development.md](docs/development.md).
-Die Firewall bleibt Teil der gemeinsamen Basis-Konfiguration.
+An optional x86_64 MicroVM uses the public
+[nix-dev-sandbox](https://github.com/denclade/nix-dev-sandbox), including its
+firewall: `mise run vm`. See [development setup](docs/development.md) for
+VM access and host integration.
 
-## Tauri und TypeScript-Bindings
+## Contributing and license
 
-`nobo-core` ist unabhängig von Tauri. Hosts stellen `IndexListener`,
-`KeychainBackend` und die Konfigurationsablage bereit. Die Feature-Crates
-halten ihre Tauri-Adapter hinter `tauri`; das Feature bleibt für
-bestehende Desktop-Hosts standardmäßig eingeschaltet.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [releases](docs/releasing.md) and the
+[publication audit](docs/publication.md). Source files carry SPDX notices;
+`REUSE.toml` covers fixtures and generated lockfiles. Check with `reuse lint`.
 
-```sh
-mise run tauri:check
-mise run tauri:build
-mise run tauri:test
-mise run bindings:export                 # target/bindings/<feature>/bindings.ts
-mise run bindings:export -- /pfad/zur/app/src/features
-```
-
-Diese Tasks brauchen die [nativen Tauri-Abhängigkeiten](https://v2.tauri.app/start/prerequisites/)
-oder die oben genannte Nix-Shell. Normale Binding-Tests exportieren in
-temporäre Verzeichnisse. Nur ein expliziter `bindings:export`-Aufruf
-schreibt in ein dauerhaftes Ziel; es gibt keine festen Pfade in ein
-übergeordnetes App-Repository mehr.
-
-`nobo-sync` verlangt mindestens einen Provider (`webdav` oder
-`pocketbase`), wenn Default-Features abgeschaltet werden.
-`mise run check:minimal` prüft beide Varianten einzeln.
-
-## Beitragen und Releases
-
-[CONTRIBUTING.md](CONTRIBUTING.md) beschreibt die lokalen Checks und die CI.
-[docs/releasing.md](docs/releasing.md) beschreibt eigenständige Git-Releases.
-Die Vorbereitung der öffentlichen Quellen ist in
-[docs/publication.md](docs/publication.md) dokumentiert.
-
-## Lizenz
-
-GPL-3.0-or-later; der vollständige Lizenztext liegt in [LICENSE](LICENSE).
+Copyright 2026 Dennis Burgermeister. [GPL-3.0-or-later](LICENSE).

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Bookmarks out of a Linkwarden backup (`backup.json`, from Linkwarden's
 //! settings: "Export data").
 //!

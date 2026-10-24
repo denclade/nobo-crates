@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use crate::core::models::{has_project_tag, Heading, RefilePosition};
 
 /// Converts `flat_headings` into a hierarchical tree, based on their levels.

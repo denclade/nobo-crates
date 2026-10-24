@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The same commands, as Tauri sees them, plus the two events that are
 //! Tauri's alone: `sync_progress` while a run works, and
 //! `sync-remote-changed` when the server pushes.

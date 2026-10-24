@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! How a subscription is named locally, derived from what it subscribes TO
 //! rather than rolled per device.
 //!

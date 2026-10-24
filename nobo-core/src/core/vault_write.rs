@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Changing a file in the vault, the one way a feature does it.
 //!
 //! Every write a user can undo is the same five steps: read the file,

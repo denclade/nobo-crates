@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What one site, or one recipe plugin, does differently.
 //!
 //! The generic reader (see `schema_org`) gets every page with schema.org

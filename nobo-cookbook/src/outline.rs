@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The plain org outline of a file: every `*`-line is a heading, the way
 //! org itself reads one.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Where features keep the things that must not sit in a file.
 //!
 //! Passwords, tokens, session cookies. No feature talks to a platform

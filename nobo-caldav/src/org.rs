@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! CalDavTask <-> org heading.
 //!
 //! Unlike the read-only ICS calendar mirror (nobo_calendar), these ARE

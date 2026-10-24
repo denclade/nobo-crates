@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Syncing the whole vault to a server of the user's own -- and, when
 //! this build says no, not syncing it anywhere.
 //!

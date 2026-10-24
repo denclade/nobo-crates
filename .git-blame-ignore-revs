@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Pure formatting commits -- `git config blame.ignoreRevsFile .git-blame-ignore-revs`
 # rustfmt with the house style (rustfmt.toml), once
-7be0c84d765ce9f053ab89ef8f8731886a29aec1
+c32d17b5f984d08300abb4000073084c91c81cf8

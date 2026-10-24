@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! File system helpers, by what they are for. Everything is re-exported
 //! here, so `fs_utils::write_atomic` and friends keep their names.
 

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Addresses, as the bookmarks compare them.
 
 /// Query parameters that only say where a click came from. Two links that

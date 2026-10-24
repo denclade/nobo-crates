@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use crate::core::heading_identity;
 use crate::core::heading_utils;
 use crate::core::indexer::IndexManager;

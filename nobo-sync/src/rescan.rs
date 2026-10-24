@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Brings `sync_state`'s `local_hash`/`deleted_at` columns up to date with
 //! what's actually on disk. Called on demand before every sync run (see
 //! Module 4's orchestrator) rather than continuously watched -- there's no

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Keeping a vault tidy: CUSTOM_IDs backfilled or removed, empty property
 //! drawers, org files promoted to notes -- Settings' maintenance section.
 

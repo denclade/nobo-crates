@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Reading and writing files: atomic writes, the guard against writing a
 //! generated file, line-based edits. Feature writes go through
 //! core::vault_write, which builds on these.

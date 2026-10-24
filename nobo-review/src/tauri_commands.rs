@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The same commands, as Tauri sees them.
 //!
 //! One line each on purpose: everything that decides anything lives in

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Parsed against the sample vault's own cookbook files (`testdata/`), not
 //! against fixtures written next to the assertions: those files are what
 //! the devcontainer serves and what anyone tries the feature on, so a

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Org tables as a grid, and back again.
 //!
 //! A table on disk is space-aligned pipe text, which is unreadable to edit

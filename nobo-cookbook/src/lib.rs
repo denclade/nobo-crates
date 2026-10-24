@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Recipes in the org-chef shape, read out of an ordinary org file.
 //!
 //! A cookbook file is a hand-written notes file that declares itself (see

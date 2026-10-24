@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! E2EE primitives for the cloud sync module (see docs/sync.md).
 //!
 //! Envelope encryption, not "one master key encrypts everything directly":

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Cookidoo, Vorwerk's Thermomix recipe platform.
 //!
 //! Two things differ from the generic case:

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! PocketBase's realtime API (Server-Sent Events over `/api/realtime`) --
 //! lets this device learn about another device's sync almost immediately,
 //! instead of waiting for the periodic interval (see App.tsx's

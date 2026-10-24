@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Bookmarks kept as org: a link, a note, tags, read later.
 //!
 //! A bookmarks file is an ordinary notes file that declares itself (see

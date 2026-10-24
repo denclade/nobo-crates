@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What a bookmark is, as the app hands it around.
 
 /// One bookmark: a heading with a `:URL:` in a bookmarks file.

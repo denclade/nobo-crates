@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use nobo_core::core::indexer::IndexManager;
 use nobo_core::core::models::DirEntry;
 use nobo_core::utils::fs_utils;

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What a vault file IS, and what may be done with it.
 //!
 //! Most org files in a vault are just notes. A few are something more

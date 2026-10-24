@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What everything that talks HTTP needs, whoever it is.
 //!
 //! Three features make network requests -- the vault sync, CalDAV and

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Markdown in, org out -- for the one moment it matters: a paste.
 //!
 //! Lifted from nobo's `components/editor/paste`, minus the half that

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Which features this build has, and what its expensive operations
 //! have done -- the three commands that are about the app itself rather
 //! than about the vault.

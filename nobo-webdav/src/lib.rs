@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! WebDAV plumbing shared by the vault sync backend (nobo_sync::providers)
 //! and the CalDAV task sync (nobo_caldav).
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What the review has to look at, counted.
 //!
 //! The checklist's steps are not all the same kind of thing: some are a

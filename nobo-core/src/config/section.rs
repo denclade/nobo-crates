@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! A feature's own corner of `settings.json`.
 //!
 //! The core owns the file, a feature owns a key in it -- the same split

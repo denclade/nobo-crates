@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The disk-writing logic behind the `clock_in` and `clock_out` commands,
 //! kept out of the commands layer so that stays a thin state-extraction
 //! wrapper. Distinct from `utils::clock_utils`, which is pure line parsing

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! One sync run for one list: the layer where planner, client, store,
 //! order merge and org rendering meet.
 //!

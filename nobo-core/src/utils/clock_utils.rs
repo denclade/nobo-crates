@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Parsing and formatting for raw `CLOCK:` lines, byte-exact with Emacs
 //! `org-clock` output:
 //!

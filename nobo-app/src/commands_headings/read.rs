@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Reading headings: lists for the views, one heading's source, categories,
 //! effort presets, the time-tracking summary. Nothing here writes.
 

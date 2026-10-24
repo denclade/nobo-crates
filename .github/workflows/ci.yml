@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 name: CI
 
 on:
@@ -30,6 +33,11 @@ jobs:
           version: "2026.10.3"
       - run: mise run verify
       - run: mise run doc
+      - name: Check SPDX license coverage
+        run: |
+          python3 -m venv "$RUNNER_TEMP/reuse"
+          "$RUNNER_TEMP/reuse/bin/python" -m pip install 'reuse[charset-normalizer]==6.2.0'
+          "$RUNNER_TEMP/reuse/bin/reuse" --no-multiprocessing lint
       - run: mise run audit:secrets
 
   tauri:

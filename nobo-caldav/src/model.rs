@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! One CalDAV task, in the shape both sides can be derived from.
 
 use serde::{Deserialize, Serialize};

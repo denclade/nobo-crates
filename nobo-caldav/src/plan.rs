@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Deciding what a sync run has to do, without doing any of it.
 //!
 //! Split out from the run itself for the same reason nobo_sync::diff is:

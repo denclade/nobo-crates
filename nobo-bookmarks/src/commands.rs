@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! What a host can ask this feature for.
 //!
 //! Plain functions: the Tauri build wraps them (see `tauri_commands`), any

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! A job that must not run twice at the same time.
 //!
 //! Refreshing calendars, syncing task lists, syncing the vault: each of

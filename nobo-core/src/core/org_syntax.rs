@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The org-syntax rules that every generator in the app has to obey.
 //!
 //! Both mirrors write org text -- a calendar's entries (nobo_calendar) and

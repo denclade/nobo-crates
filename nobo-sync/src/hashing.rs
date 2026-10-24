@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! BLAKE3 content hashing -- fast enough to re-hash a whole vault on every
 //! sync run without it being the bottleneck, which is the whole point of
 //! using it for change detection instead of relying on mtimes (mtimes lie

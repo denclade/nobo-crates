@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Reading recipes out of an org file.
 //!
 //! Only compiled with the `cookbook` feature: without it the app still

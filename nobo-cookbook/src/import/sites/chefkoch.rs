@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Chefkoch, the largest German recipe community.
 //!
 //! Its JSON-LD is complete, but written for search engines rather than

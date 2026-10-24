@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Fetching one web page or one picture for a person who is waiting --
 //! the recipe import, a bookmark's preview.
 //!

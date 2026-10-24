@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Just enough HTML to read a web page's meta data, and no more.
 //!
 //! Not a parser, and not meant to become one. What reads pages here -- the

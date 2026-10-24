@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Persists the GTD Weekly Review's cross-device state -- when it was last
 //! completed, and which checklist steps are currently ticked mid-review
 //! (see src/features/review). Stored at `<vault_root>/.nobo/review-state.json`

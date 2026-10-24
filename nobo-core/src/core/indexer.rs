@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use crate::core::cost::{Heavy, Scale};
 use crate::core::models::{DirEntry, FileEntry, Heading, Note};
 use crate::core::org_parser::extract_headings_from_file;

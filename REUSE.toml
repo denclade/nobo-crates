@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+version = 1
+
+# Preserve the bytes of parser fixtures, images and generated lockfiles.
+[[annotations]]
+path = ["testdata/**", "Cargo.lock", "flake.lock"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Dennis Burgermeister"
+SPDX-License-Identifier = "GPL-3.0-or-later"

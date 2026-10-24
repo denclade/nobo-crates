@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Reading directories: entries, the recursive file list, path suggestions.
 
 use super::paths::{has_hidden_ancestor, is_hidden};
@@ -128,7 +131,7 @@ Checks path INPUT for latest valid path and returns a list of possible
 continuations to the path.
 e.g.
 INPUT: /home/user
-checks all folders in /home for files starting with de
+checks all folders in /home for files starting with user
  */
 pub fn get_path_suggestions(input: &str) -> Vec<String> {
     if input.is_empty() {

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! The one place a heading is written.
 //!
 //! Every heading-mutating command used to spell the same sequence out for

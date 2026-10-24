@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! How an ICS subscription is named locally.
 //!
 //! Its own module for the same reason caldav::identity is one: the id

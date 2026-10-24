@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use crate::core::models::{DirEntry, FullTextSearchResult, Note, SearchResult, UnpromotedOrgFile};
 use crate::utils::fs_utils;
 use rayon::prelude::*;

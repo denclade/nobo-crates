@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Two-way CalDAV sync for VTODO task lists (Nextcloud Tasks, Apple
 //! Reminders, any RFC 4791 server).
 //!

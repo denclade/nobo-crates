@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # The house style: wide lines, short expressions kept on one. Chosen to
 # match how the code was already written, so formatting changed as little
 # as possible; `mise run fmt:check` checks it in this workspace.

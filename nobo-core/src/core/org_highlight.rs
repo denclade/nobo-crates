@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dennis Burgermeister
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Colouring code inside a `#+BEGIN_SRC` block.
 //!
 //! nobo's frontend hands this to Prism, which ships a grammar per language
