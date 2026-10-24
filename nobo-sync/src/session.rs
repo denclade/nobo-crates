@@ -76,7 +76,6 @@ pub type SyncSessionState = Mutex<Option<Arc<SyncSession>>>;
 
 /// The same slot in a build without sync: it exists so nothing above has
 /// to know, and it is always empty.
-
 pub fn new_session_state() -> SyncSessionState {
     Mutex::new(None)
 }

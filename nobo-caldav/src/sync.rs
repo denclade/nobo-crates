@@ -1884,16 +1884,16 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
         let fixture = Fixture::new();
         // (uid, summary, CREATED, explicit sort order)
         let list: [(&str, &str, &str, Option<i64>); 9] = [
-            ("a", "3x milch", "20260823T155150Z", None),
-            ("b", "3-4 becher", "20260823T155155Z", None),
-            ("c", "Klooaoier", "20260823T155201Z", None),
-            ("d", "Quetschies", "20260823T155204Z", None),
-            ("e", "Neue Post", "20260823T155208Z", None),
-            ("f", "Strizel", "20260823T155215Z", None),
-            ("g", "3 Semmeln", "20260823T155221Z", None),
+            ("a", "Item A", "20260823T155150Z", None),
+            ("b", "Item B", "20260823T155155Z", None),
+            ("c", "Item C", "20260823T155201Z", None),
+            ("d", "Item D", "20260823T155204Z", None),
+            ("e", "Item E", "20260823T155208Z", None),
+            ("f", "Item F", "20260823T155215Z", None),
+            ("g", "Item G", "20260823T155221Z", None),
             // Created last, dragged to fourth place.
-            ("h", "Ofenkäse", "20260823T160042Z", Some(809193116)),
-            ("i", "--- Oma", "20260810T060855Z", None),
+            ("h", "Moved item", "20260823T160042Z", Some(809193116)),
+            ("i", "Earlier item", "20260810T060855Z", None),
         ];
         let objects: Vec<(String, String, String)> = list
             .iter()
@@ -1911,10 +1911,7 @@ STATUS:NEEDS-ACTION\r\n{extra}END:VTODO\r\nEND:VCALENDAR\r\n"
 
         let content = fixture.content();
         let titles: Vec<&str> = content.lines().filter_map(|l| l.strip_prefix("* TODO ")).collect();
-        assert_eq!(
-            titles,
-            ["--- Oma", "3x milch", "3-4 becher", "Ofenkäse", "Klooaoier", "Quetschies", "Neue Post", "Strizel", "3 Semmeln"],
-        );
+        assert_eq!(titles, ["Earlier item", "Item A", "Item B", "Moved item", "Item C", "Item D", "Item E", "Item F", "Item G"],);
     }
 
     /// ...and reproducing that order must not cost a single write: every

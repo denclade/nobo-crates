@@ -1,64 +1,102 @@
-# nobo's Rust-Kisten
+# nobo-crates
 
-Alles, woraus nobos Apps gebaut sind, und nichts, was eine App ist.
+Die gemeinsamen Rust-Bibliotheken von nobo: Org-Dateien, Aufgaben,
+Kalender, Rezepte, Lesezeichen und verschlüsselter Vault-Sync. Ein eigener
+Cargo-Workspace, der unabhängig von einer App gebaut und getestet werden
+kann. Desktop- und Sailfish-Hosts binden dieselben Bibliotheken ein.
 
-Ein eigener Cargo-Workspace, und dafür gedacht, ein eigenes Repository zu
-werden: der Sailfish-OS-Port ([harbour-nobo](https://example.org/harbour-nobo))
-linkt dieselben Kisten unter einer Qt/Silica-Oberfläche und hat für die
-Tauri-App darum herum keine Verwendung. Beide Projekte binden das hier als
-Submodul ein.
-
-## Was drin liegt
-
-| Kiste | Was |
+| Kiste | Inhalt |
 |---|---|
-| `nobo-core` | Org-Dateien, Headings, Index, Suche, History, Einstellungen, Datei-Arten, Merge, Secrets, DB, Uhr |
-| `nobo-app` | die Command-Bodies, ohne die Verpackung irgendeines Hosts |
-| `nobo-http`, `nobo-webdav`, `nobo-ical`, `nobo-calendar-mirror` | die geteilten Bibliotheken |
-| `nobo-babel`, `nobo-calendar`, `nobo-caldav`, `nobo-cookbook`, `nobo-review`, `nobo-sync` | die Feature-Kisten |
-| `testdata/` | der Beispieltresor, den die Tests lesen (`../testdata` aus einer Kiste heraus) |
+| `nobo-core` | Org-Dateien, Headings, Index, Suche, History, Einstellungen, Merge, Secrets, DB und Uhr |
+| `nobo-app` | gemeinsame Command-Bodies ohne Host-Verpackung |
+| `nobo-http`, `nobo-webdav`, `nobo-ical`, `nobo-calendar-mirror` | gemeinsame Protokoll- und Formatbibliotheken |
+| `nobo-babel`, `nobo-bookmarks`, `nobo-calendar`, `nobo-caldav`, `nobo-cookbook`, `nobo-review`, `nobo-sync` | optionale Features und ihre Tauri-Adapter |
+| `testdata/` | Beispieltresor und Test-Fixtures; keine Live-Konten erforderlich |
 
-## Tauri ist optional, überall
+## Mit mise auf dem Host
 
-`nobo-core` weiß nicht, was Tauri ist -- `cargo tree -p nobo-core` zeigt
-null Tauri-Pakete. Was ein Host beisteuern muss, geht durch Traits, die er
-ausfüllt: `IndexListener`, `KeychainBackend`, `set_config_dir`.
-
-Die Feature-Kisten sind Tauri-**Plugins**, und das bleiben sie: ihre
-`commands.rs` sind schlichte Funktionen, ihre `tauri_commands.rs` legen
-hinter dem Feature `tauri` Tauris Verpackung darum. Das Feature ist
-standardmäßig an, damit der App-Build unverändert ist:
+Linux braucht einen C-Compiler samt Linker und `pkg-config`; die
+Babel-Tests führen außerdem Bash und Python aus. Rust einschließlich
+Clippy/rustfmt kommt aus `rust-toolchain.toml`, Python aus `mise.toml`:
 
 ```sh
-cargo check --workspace                     # mit Tauri, wie die App es baut
-cargo check --workspace --no-default-features --features nobo-sync/webdav
+mise trust
+mise install
+mise tasks
+mise run build
+mise run test
+mise run verify
 ```
 
-Die zweite Zeile ist der Host-freie Pfad -- das, was harbour-nobo
-kompiliert. `nobo-sync` braucht dabei einen Provider genannt, weil es sich
-ohne absichtlich weigert zu bauen.
+Die normalen Tasks bauen alle 13 Crates ohne Tauri, mit beiden
+Sync-Providern und den Import-/Fetch-Features. Tests verwenden temporäre
+Verzeichnisse und lokale HTTP-Testserver; sie brauchen keine produktiven
+Zugangsdaten oder laufende nobo-App. `mise run verify` prüft zusätzlich
+Formatierung, Clippy, minimale Features und CalDAV in mehreren Zeitzonen.
 
-**Nichts hier zeigt aus diesem Verzeichnis heraus.** Jede Tauri-Abhängigkeit
-kommt von crates.io; lokale Tauri-Plugins und die Tauri-Antworten auf die
-Nähte des Kerns (`nobo-tauri`) liegen bei der App, nicht hier.
-
-Eine Ausnahme mit Ansage: die `bindings_export`-Tests schreiben
-`../../src/features/*/bindings.ts`, also ins Frontend der Tauri-App. Sie
-hängen am Feature `tauri` und existieren im Host-freien Build gar nicht --
-ein `cargo test` mit Default-Features außerhalb von nobos Baum läuft
-darum in einen Schreibfehler.
-
-## Tests
+Direkt mit Cargo ist derselbe Build möglich:
 
 ```sh
-cargo test --workspace --no-fail-fast
+cargo build --locked --workspace --no-default-features \
+  --features nobo-sync/pocketbase,nobo-sync/webdav,nobo-cookbook/import,nobo-bookmarks/fetch
+cargo test --locked --workspace --no-default-features \
+  --features nobo-sync/pocketbase,nobo-sync/webdav,nobo-cookbook/import,nobo-bookmarks/fetch
 ```
 
-Zwei Tests in `nobo-caldav` sind zeitzonenabhängig und scheitern außerhalb
-von UTC (`sync::tests::the_order_matches_what_nextcloud_and_tasks_org_show`,
-`vtodo::tests::the_sort_key_falls_back_to_created_because_only_dragging_writes_the_property`).
-Bekannt und älter als dieser Workspace.
+## Mit Nix
+
+`flake.lock` pinnt das Toolset und die nativen Bibliotheken. Die
+Entwicklungs-Shells unterstützen `x86_64-linux` und `aarch64-linux`:
+
+```sh
+nix develop                  # Rust, mise und native Tauri-Abhängigkeiten
+mise run verify:tauri
+
+nix develop .#headless       # kleinere Shell ohne GTK/WebKit
+mise run verify
+```
+
+Innerhalb der Nix-Shell verwendet mise das von Nix gelieferte Rust und
+Python. `mise install` ist dort nicht zusätzlich nötig. Cargo lädt seine
+im eingecheckten `Cargo.lock` festgelegten Bibliotheken beim ersten Build.
+
+Die optionale x86_64-MicroVM (`nix run .` oder `mise run vm`) benutzt die
+öffentliche [nix-dev-sandbox](https://github.com/denclade/nix-dev-sandbox).
+Einrichtung und SSH-Zugang stehen in [docs/development.md](docs/development.md).
+Die Firewall bleibt Teil der gemeinsamen Basis-Konfiguration.
+
+## Tauri und TypeScript-Bindings
+
+`nobo-core` ist unabhängig von Tauri. Hosts stellen `IndexListener`,
+`KeychainBackend` und die Konfigurationsablage bereit. Die Feature-Crates
+halten ihre Tauri-Adapter hinter `tauri`; das Feature bleibt für
+bestehende Desktop-Hosts standardmäßig eingeschaltet.
+
+```sh
+mise run tauri:check
+mise run tauri:build
+mise run tauri:test
+mise run bindings:export                 # target/bindings/<feature>/bindings.ts
+mise run bindings:export -- /pfad/zur/app/src/features
+```
+
+Diese Tasks brauchen die [nativen Tauri-Abhängigkeiten](https://v2.tauri.app/start/prerequisites/)
+oder die oben genannte Nix-Shell. Normale Binding-Tests exportieren in
+temporäre Verzeichnisse. Nur ein expliziter `bindings:export`-Aufruf
+schreibt in ein dauerhaftes Ziel; es gibt keine festen Pfade in ein
+übergeordnetes App-Repository mehr.
+
+`nobo-sync` verlangt mindestens einen Provider (`webdav` oder
+`pocketbase`), wenn Default-Features abgeschaltet werden.
+`mise run check:minimal` prüft beide Varianten einzeln.
+
+## Beitragen und Releases
+
+[CONTRIBUTING.md](CONTRIBUTING.md) beschreibt die lokalen Checks und die CI.
+[docs/releasing.md](docs/releasing.md) beschreibt eigenständige Git-Releases.
+Die Vorbereitung der öffentlichen Quellen ist in
+[docs/publication.md](docs/publication.md) dokumentiert.
 
 ## Lizenz
 
-GPL-3.0-or-later.
+GPL-3.0-or-later; der vollständige Lizenztext liegt in [LICENSE](LICENSE).

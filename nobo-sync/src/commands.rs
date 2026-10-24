@@ -215,7 +215,7 @@ pub struct SyncLoginResult {
 #[derive(Debug, serde::Serialize)]
 #[cfg_attr(feature = "tauri", derive(specta::Type))]
 pub struct SyncConnectionInfo {
-    /// e.g. "PocketBase — https://sync.example.com" -- see each
+    /// e.g. `PocketBase — https://sync.example.com` -- see each
     /// SyncProvider impl's own `label()`.
     pub label: String,
     /// e.g. the PocketBase email or WebDAV username -- see each

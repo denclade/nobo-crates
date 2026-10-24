@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_BUILD_JOBS: "2"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+
+jobs:
+  headless:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Native build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5
+        with:
+          version: "2026.10.3"
+      - run: mise run verify
+      - run: mise run doc
+      - run: mise run audit:secrets
+
+  tauri:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Native Tauri dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libwebkit2gtk-4.1-dev \
+            libssl-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libxdo-dev
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5
+        with:
+          version: "2026.10.3"
+      - run: mise run tauri:test
+      - run: mise run bindings:export
+      - name: Check the complete binding export
+        run: |
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          expected = {"babel", "bookmarks", "caldav", "calendar", "cookbook", "review", "sync"}
+          files = list(Path("target/bindings").glob("*/bindings.ts"))
+          assert {p.parent.name for p in files} == expected
+          assert all(p.stat().st_size > 0 for p in files)
+          PYCODE

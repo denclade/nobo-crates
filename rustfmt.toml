@@ -1,5 +1,5 @@
 # The house style: wide lines, short expressions kept on one. Chosen to
 # match how the code was already written, so formatting changed as little
-# as possible; `pnpm check:fmt` (in the app) holds it from here on.
+# as possible; `mise run fmt:check` checks it in this workspace.
 max_width = 140
 use_small_heuristics = "Max"

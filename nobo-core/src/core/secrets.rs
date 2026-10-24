@@ -404,7 +404,7 @@ impl Secrets {
     /// failure to move is never a failure to read.
     ///
     /// "Only while something is still there" is what
-    /// [`legacy_names_known_empty`] makes true: without it the extra
+    /// `legacy_names_known_empty` makes true: without it the extra
     /// lookup would be permanent for every key that has nothing stored.
     ///
     /// Drop the legacy argument after a release or two, the same way an
@@ -606,7 +606,7 @@ fn spawn_detached(future: impl std::future::Future<Output = ()> + Send + 'static
 /// worker's problem, not the backend's. `Ok(None)` from `load` means
 /// "nothing stored"; an error that means "could not reach the store at
 /// all" must come back as [`SecretError::Unavailable`], because that is
-/// what opens the breaker (see [`Breaker`]).
+/// what opens the breaker (see `Breaker`).
 pub trait KeychainBackend: Send + 'static {
     fn load(&mut self, key: &str) -> Result<Option<String>, SecretError>;
     fn save(&mut self, key: &str, value: &str) -> Result<(), SecretError>;
@@ -763,8 +763,8 @@ impl Breaker {
 
 /// The OS keychain, reached through one worker with a deadline.
 ///
-/// Everything about why it is shaped this way is on [`Worker`] and
-/// [`Breaker`]; what is left here is the mapping from the trait onto
+/// Everything about why it is shaped this way is on `Worker` and
+/// `Breaker`; what is left here is the mapping from the trait onto
 /// them.
 pub struct Keychain {
     worker: Worker,

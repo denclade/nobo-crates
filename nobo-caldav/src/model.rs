@@ -53,7 +53,8 @@ pub struct CalDavTask {
     /// an untouched task sorts by when it was made, a dragged one by the
     /// value it was given. See `sort_key`.
     pub sort_order: Option<i64>,
-    /// `CREATED`. The ordering fallback, not decoration.
+    /// `CREATED` in UTC, unlike the local planning dates above. The ordering
+    /// fallback must use the same absolute scale as X-APPLE-SORT-ORDER.
     pub created: Option<NaiveDateTime>,
     /// The component verbatim, as fetched. `None` for a task created here
     /// that the server has never seen.

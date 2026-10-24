@@ -141,7 +141,7 @@ impl HeadingEdit {
         self.mutated
     }
 
-    /// Whether FLAT[OTHER] is a sibling of the heading being edited: same
+    /// Whether `FLAT[OTHER]` is a sibling of the heading being edited: same
     /// level, same parent. The question a drop next to another heading
     /// asks first -- a sibling means reordering, anything else means
     /// refiling, and the two are different commands.
@@ -149,7 +149,7 @@ impl HeadingEdit {
         self.flat[other].level == self.flat[self.idx].level && parent_line_of(&self.flat, other) == parent_line_of(&self.flat, self.idx)
     }
 
-    /// The sibling following FLAT[OTHER], if any -- what "drop it after
+    /// The sibling following `FLAT[OTHER]`, if any -- what "drop it after
     /// that one" resolves to as an anchor for `move_subtree_before`. The
     /// run ends where the parent's subtree does, so the last sibling has
     /// none, which is the `None` that means "last".

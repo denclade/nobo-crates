@@ -1,3 +1,16 @@
-# Its own, because this directory is meant to become its own repository
-# (see README.md) -- the app's ignore rules live in ../src-tauri/.
+# Build outputs, caches and machine-local configuration.
 /target/
+.env
+.env.*
+!.env.template
+mise.local.toml
+mise.*.local.toml
+.miserc.local.toml
+.microvm-state/
+*.sock
+/result
+/result-*
+.direnv/
+.venv/
+.aws/
+.ssh/

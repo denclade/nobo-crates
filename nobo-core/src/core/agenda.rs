@@ -1,7 +1,7 @@
 //! What a day looks like: appointments, what is planned for it, and what
 //! to do next.
 //!
-//! This used to be the frontend's ([`useAgenda.ts`] plus the memos in
+//! This used to be the frontend's (`useAgenda.ts` plus the memos in
 //! `DashboardView.tsx`): which tasks fall on a day, which of them carry a
 //! time, how much of the day is already spoken for, and which actions are
 //! the next ones. None of that is layout -- it is what an agenda *is*,

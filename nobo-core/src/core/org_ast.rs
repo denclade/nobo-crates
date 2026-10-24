@@ -740,7 +740,7 @@ fn block_kind_of(kind: &str) -> BlockKind {
 /// Parsing and grouping in one pass: a second pass over a "lines" array
 /// would be the same walk twice, and nothing here needs to look further
 /// ahead than the line it is on -- except a checkbox's children, which is
-/// the one thing [`mark_derived_checkboxes`] does at the end.
+/// the one thing `mark_derived_checkboxes` does at the end.
 pub fn parse(text: &str) -> Vec<Block> {
     let lines: Vec<&str> = text.split('\n').collect();
     let mut blocks: Vec<Block> = Vec::new();

@@ -130,9 +130,9 @@ pub fn compute_insert_index(
     })
 }
 
-/// The chain of ancestor headings enclosing FLAT[IDX], nearest (immediate
+/// The chain of ancestor headings enclosing `FLAT[IDX]`, nearest (immediate
 /// parent) first, root last -- e.g. a level-3 subtask's chain is [level-2
-/// parent, level-1 project]. Doesn't include FLAT[IDX] itself. Empty for a
+/// parent, level-1 project]. Doesn't include `FLAT[IDX]` itself. Empty for a
 /// top-level (level 1) heading.
 pub fn ancestors_of(flat: &[Heading], idx: usize) -> Vec<Heading> {
     let mut out = Vec::new();

@@ -6,12 +6,28 @@ veröffentlicht. Format nach
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionen nach
 [Semantic Versioning](https://semver.org/lang/de/).
 
-Veröffentlicht wird aus der App heraus (`pnpm release:crates`, siehe
-docs/releasing.md im App-Repository). Vor 1.0 gilt: Eine Änderung, die
+Eigenständige Git-Releases sind in [docs/releasing.md](docs/releasing.md)
+beschrieben. Vor 1.0 gilt: Eine Änderung, die
 Hosts (die App, harbour-nobo) anpassen müssen, erhöht die zweite Stelle;
 die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
+
+### Behoben
+
+- CalDAV sortiert Erstellungszeiten auf derselben UTC-Skala wie explizite
+  Sortierwerte; die bisherigen Regressionen laufen auch außerhalb von UTC.
+
+### Geändert
+
+- Eigenständige Entwicklung mit mise-Tasks, gepinnter Rust-Toolchain,
+  Nix-DevShells, optionaler MicroVM und CI; Lizenztext und Release-Anleitung ergänzt.
+- Tauri-Binding-Tests schreiben standardmäßig in temporäre Verzeichnisse.
+  Hosts exportieren dauerhaft mit `mise run bindings:export -- <Ziel>`
+  statt über feste Pfade in ein benachbartes App-Repository.
+- Die API-Dokumentation löst interne und externe Verweise ohne Rustdoc-Warnungen auf.
+- Interne Projektadresse und persönliche absolute Beispielpfade aus dem
+  aktuellen Quellstand entfernt.
 
 ## [0.18.0] – 2026-10-13
 

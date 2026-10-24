@@ -274,7 +274,7 @@ impl Parser {
 }
 
 /// Parses a query. Never fails: a half-typed query filters by what is
-/// already readable (see [`Parser::unary`]).
+/// already readable (see `Parser::unary`).
 pub fn parse(query: &str) -> Expr {
     let tokens = tokenize(query);
     if tokens.is_empty() {

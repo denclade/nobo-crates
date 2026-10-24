@@ -1,0 +1,3 @@
+# Include this repository's config, but stop before its parent. This also
+# prevents app tasks and SDK variables leaking in when used as a submodule.
+ceiling_paths = ["{{ config_root | dirname }}"]

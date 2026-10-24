@@ -169,18 +169,21 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
     ])
 }
 
-/// Writes this plugin's `bindings.ts` next to the frontend half that
-/// imports it.
-///
-/// A test, like the app's own export: running the tests is what
-/// regenerates them, so a command whose signature changed without the
-/// frontend being regenerated fails the build rather than the device.
 #[cfg(all(test, feature = "tauri"))]
 mod bindings_export {
+    /// Validate export without depending on an app checkout. An explicit
+    /// NOBO_BINDINGS_DIR also keeps the generated files for a host to consume.
     #[test]
     fn export_bindings() {
-        super::specta_builder()
-            .export(specta_typescript::Typescript::default(), "../../src/features/calendar/bindings.ts")
-            .expect("failed to write the bindings");
+        let temporary = tempfile::tempdir().expect("temporary bindings directory");
+        let root = std::env::var_os("NOBO_BINDINGS_DIR")
+            .filter(|value| !value.is_empty())
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| temporary.path().to_path_buf());
+        let directory = root.join("calendar");
+        std::fs::create_dir_all(&directory).expect("bindings directory");
+        let output = directory.join("bindings.ts");
+        super::specta_builder().export(specta_typescript::Typescript::default(), &output).expect("failed to write the bindings");
+        assert!(std::fs::metadata(output).expect("exported bindings").len() > 0);
     }
 }

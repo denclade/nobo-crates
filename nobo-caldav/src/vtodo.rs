@@ -73,7 +73,11 @@ fn task_from_todo(todo: &IcalTodo, raw: &str) -> Option<CalDavTask> {
             .and_then(|p| p.value.clone())
             .map(|v| nobo_ical::split_list(&v))
             .unwrap_or_default(),
-        created: find(todo, "CREATED").and_then(date_time_of),
+        // RFC 5545 section 3.8.7.1 requires CREATED in UTC. Converting it
+        // to a local wall clock would shift its absolute sort position.
+        created: find(todo, "CREATED")
+            .and_then(|p| p.value.as_deref())
+            .and_then(|value| NaiveDateTime::parse_from_str(value.trim(), "%Y%m%dT%H%M%SZ").ok()),
         sort_order: find(todo, "X-APPLE-SORT-ORDER").and_then(|p| p.value.as_ref()).and_then(|v| v.trim().parse().ok()),
         raw: Some(raw.to_string()),
     };
@@ -521,7 +525,7 @@ BEGIN:VTODO\r\nUID:a\r\nRECURRENCE-ID:20260901T090000Z\r\nSUMMARY:Override\r\nEN
 
     /// A CHILD or SIBLING link is a different relationship. Reading one as
     /// a parent would build a different tree than the server shows.
-    /// Real data from a Nextcloud list: only the task that was dragged
+    /// An anonymized Nextcloud regression: only the task that was dragged
     /// carries X-APPLE-SORT-ORDER, every other one has nothing but
     /// CREATED. Both clients that show this list order it by the explicit
     /// value where there is one and by CREATED otherwise -- on the same
@@ -529,11 +533,11 @@ BEGIN:VTODO\r\nUID:a\r\nRECURRENCE-ID:20260901T090000Z\r\nSUMMARY:Override\r\nEN
     #[test]
     fn the_sort_key_falls_back_to_created_because_only_dragging_writes_the_property() {
         let dragged = parse_one(
-            "BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nSUMMARY:Ofenkäse\r\n\
+            "BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nSUMMARY:Dragged task\r\n\
 CREATED:20260823T160042Z\r\nX-APPLE-SORT-ORDER:809193116\r\nEND:VTODO\r\nEND:VCALENDAR\r\n",
         );
         let untouched = parse_one(
-            "BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:b\r\nSUMMARY:3-4 becher\r\n\
+            "BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:b\r\nSUMMARY:Untouched task\r\n\
 CREATED:20260823T155155Z\r\nEND:VTODO\r\nEND:VCALENDAR\r\n",
         );
 
@@ -543,6 +547,17 @@ CREATED:20260823T155155Z\r\nEND:VTODO\r\nEND:VCALENDAR\r\n",
         // that is what moving it up the list did.
         assert_eq!(untouched.sort_key(), Some(809193115));
         assert!(untouched.sort_key() < dragged.sort_key(), "the dragged task sorts just after it");
+    }
+
+    #[test]
+    fn creation_time_is_kept_in_utc_even_across_a_local_dst_fold() {
+        for value in ["20260823T155155Z", "20261025T003000Z", "20261025T013000Z"] {
+            let raw = format!("BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:a\r\nCREATED:{value}\r\nEND:VTODO\r\nEND:VCALENDAR\r\n");
+            let task = parse_one(&raw);
+            let utc = NaiveDateTime::parse_from_str(value, "%Y%m%dT%H%M%SZ").unwrap();
+            assert_eq!(task.created, Some(utc));
+            assert_eq!(task.sort_key(), Some(utc.and_utc().timestamp() - 978_307_200));
+        }
     }
 
     #[test]

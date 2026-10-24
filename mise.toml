@@ -1,0 +1,117 @@
+[tools]
+python = "3.14"
+
+[settings]
+# rust-toolchain.toml is the shared version/component declaration for mise and rustup.
+idiomatic_version_file_enable_tools = ["rust"]
+# Cargo tasks share target/. Let Cargo parallelize individual compilations.
+jobs = 1
+
+[task_config]
+dir = "{{ config_root }}"
+shell = "bash -euo pipefail -c"
+
+[vars]
+# Each Cargo task chooses its cache, so shell activation does not fix one graph.
+headless_target = "{{ config_root }}/target/headless"
+tauri_target = "{{ config_root }}/target/tauri"
+headless_features = "nobo-sync/pocketbase,nobo-sync/webdav,nobo-cookbook/import,nobo-bookmarks/fetch"
+
+[tasks.build]
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.headless_target) }}"
+description = "Build all libraries without Tauri, with both sync providers and network features"
+run = "cargo build --locked --workspace --no-default-features --features {{ vars.headless_features }}"
+
+[tasks.check]
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.headless_target) }}"
+description = "Type-check all libraries and tests without Tauri"
+run = "cargo check --locked --workspace --all-targets --no-default-features --features {{ vars.headless_features }}"
+
+[tasks."check:workspace"]
+description = "Check workspace versions, licenses and local dependencies stay inside this repository"
+run = "python3 scripts/check-workspace.py"
+
+[tasks.test]
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.headless_target) }}"
+description = "Run all library, integration and documentation tests without Tauri"
+run = "cargo test --locked --workspace --no-default-features --features {{ vars.headless_features }} --no-fail-fast"
+
+[tasks."test:timezones"]
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.headless_target) }}"
+description = "Run CalDAV regressions in UTC, Berlin and New York"
+run = '''
+for zone in UTC Europe/Berlin America/New_York; do
+    echo "CalDAV tests: $zone"
+    TZ="$zone" cargo test --locked -p nobo-caldav --no-default-features
+done
+'''
+
+[tasks.fmt]
+description = "Format every crate with the workspace style"
+run = "cargo fmt --all"
+
+[tasks."fmt:check"]
+description = "Check formatting without changing files"
+run = "cargo fmt --all -- --check"
+
+[tasks.clippy]
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.headless_target) }}"
+description = "Lint all libraries and tests; reject correctness/suspicious findings, report style warnings"
+run = "cargo clippy --locked --workspace --all-targets --no-default-features --features {{ vars.headless_features }} -- -D clippy::correctness -D clippy::suspicious"
+
+[tasks.doc]
+env.RUSTDOCFLAGS = "{{ get_env(name='RUSTDOCFLAGS', default='-D warnings') }}"
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.headless_target) }}"
+description = "Build API documentation for all libraries without Tauri"
+run = "cargo doc --locked --workspace --no-deps --no-default-features --features {{ vars.headless_features }}"
+
+[tasks."check:minimal"]
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.headless_target) }}"
+description = "Check the workspace with each sync provider alone and optional fetch/import disabled"
+run = [
+    "cargo check --locked --workspace --all-targets --no-default-features --features nobo-sync/webdav",
+    "cargo check --locked --workspace --all-targets --no-default-features --features nobo-sync/pocketbase",
+]
+
+[tasks."tauri:build"]
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.tauri_target) }}"
+description = "Build all libraries with Tauri and all optional features (requires native Tauri dependencies)"
+run = "cargo build --locked --workspace --all-features"
+
+[tasks."tauri:check"]
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.tauri_target) }}"
+description = "Check all Tauri libraries and tests (requires native Tauri dependencies)"
+run = "cargo check --locked --workspace --all-targets --all-features"
+
+[tasks."tauri:test"]
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.tauri_target) }}"
+description = "Run all tests with Tauri; binding tests use temporary directories"
+run = "cargo test --locked --workspace --all-features --no-fail-fast"
+
+[tasks."bindings:export"]
+env.CARGO_TARGET_DIR = "{{ get_env(name='CARGO_TARGET_DIR', default=vars.tauri_target) }}"
+description = "Export the seven Tauri plugins' TypeScript bindings to an explicit directory"
+usage = 'arg "[output]" default="target/bindings" help="Directory containing babel/, bookmarks/, caldav/, calendar/, cookbook/, review/ and sync/"'
+run = '''
+mkdir -p "${usage_output?}"
+export NOBO_BINDINGS_DIR="$(cd "${usage_output?}" && pwd)"
+cargo test --locked --workspace --all-features --no-fail-fast bindings_export::export_bindings
+echo "Bindings exported to $NOBO_BINDINGS_DIR"
+'''
+
+[tasks.verify]
+description = "Check workspace independence, formatting, headless lint/tests, minimal features and timezones"
+depends = ["check:workspace", "fmt:check", "clippy", "test", "check:minimal", "test:timezones"]
+
+[tasks."verify:tauri"]
+description = "Run the portable checks and all Tauri tests"
+depends = ["verify", "tauri:test"]
+
+[tasks.vm]
+description = "Start the isolated Nix development VM on the host; then ssh nobo-crates-vm"
+run = "nix run ."
+
+[tasks."audit:secrets"]
+description = "Scan the available Git history for secrets; redact findings"
+tools = { gitleaks = "8.30.1" }
+run = 'gitleaks git --log-opts="--all --full-history" --ignore-gitleaks-allow --redact=100 --no-banner .'

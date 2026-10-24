@@ -15,7 +15,7 @@ use super::{IndexVersion, SyncProvider};
 
 pub struct WebDavProvider {
     client: Client,
-    /// e.g. "https://example.com/dav/nobo" -- no trailing slash.
+    /// e.g. `https://example.com/dav/nobo` -- no trailing slash.
     root: String,
     username: String,
 }

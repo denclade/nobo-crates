@@ -1,18 +1,17 @@
 # nobo's Rust crates: everything the apps are built out of, and nothing
 # that is an app.
 #
-# Its own workspace, and meant to become its own repository -- the
+# Its own workspace, usable as its own repository -- the
 # Sailfish OS port (harbour-nobo) links these same crates under a
 # Qt/Silica UI and has no use for the Tauri app around them. What lives
 # here therefore points at nothing outside this directory: no `../plugins`,
 # no `../src-tauri`. Every Tauri dependency below comes from crates.io,
 # and every crate that has one keeps it behind a `tauri` feature that is
-# default-on for this repo's app and switched off by any other host.
+# default-on for Tauri hosts and switched off by other hosts.
 #
-# `nobo-tauri` is deliberately NOT here: it is this repo's answer to the
-# core's seams (an index listener, the keychain, the notifications) and
-# reaches local Tauri plugins by path. It lives next to the app, in
-# ../src-tauri/crates/.
+# `nobo-tauri` belongs to the desktop app. It implements the core's host
+# interfaces (index listener, keychain, notifications) and integrates the
+# app's own Tauri plugins. No crate here depends on that host adapter.
 [workspace]
 # Named rather than `*`: `testdata/` sits alongside the crates (the tests
 # in here read it as `../testdata`) and is not one.
@@ -20,14 +19,14 @@ members = ["nobo-*"]
 resolver = "2"
 
 # One version for every crate here: they are released together, as one
-# tag of this repository (see scripts/release.mjs in the app, and
+# tag of this repository (see docs/releasing.md and
 # CHANGELOG.md). A crate does not get a version of its own.
 [workspace.package]
 version = "0.18.0"
 
 # Only for building these crates on their own -- `cargo test` in here.
 # The app's own profile governs the app's build, because a dependency's
-# workspace profile is ignored; see ../src-tauri/Cargo.toml.
+# workspace profile is ignored when a host uses these libraries.
 [profile.release]
 codegen-units = 1
 lto = true
@@ -35,9 +34,8 @@ opt-level = 3
 strip = true
 
 # One version list for every crate here, so they cannot drift apart. The
-# app keeps its own (../src-tauri/Cargo.toml) for what only it uses --
-# the local plugins, the Tauri plugins for the window, the dialogs, the
-# log and the clipboard, and `jni` for the Android worker.
+# hosts maintain their own dependency lists for host-specific plugins,
+# windows, dialogs, the clipboard and platform integrations.
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
 encoding_rs = "0.8"

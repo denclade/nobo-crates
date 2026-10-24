@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::core::models::Heading;
 
 /// Org-mode's standard property for a stable, export/link-anchor-safe
-/// heading identifier -- see https://orgmode.org/manual/Internal-Links.html.
+/// heading identifier -- see <https://orgmode.org/manual/Internal-Links.html>.
 /// Deliberately not derived from the title: a slug looks tidy but goes stale
 /// the moment the heading is renamed or refiled, which is exactly the case
 /// this identity is meant to survive. Generated as a plain UUID instead --
