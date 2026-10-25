@@ -190,6 +190,13 @@ pub(crate) fn merge_org_ast(path: &str, base_text: &str, local_text: &str, remot
     let local_keyed: Vec<(String, &Heading)> = local_flat.iter().map(|h| (key_of(h), h)).collect();
     let remote_keyed: Vec<(String, &Heading)> = remote_flat.iter().map(|h| (key_of(h), h)).collect();
 
+    for keyed in [&base_keyed, &local_keyed, &remote_keyed] {
+        let mut seen = HashSet::new();
+        if keyed.iter().any(|(key, _)| !seen.insert(key)) {
+            return Err("cannot auto-merge: duplicate CUSTOM_ID".to_string());
+        }
+    }
+
     let base_map: HashMap<&str, &Heading> = base_keyed.iter().map(|(k, h)| (k.as_str(), *h)).collect();
     let local_map: HashMap<&str, &Heading> = local_keyed.iter().map(|(k, h)| (k.as_str(), *h)).collect();
     let remote_map: HashMap<&str, &Heading> = remote_keyed.iter().map(|(k, h)| (k.as_str(), *h)).collect();
@@ -199,7 +206,10 @@ pub(crate) fn merge_org_ast(path: &str, base_text: &str, local_text: &str, remot
     let local_keys = local_keyed.iter().map(|(k, _)| k.as_str()).collect::<Vec<_>>().join("\n");
     let remote_keys = remote_keyed.iter().map(|(k, _)| k.as_str()).collect::<Vec<_>>().join("\n");
 
-    let merged_keys_text = merge_text(&base_keys, &local_keys, &remote_keys)?;
+    // Independent captures at the same position are distinct headings,
+    // even though a line-based diff sees overlapping insertions.
+    let merged_keys_text = merge_text(&base_keys, &local_keys, &remote_keys)
+        .or_else(|_| merge_added_heading_order(&base_keyed, &local_keyed, &remote_keyed))?;
 
     let mut final_lines = Vec::new();
     if !merged_preamble.is_empty() {
@@ -274,6 +284,76 @@ pub(crate) fn merge_org_ast(path: &str, base_text: &str, local_text: &str, remot
     }
 
     Ok(final_lines.join("\n") + "\n")
+}
+
+/// Conservative fallback for concurrent additions: keep all existing keys
+/// in their original order and merge insertion runs under the same parent.
+/// Nested additions, moves and deletions still require the normal merge.
+fn merge_added_heading_order(
+    base: &[(String, &Heading)],
+    local: &[(String, &Heading)],
+    remote: &[(String, &Heading)],
+) -> Result<String, String> {
+    let conflict = || "cannot merge heading order: ambiguous concurrent structural changes".to_string();
+    let base_keys: HashSet<&str> = base.iter().map(|(k, _)| k.as_str()).collect();
+    let split = |side: &[(String, &Heading)]| -> Result<Vec<Vec<String>>, String> {
+        let mut gaps = vec![Vec::new(); base.len() + 1];
+        let mut at = 0;
+        for (key, heading) in side {
+            if base_keys.contains(key.as_str()) {
+                if base.get(at).is_none_or(|(expected, original)| expected != key || original.level != heading.level) {
+                    return Err(conflict());
+                }
+                at += 1;
+            } else {
+                gaps[at].push(key.clone());
+            }
+        }
+        if at != base.len() {
+            return Err(conflict());
+        }
+        for (gap, run) in gaps.iter().enumerate().filter(|(_, run)| !run.is_empty()) {
+            let levels: Vec<usize> = run.iter().map(|key| side.iter().find(|(k, _)| k == key).unwrap().1.level).collect();
+            if levels.iter().any(|level| *level != levels[0]) || base.get(gap).is_some_and(|(_, next)| next.level > levels[0]) {
+                return Err(conflict());
+            }
+        }
+        Ok(gaps)
+    };
+    let left = split(local)?;
+    let right = split(remote)?;
+    // A shared new ID needs the usual three-way logic; this fallback is
+    // strictly for independent additions and must never duplicate an ID.
+    let new_left: HashSet<&str> = left.iter().flatten().map(String::as_str).collect();
+    if right.iter().flatten().any(|key| new_left.contains(key.as_str())) {
+        return Err(conflict());
+    }
+    let mut result = Vec::new();
+    for gap in 0..=base.len() {
+        let l = &left[gap];
+        let r = &right[gap];
+        if !l.is_empty() && !r.is_empty() {
+            // Inserting siblings is safe. Mixing levels would interleave
+            // parents and children and could silently reparent a task.
+            let headings: Vec<&Heading> =
+                l.iter().chain(r).map(|key| local.iter().chain(remote).find(|(k, _)| k == key).unwrap().1).collect();
+            let level = headings[0].level;
+            if headings.iter().any(|h| h.level != level) {
+                return Err(conflict());
+            }
+            // Both runs follow the same unchanged base prefix. At this
+            // level that prefix identifies exactly one parent on both sides.
+        }
+        // Keep each device's insertion order, choose the ordering of the
+        // runs by their stable IDs so exchanging local/remote converges.
+        let (first, second) = if l.first() <= r.first() { (l, r) } else { (r, l) };
+        result.extend(first.iter().cloned());
+        result.extend(second.iter().cloned());
+        if let Some((key, _)) = base.get(gap) {
+            result.push(key.clone());
+        }
+    }
+    Ok(result.join("\n"))
 }
 
 pub fn merge_headings(base: &Heading, local: &Heading, remote: &Heading) -> Result<Heading, String> {
@@ -596,6 +676,61 @@ mod tests {
             title: title.to_string(),
             ..Default::default()
         }
+    }
+
+    fn capture(id: &str, title: &str) -> String {
+        format!("* {title}\n:PROPERTIES:\n:CUSTOM_ID: {id}\n:END:\n")
+    }
+
+    #[test]
+    fn concurrent_inbox_captures_at_the_same_position_both_survive() {
+        for base in [String::new(), capture("existing", "Already here")] {
+            let local = format!("{}{}{}", base, capture("phone-a", "Phone one"), capture("phone-b", "Phone two"));
+            let remote = format!("{}{}", base, capture("desktop-a", "Desktop"));
+            let merged = merge_org_ast("inbox.org", &base, &local, &remote).unwrap();
+            assert_eq!(merged, merge_org_ast("inbox.org", &base, &remote, &local).unwrap());
+            for title in ["Phone one", "Phone two", "Desktop"] {
+                assert_eq!(merged.matches(title).count(), 1, "{merged}");
+            }
+            assert!(merged.find("Phone one") < merged.find("Phone two"));
+        }
+    }
+
+    #[test]
+    fn concurrent_subtasks_stay_under_their_project() {
+        let base = capture("project", "Project :project:");
+        let local = format!("{base}*{}", capture("local", "TODO Local child"));
+        let remote = format!("{base}*{}", capture("remote", "TODO Remote child"));
+        let merged = merge_org_ast("projects.org", &base, &local, &remote).unwrap();
+        assert!(merged.starts_with(&base));
+        assert!(merged.contains("** TODO Local child"));
+        assert!(merged.contains("** TODO Remote child"));
+    }
+
+    #[test]
+    fn concurrent_subtasks_do_not_leak_into_the_following_project() {
+        let project = capture("project", "Project :project:");
+        let following = format!("{}*{}", capture("other-project", "Other :project:"), capture("other-child", "TODO Unrelated"));
+        let base = format!("{project}{following}");
+        let local = format!("{project}*{}{following}", capture("local", "TODO Local child"));
+        let remote = format!("{project}*{}{following}", capture("remote", "TODO Remote child"));
+        let merged = merge_org_ast("projects.org", &base, &local, &remote).unwrap();
+        assert!(merged.ends_with(&following), "{merged}");
+        assert_eq!(merged, merge_org_ast("projects.org", &base, &remote, &local).unwrap());
+    }
+
+    #[test]
+    fn concurrent_nested_insertions_require_a_manual_decision() {
+        let base = capture("existing", "Already here");
+        let local = format!("{base}{}*{}", capture("new-parent", "New parent"), capture("new-child", "TODO Child"));
+        let remote = format!("{base}{}", capture("other", "Other new entry"));
+        assert!(merge_org_ast("inbox.org", &base, &local, &remote).is_err());
+    }
+
+    #[test]
+    fn duplicate_ids_are_never_silently_dropped() {
+        let local = format!("{}{}", capture("duplicate", "First"), capture("duplicate", "Second"));
+        assert!(merge_org_ast("inbox.org", "", &local, &capture("other", "Other")).is_err());
     }
 
     #[test]

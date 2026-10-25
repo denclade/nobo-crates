@@ -200,16 +200,19 @@ async fn auto_merge_conflict(
         store::get(&conn, path).ok().flatten().and_then(|r| r.base_hash)
     };
 
-    let Some(base_h) = base_hash else {
-        return Ok(None); // Without a base we can't do a 3way merge
+    // Two devices can create inbox.org before their first shared sync.
+    // With no ancestor, only identified Org headings can be combined;
+    // arbitrary prose still requires a common base.
+    if base_hash.is_none() && !path.ends_with(".org") {
+        return Ok(None);
+    }
+    let base = async {
+        match base_hash {
+            Some(hash) => fetch_blob_by_hash(provider, master_key, work_dir, &hash).await,
+            None => Ok(String::new()),
+        }
     };
-
-    // Load all three versions -- base and remote are independent blob
-    // fetches, fetched concurrently rather than one after the other.
-    let (base_text, remote_text) = tokio::try_join!(
-        fetch_blob_by_hash(provider, master_key, work_dir, &base_h),
-        fetch_blob_by_hash(provider, master_key, work_dir, remote_hash),
-    )?;
+    let (base_text, remote_text) = tokio::try_join!(base, fetch_blob_by_hash(provider, master_key, work_dir, remote_hash))?;
     // A failed read here must NOT silently become an empty string --
     // merge_org_ast would then see zero local headings and conclude local
     // deleted everything, producing a "merge" that's actually just
@@ -514,6 +517,10 @@ pub async fn run_sync(
 
                     match auto_merge_conflict(provider, db, vault_root, master_key, work_dir, &path, r_hash).await {
                         Ok(Some(merged_text)) => {
+                            if !local_matches_diff_snapshot(vault_root, &path, local_hash.as_deref()) {
+                                summary.skipped_locally_changed += 1;
+                                continue;
+                            }
                             let abs_path = vault_root.join(&path);
                             // Atomic, like every other write into the vault:
                             // this replaces a file the user may have open,
@@ -1630,6 +1637,75 @@ mod tests {
     // rule: state or :project: tag required once something else already
     // opened the heading before them).
     const THREE_HEADINGS: &str = "* TODO Task A\n:PROPERTIES:\n:CUSTOM_ID: aaa\n:END:\n* TODO Task B\n:PROPERTIES:\n:CUSTOM_ID: bbb\n:END:\n* TODO Task C\n:PROPERTIES:\n:CUSTOM_ID: ccc\n:END:\n";
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn independent_inbox_captures_merge_with_and_without_a_common_base() {
+        for encrypted in [false, true] {
+            let master = master_key();
+            let key = encrypted.then_some(&master);
+            for shared_base in [false, true] {
+                let provider = MockProvider::default();
+                let a = TempDir::new().unwrap();
+                let b = TempDir::new().unwrap();
+                let work = TempDir::new().unwrap();
+                let db_a = db();
+                let db_b = db();
+                let base = "#+TITLE: Inbox\n";
+                if shared_base {
+                    std::fs::write(a.path().join("inbox.org"), base).unwrap();
+                    run_sync(&provider, &db_a, a.path(), key, work.path(), |_| {}).await.unwrap();
+                    run_sync(&provider, &db_b, b.path(), key, work.path(), |_| {}).await.unwrap();
+                }
+                let capture = |id: &str| format!("* Captured {id}\n:PROPERTIES:\n:CUSTOM_ID: {id}\n:END:\n");
+                std::fs::write(a.path().join("inbox.org"), format!("{base}{}{}", capture("a1"), capture("a2"))).unwrap();
+                std::fs::write(b.path().join("inbox.org"), format!("{base}{}{}", capture("b1"), capture("b2"))).unwrap();
+                run_sync(&provider, &db_a, a.path(), key, work.path(), |_| {}).await.unwrap();
+                let summary = run_sync(&provider, &db_b, b.path(), key, work.path(), |_| {}).await.unwrap();
+                assert!(summary.conflicts.is_empty(), "encrypted={encrypted}, shared_base={shared_base}: {summary:?}");
+                let merged = std::fs::read_to_string(b.path().join("inbox.org")).unwrap();
+                for id in ["a1", "a2", "b1", "b2"] {
+                    assert_eq!(merged.matches(&format!("CUSTOM_ID: {id}")).count(), 1, "{merged}");
+                }
+                run_sync(&provider, &db_a, a.path(), key, work.path(), |_| {}).await.unwrap();
+                assert_eq!(std::fs::read_to_string(a.path().join("inbox.org")).unwrap(), merged);
+                let quiet = run_sync(&provider, &db_b, b.path(), key, work.path(), |_| {}).await.unwrap();
+                assert_eq!(quiet.uploaded + quiet.downloaded, 0);
+                assert!(quiet.conflicts.is_empty());
+            }
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn an_inbox_capture_during_auto_merge_is_preserved_and_merged_on_the_next_pass() {
+        let inner = MockProvider::default();
+        let a = TempDir::new().unwrap();
+        let b = TempDir::new().unwrap();
+        let work = TempDir::new().unwrap();
+        let db_a = db();
+        let db_b = db();
+        let capture = |id: &str| format!("* Captured {id}\n:PROPERTIES:\n:CUSTOM_ID: {id}\n:END:\n");
+        let base = capture("base");
+        std::fs::write(a.path().join("inbox.org"), &base).unwrap();
+        run_sync(&inner, &db_a, a.path(), None, work.path(), |_| {}).await.unwrap();
+        run_sync(&inner, &db_b, b.path(), None, work.path(), |_| {}).await.unwrap();
+        std::fs::write(a.path().join("inbox.org"), format!("{base}{}", capture("a"))).unwrap();
+        run_sync(&inner, &db_a, a.path(), None, work.path(), |_| {}).await.unwrap();
+        std::fs::write(b.path().join("inbox.org"), format!("{base}{}", capture("b1"))).unwrap();
+        let newest = format!("{base}{}{}", capture("b1"), capture("b2"));
+        let provider =
+            EditsLocallyMidRunProvider { inner, file: b.path().join("inbox.org"), content: &newest, edited: StdSyncMutex::new(false) };
+        let summary = run_sync(&provider, &db_b, b.path(), None, work.path(), |_| {}).await.unwrap();
+        assert_eq!(summary.skipped_locally_changed, 1);
+        assert_eq!(summary.uploaded, 0);
+        assert_eq!(std::fs::read_to_string(b.path().join("inbox.org")).unwrap(), newest);
+        let next = run_sync(&provider, &db_b, b.path(), None, work.path(), |_| {}).await.unwrap();
+        assert!(next.conflicts.is_empty());
+        assert_eq!(next.uploaded, 1);
+        let merged = std::fs::read_to_string(b.path().join("inbox.org")).unwrap();
+        for id in ["base", "a", "b1", "b2"] {
+            assert_eq!(merged.matches(&format!("CUSTOM_ID: {id}\n")).count(), 1, "{merged}");
+        }
+    }
 
     /// The core structural-safety guarantee end-to-end: two devices edit
     /// TWO DIFFERENT headings in the same file (both already carrying a
