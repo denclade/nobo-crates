@@ -103,7 +103,7 @@ impl SyncProvider for WebDavProvider {
             (None, Some(date)) => IndexVersion::LastModified(date.to_string()),
             (None, None) => IndexVersion::Unversioned,
         };
-        let bytes = resp.bytes().await.map_err(|e| e.to_string())?.to_vec();
+        let bytes = resp.bytes().await.map_err(|e| nobo_http::describe_error(&e))?.to_vec();
         Ok(Some((bytes, version)))
     }
 
@@ -197,7 +197,7 @@ impl SyncProvider for WebDavProvider {
         let mut stream = resp.bytes_stream();
         use futures_util::StreamExt;
         while let Some(chunk) = stream.next().await {
-            let chunk = chunk.map_err(|e| e.to_string())?;
+            let chunk = chunk.map_err(|e| nobo_http::describe_error(&e))?;
             out.write_all(&chunk).await.map_err(|e| e.to_string())?;
         }
         // Tokio's file writes can still be queued on the blocking pool
@@ -614,6 +614,56 @@ mod tests {
             assert_eq!(upload.body, bytes);
             assert!(!upload.headers.contains_key("transfer-encoding"));
         }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn conflict_preview_retries_a_real_truncated_http_response() {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let content = b"complete server version";
+        let index = serde_json::json!({"entries": [{
+            "path": "inbox.org", "content_hash": "blob", "wrapped_key": null,
+            "size": content.len(), "updated_at": "2026-10-25T00:00:00Z"
+        }]})
+        .to_string();
+        let server = std::thread::spawn(move || {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+            let mut requests = 0;
+            while requests < 4 && std::time::Instant::now() < deadline {
+                let Ok((mut stream, _)) = listener.accept() else {
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                    continue;
+                };
+                stream.set_read_timeout(Some(std::time::Duration::from_secs(2))).unwrap();
+                let mut request = Vec::new();
+                while !request.ends_with(b"\r\n\r\n") {
+                    let mut byte = [0];
+                    if stream.read(&mut byte).unwrap_or(0) == 0 {
+                        break;
+                    }
+                    request.push(byte[0]);
+                }
+                let (body, length): (&[u8], usize) = if requests % 2 == 0 {
+                    assert!(request.starts_with(b"GET /index.enc "));
+                    (index.as_bytes(), index.len())
+                } else if requests == 1 {
+                    (b"partial", 1000)
+                } else {
+                    (content, content.len())
+                };
+                write!(stream, "HTTP/1.1 200 OK\r\nContent-Length: {length}\r\nConnection: close\r\n\r\n").unwrap();
+                stream.write_all(body).unwrap();
+                requests += 1;
+            }
+            requests
+        });
+        let provider = WebDavProvider::new(format!("http://{address}"), "alice".into(), "test".into()).unwrap();
+        let work = tempfile::TempDir::new().unwrap();
+        let result = crate::orchestrator::fetch_remote_content(&provider, None, work.path(), "inbox.org").await;
+        assert_eq!(server.join().unwrap(), 4, "both index and blob must be fetched again");
+        assert_eq!(result.unwrap(), Some(String::from_utf8(content.to_vec()).unwrap()));
     }
 
     #[tokio::test]

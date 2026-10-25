@@ -39,6 +39,7 @@ fn is_recoverable_sync_error(msg: &str) -> bool {
         "failed to fill whole buffer", // truncated HTTP/TLS body stream mid-transfer
         "unexpected eof",
         "unexpected end of file",
+        "error decoding response body", // reqwest wraps a truncated HTTP body in this error
         "connection reset",
         "connection closed",
         "broken pipe",
@@ -762,6 +763,25 @@ pub async fn fetch_remote_content(
     work_dir: &Path,
     path: &str,
 ) -> Result<Option<String>, String> {
+    for attempt in 1..=MAX_TRANSIENT_RETRIES {
+        match fetch_remote_content_once(provider, master_key, work_dir, path).await {
+            Err(error) if attempt < MAX_TRANSIENT_RETRIES && (is_recoverable_sync_error(&error) || is_missing_remotely_error(&error)) => {
+                // Read the index afresh too: the other device may have
+                // replaced/deleted this version between index and blob.
+                tokio::time::sleep(std::time::Duration::from_millis(400 * attempt as u64)).await;
+            }
+            result => return result,
+        }
+    }
+    unreachable!()
+}
+
+async fn fetch_remote_content_once(
+    provider: &dyn SyncProvider,
+    master_key: Option<&MasterKey>,
+    work_dir: &Path,
+    path: &str,
+) -> Result<Option<String>, String> {
     let Some((bytes, _version)) = provider.download_index().await? else { return Ok(None) };
     let remote_index: SyncIndex = match master_key {
         Some(mk) => super::index::decrypt(mk, &bytes)?,
@@ -791,7 +811,7 @@ pub async fn fetch_remote_content(
         _ => std::fs::read(temp.path()).map_err(|e| e.to_string())?,
     };
 
-    Ok(Some(String::from_utf8_lossy(&bytes).into_owned()))
+    String::from_utf8(bytes).map(Some).map_err(|e| format!("the server's copy is not UTF-8 text: {e}"))
 }
 
 #[cfg(test)]
@@ -1314,6 +1334,7 @@ mod tests {
     #[test]
     fn recoverable_error_classifier_matches_transient_network_failures() {
         assert!(is_recoverable_sync_error("failed to fill whole buffer"));
+        assert!(is_recoverable_sync_error("error decoding response body"));
         assert!(is_recoverable_sync_error("Connection reset by peer"));
         assert!(is_recoverable_sync_error("Server nicht erreichbar -- URL und Internetverbindung prüfen"));
         assert!(is_recoverable_sync_error("Zeitüberschreitung -- der Server antwortet nicht"));
@@ -1704,6 +1725,24 @@ mod tests {
         let merged = std::fs::read_to_string(b.path().join("inbox.org")).unwrap();
         for id in ["base", "a", "b1", "b2"] {
             assert_eq!(merged.matches(&format!("CUSTOM_ID: {id}\n")).count(), 1, "{merged}");
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn conflict_preview_retries_transient_failures_and_distinguishes_empty_from_deleted() {
+        for encrypted in [false, true] {
+            let provider = MockProvider::default();
+            let master = master_key();
+            let key = encrypted.then_some(&master);
+            let vault = TempDir::new().unwrap();
+            let work = TempDir::new().unwrap();
+            let state = db();
+            std::fs::write(vault.path().join("inbox.org"), "").unwrap();
+            run_sync(&provider, &state, vault.path(), key, work.path(), |_| {}).await.unwrap();
+            *provider.flaky_downloads_remaining.lock().unwrap() = 1;
+            assert_eq!(fetch_remote_content(&provider, key, work.path(), "inbox.org").await.unwrap(), Some(String::new()));
+            assert_eq!(fetch_remote_content(&provider, key, work.path(), "deleted.org").await.unwrap(), None);
+            assert_eq!(std::fs::read_to_string(vault.path().join("inbox.org")).unwrap(), "");
         }
     }
 

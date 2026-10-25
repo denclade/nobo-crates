@@ -232,7 +232,7 @@ impl SyncProvider for PocketBaseProvider {
         // is metadata (paths, hashes, wrapped keys), not file content, so
         // it stays orders of magnitude smaller than the large-attachment
         // case those two are built to avoid buffering in memory for.
-        let bytes = resp.bytes().await.map_err(|e| e.to_string())?.to_vec();
+        let bytes = resp.bytes().await.map_err(|e| nobo_http::describe_error(&e))?.to_vec();
         Ok(Some((bytes, IndexVersion::At(record.updated))))
     }
 
@@ -344,7 +344,7 @@ impl SyncProvider for PocketBaseProvider {
         let mut out = tokio::fs::File::create(local_path).await.map_err(|e| format!("failed to create {}: {e}", local_path.display()))?;
         let mut stream = resp.bytes_stream();
         while let Some(chunk) = stream.next().await {
-            out.write_all(&chunk.map_err(|e| e.to_string())?).await.map_err(|e| e.to_string())?;
+            out.write_all(&chunk.map_err(|e| nobo_http::describe_error(&e))?).await.map_err(|e| e.to_string())?;
         }
         out.flush().await.map_err(|e| e.to_string())?;
         Ok(())
