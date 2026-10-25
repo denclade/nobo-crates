@@ -200,6 +200,10 @@ impl SyncProvider for WebDavProvider {
             let chunk = chunk.map_err(|e| e.to_string())?;
             out.write_all(&chunk).await.map_err(|e| e.to_string())?;
         }
+        // Tokio's file writes can still be queued on the blocking pool
+        // after write_all returns. Conflict previews/decryption read this
+        // path synchronously next, so completion must include that write.
+        out.flush().await.map_err(|e| e.to_string())?;
         Ok(())
     }
 
@@ -609,6 +613,24 @@ mod tests {
             let upload = requests.iter().find(|request| request.url.path() == "/files/blob").unwrap();
             assert_eq!(upload.body, bytes);
             assert!(!upload.headers.contains_key("transfer-encoding"));
+        }
+    }
+
+    #[tokio::test]
+    async fn a_completed_download_is_immediately_readable_by_synchronous_consumers() {
+        for bytes in [Vec::new(), b"server version".to_vec(), vec![0x5a; 2 * 1024 * 1024 + 17]] {
+            let server = MockServer::start().await;
+            Mock::given(method("GET"))
+                .and(path("/files/blob"))
+                .respond_with(ResponseTemplate::new(200).set_body_bytes(bytes.clone()))
+                .mount(&server)
+                .await;
+            let provider = provider(&server).await;
+            for _ in 0..4 {
+                let file = tempfile::NamedTempFile::new().unwrap();
+                provider.download_file("blob", file.path()).await.unwrap();
+                assert_eq!(std::fs::read(file.path()).unwrap(), bytes);
+            }
         }
     }
 

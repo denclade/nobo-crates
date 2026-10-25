@@ -346,6 +346,7 @@ impl SyncProvider for PocketBaseProvider {
         while let Some(chunk) = stream.next().await {
             out.write_all(&chunk.map_err(|e| e.to_string())?).await.map_err(|e| e.to_string())?;
         }
+        out.flush().await.map_err(|e| e.to_string())?;
         Ok(())
     }
 
@@ -470,6 +471,31 @@ mod tests {
 
     fn session(user_id: &str) -> AuthSession {
         AuthSession { token: "test-token".into(), user_id: user_id.into(), verified: true }
+    }
+
+    #[tokio::test]
+    async fn a_completed_download_is_immediately_readable_for_decryption_and_preview() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/collections/user_files/records"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "page": 1, "perPage": 1, "totalItems": 1, "totalPages": 1,
+                "items": [{"id": "file1", "file": "blob.enc", "updated": "2026-10-25 00:00:00.000Z"}]
+            })))
+            .mount(&server)
+            .await;
+        let bytes = vec![0x5a; 2 * 1024 * 1024 + 17];
+        Mock::given(method("GET"))
+            .and(path("/api/files/user_files/file1/blob.enc"))
+            .respond_with(ResponseTemplate::new(200).set_body_bytes(bytes.clone()))
+            .mount(&server)
+            .await;
+        let provider = PocketBaseProvider::new(server.uri(), &session("u1")).unwrap();
+        for _ in 0..4 {
+            let file = tempfile::NamedTempFile::new().unwrap();
+            provider.download_file("blob", file.path()).await.unwrap();
+            assert_eq!(std::fs::read(file.path()).unwrap(), bytes);
+        }
     }
 
     #[tokio::test]
