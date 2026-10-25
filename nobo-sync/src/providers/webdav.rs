@@ -160,9 +160,15 @@ impl SyncProvider for WebDavProvider {
     async fn upload_file(&self, content_hash: &str, local_path: &Path) -> Result<(), String> {
         self.ensure_directories().await?;
         let file = tokio::fs::File::open(local_path).await.map_err(|e| format!("failed to open {}: {e}", local_path.display()))?;
+        // A file stream does not advertise its size to reqwest. Send the
+        // known length so WebDAV servers which require Content-Length do
+        // not treat a chunked PUT as an empty file (and its chunks as the
+        // next request on a persistent connection).
+        let length = file.metadata().await.map_err(|e| format!("failed to stat {}: {e}", local_path.display()))?.len();
         let resp = self
             .client
             .put(self.file_url(content_hash))
+            .header(reqwest::header::CONTENT_LENGTH, length.to_string())
             .body(reqwest::Body::from(file))
             .send()
             .await
@@ -582,6 +588,28 @@ mod tests {
         // Would fail to match any mock (wiremock 404s with a diagnostic)
         // if the Authorization header were missing or wrong.
         provider.download_index().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn streamed_file_uploads_send_the_exact_length_including_empty_files() {
+        for bytes in [Vec::new(), vec![0, 1, 127, 255]] {
+            let server = MockServer::start().await;
+            Mock::given(method("MKCOL")).respond_with(ResponseTemplate::new(405)).mount(&server).await;
+            Mock::given(method("PUT"))
+                .and(path("/files/blob"))
+                .and(header("Content-Length", bytes.len().to_string().as_str()))
+                .respond_with(ResponseTemplate::new(201))
+                .expect(1)
+                .mount(&server)
+                .await;
+            let file = tempfile::NamedTempFile::new().unwrap();
+            std::fs::write(file.path(), &bytes).unwrap();
+            provider(&server).await.upload_file("blob", file.path()).await.unwrap();
+            let requests = server.received_requests().await.unwrap();
+            let upload = requests.iter().find(|request| request.url.path() == "/files/blob").unwrap();
+            assert_eq!(upload.body, bytes);
+            assert!(!upload.headers.contains_key("transfer-encoding"));
+        }
     }
 
     #[tokio::test]
