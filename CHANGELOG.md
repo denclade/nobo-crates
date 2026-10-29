@@ -18,6 +18,12 @@ die dritte bleibt für Korrekturen.
 
 ### Behoben
 
+- Sync: Eine Inbox, die auf einem Gerät abgearbeitet (Einträge erledigt
+  oder verschoben) und auf einem anderen ergänzt wird, wird automatisch
+  zusammengeführt; ebenso der erste Sync zweier Inboxen mit gemeinsamen
+  Einträgen. Ein Eintrag, den eine Seite entfernt und die andere geändert
+  hat, landet dagegen in der manuellen Auflösung, statt die Änderung zu
+  verlieren.
 - CalDAV sortiert Erstellungszeiten auf derselben UTC-Skala wie explizite
   Sortierwerte; die bisherigen Regressionen laufen auch außerhalb von UTC.
 
