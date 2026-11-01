@@ -356,6 +356,86 @@ fn saving_a_draft_keeps_live_attachments_and_recycles_only_its_discarded_links()
     assert_eq!(text.matches("[[file:.attachments/kept.png]]").count(), 1);
 }
 
+#[test]
+fn replacing_a_heading_with_another_id_keeps_the_deleted_one_recoverable() {
+    let f = Fixture::new();
+    f.write("a.org", "* TODO Original\n:PROPERTIES:\n:CUSTOM_ID: old-id\n:END:\nOld description\n");
+    f.edit("a.org", "* TODO Replacement\n:PROPERTIES:\n:CUSTOM_ID: new-id\n:END:\nNew description\n");
+    let entries = f.entries();
+    assert_eq!(entries.len(), 1);
+    f.restore(&entries[0].id).unwrap();
+    let text = fs::read_to_string(f.path("a.org")).unwrap();
+    assert!(text.contains("Old description"));
+    assert!(text.contains("New description"));
+}
+
+#[test]
+fn restoring_a_heading_refuses_a_reused_binary_owner_file() {
+    let f = Fixture::new();
+    f.write("a.org", "* TODO Deleted\nOriginal\n* TODO Kept\n");
+    f.edit("a.org", "* TODO Kept\n");
+    let id = f.entries()[0].id.clone();
+    f.write("a.org", [255, 254, 0, 13]);
+    assert!(f.restore(&id).is_err());
+    assert_eq!(fs::read(f.path("a.org")).unwrap(), [255, 254, 0, 13]);
+    assert_eq!(f.entries().len(), 1);
+}
+
+#[test]
+fn restoring_a_heading_requires_its_missing_owner_file_to_be_restored_first() {
+    let f = Fixture::new();
+    f.write("a.org", "* TODO Deleted\n* TODO Kept\n");
+    f.edit("a.org", "* TODO Kept\n");
+    let id = f.entries()[0].id.clone();
+    fs::remove_file(f.path("a.org")).unwrap();
+    assert!(f.restore(&id).is_err());
+    assert!(!f.path("a.org").exists());
+    assert_eq!(f.entries().len(), 1);
+}
+
+#[test]
+fn deleting_an_archive_preserves_its_draft_even_if_it_contains_the_only_attachment_link() {
+    let f = Fixture::new();
+    let path = f.write("a.org_archive", "Saved archive\n");
+    let draft = f.write("#a.org_archive#", "Draft\n[[file:.attachments/draft.png]]\n");
+    f.write(".attachments/draft.png", [255, 3]);
+    vault_write::recorded(
+        &path,
+        |_| HistoryEntryKind::FileDeleted { filename: "a.org_archive".into() },
+        &f.index,
+        &f.db,
+        || {
+            fs::remove_file(&path).unwrap();
+            fs::remove_file(&draft).unwrap();
+            Ok(())
+        },
+    )
+    .unwrap();
+    let id = f.entries()[0].id.clone();
+    f.restore(&id).unwrap();
+    assert_eq!(fs::read_to_string(draft).unwrap(), "Draft\n[[file:.attachments/draft.png]]\n");
+    assert!(f.path(".attachments/draft.png").exists());
+}
+
+#[test]
+fn a_failed_preimage_backup_prevents_the_destructive_write() {
+    let f = Fixture::new();
+    let path = f.write("a.org", "Unique irreplaceable content\n");
+    f.db.lock()
+        .unwrap()
+        .execute_batch("CREATE TRIGGER fail_backup BEFORE INSERT ON trash_files BEGIN SELECT RAISE(FAIL, 'simulated full disk'); END;")
+        .unwrap();
+    let result = vault_write::recorded(
+        &path,
+        |_| HistoryEntryKind::FileDeleted { filename: "a.org".into() },
+        &f.index,
+        &f.db,
+        || fs::remove_file(&path).map_err(|e| e.to_string()),
+    );
+    assert!(result.is_err());
+    assert_eq!(fs::read_to_string(path).unwrap(), "Unique irreplaceable content\n");
+}
+
 #[cfg(unix)]
 #[test]
 fn symlinked_attachment_folders_never_delete_external_data() {
@@ -366,4 +446,181 @@ fn symlinked_attachment_folders_never_delete_external_data() {
     f.write("a.org", "[[file:.attachments/x.png]]");
     f.delete("a.org");
     assert!(external.path().join("x.png").exists());
+}
+
+#[test]
+fn durable_backups_use_full_sync_and_restore_the_connection_setting_on_success_and_failure() {
+    let f = Fixture::new();
+    let conn = f.db.lock().unwrap();
+    conn.pragma_update(None, "synchronous", 1).unwrap();
+    durable_transaction(&conn, |tx| {
+        let sync: i64 = tx.pragma_query_value(None, "synchronous", |r| r.get(0)).unwrap();
+        assert_eq!(sync, 2);
+        tx.execute("INSERT INTO trash_entries(id, root, label, deleted_at, expires_at, attachments_dir) VALUES ('full', '/', 'full', 0, 1, '.attachments')", []).unwrap();
+        Ok(())
+    })
+    .unwrap();
+    assert_eq!(conn.pragma_query_value(None, "synchronous", |r| r.get::<_, i64>(0)).unwrap(), 1);
+    let result: Result<(), String> = durable_transaction(&conn, |tx| {
+        tx.execute("DELETE FROM trash_entries WHERE id = 'full'", []).unwrap();
+        Err("simulated backup failure".into())
+    });
+    assert!(result.is_err());
+    assert_eq!(conn.pragma_query_value(None, "synchronous", |r| r.get::<_, i64>(0)).unwrap(), 1);
+    assert_eq!(conn.query_row("SELECT COUNT(*) FROM trash_entries WHERE id = 'full'", [], |r| r.get::<_, i64>(0)).unwrap(), 1);
+    let tx = conn.unchecked_transaction().unwrap();
+    assert!(durable_transaction(&conn, |_| Ok(())).is_err());
+    drop(tx);
+}
+
+#[test]
+fn undo_preflights_all_retained_files_before_restoring_any_of_them() {
+    let f = Fixture::new();
+    f.write("a.org", "[[file:.attachments/a.png]]\n[[file:.attachments/z.png]]\n");
+    f.write(".attachments/a.png", b"original-a");
+    f.write(".attachments/z.png", b"original-z");
+    f.delete("a.org");
+    f.write(".attachments/z.png", b"replacement");
+    let conn = f.db.lock().unwrap();
+    assert!(history::undo(&conn, &f.index).is_err());
+    assert!(!f.path("a.org").exists());
+    assert!(!f.path(".attachments/a.png").exists());
+    assert_eq!(fs::read(f.path(".attachments/z.png")).unwrap(), b"replacement");
+    assert_eq!(list(&conn, f.dir.path()).unwrap().len(), 1);
+    assert!(!history::list(&conn, 1).unwrap()[0].undone);
+}
+
+#[test]
+fn a_refile_preserves_attachment_and_does_not_create_a_deletion_entry() {
+    let f = Fixture::new();
+    let source = f.write("source.org", "* TODO Move\n:PROPERTIES:\n:CUSTOM_ID: move-id\n:END:\n[[file:.attachments/x.png]]\n");
+    let destination = f.write("target.org", "* TODO Kept\n");
+    f.write(".attachments/x.png", b"image");
+    let original = fs::read_to_string(&source).unwrap();
+    vault_write::edit_files_in(f.dir.path(), &[&source, &destination], None, &f.index, &f.db, |_| {
+        Ok((vec![String::new(), format!("* TODO Kept\n{original}")], ()))
+    })
+    .unwrap();
+    assert!(f.entries().is_empty());
+    assert_eq!(fs::read(f.path(".attachments/x.png")).unwrap(), b"image");
+}
+
+#[test]
+fn a_queued_autosave_recovers_recycled_bytes_and_its_draft_protects_them_from_gc() {
+    let f = Fixture::new();
+    f.write("a.org", "[[file:.attachments/x.png]]");
+    f.write("b.org", "Saved note\n");
+    f.write(".attachments/x.png", [255, 9]);
+    f.delete("a.org");
+    assert!(!f.path(".attachments/x.png").exists());
+    vault_write::save_draft(&f.path("b.org"), "Draft\n[[file:.attachments/x.png]]\n", &f.index, &f.db).unwrap();
+    assert_eq!(fs::read(f.path(".attachments/x.png")).unwrap(), [255, 9]);
+    assert!(attachments::find_orphaned(&Policy::new(f.dir.path(), ".attachments", 31)).unwrap().is_empty());
+    assert_eq!(fs::read_to_string(f.path("b.org")).unwrap(), "Saved note\n");
+}
+
+#[test]
+fn reconciling_interrupted_writes_never_collects_files_without_the_vault_lock() {
+    let f = Fixture::new();
+    let path = f.write("a.org", "[[file:.attachments/x.png]]");
+    f.write(".attachments/x.png", b"image");
+    let protection = Protection::prepare(&Policy::new(f.dir.path(), ".attachments", 31), &[&path], &f.db).unwrap();
+    fs::remove_file(path).unwrap();
+    drop(protection);
+    assert_eq!(f.entries().len(), 1);
+    assert!(f.path(".attachments/x.png").exists());
+}
+
+#[test]
+fn maintenance_does_not_expire_a_backup_that_cannot_be_reconciled() {
+    let f = Fixture::new();
+    let path = f.write("a.org", "Irreplaceable\n");
+    let protection = Protection::prepare(&Policy::new(f.dir.path(), ".attachments", 31), &[&path], &f.db).unwrap();
+    drop(protection);
+    fs::remove_file(&path).unwrap();
+    fs::create_dir(&path).unwrap(); // Reading the owner now fails with IsADirectory.
+    let conn = f.db.lock().unwrap();
+    maintain(&conn, chrono::Utc::now().timestamp() + 32 * 86400).unwrap();
+    let count: i64 =
+        conn.query_row("SELECT COUNT(*) FROM trash_files WHERE before_bytes = ?1", [b"Irreplaceable\n".as_slice()], |r| r.get(0)).unwrap();
+    assert_eq!(count, 1);
+}
+
+#[test]
+fn undoing_creation_keeps_the_deleted_file_recoverable_after_history_pruning() {
+    let f = Fixture::new();
+    let path = f.write("a.org", "Created note\n");
+    let conn = f.db.lock().unwrap();
+    history::record(
+        &conn,
+        HistoryEntryKind::FileCreated { filename: "a.org".into() },
+        false,
+        vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: None, after: Some("Created note\n".into()) }],
+    )
+    .unwrap();
+    history::undo(&conn, &f.index).unwrap();
+    assert!(!path.exists());
+    history::store::prune(&conn, 0, 0).unwrap();
+    let entry = list(&conn, f.dir.path()).unwrap().remove(0);
+    restore(&conn, f.dir.path(), &entry.id, &f.index).unwrap();
+    assert_eq!(fs::read_to_string(path).unwrap(), "Created note\n");
+}
+
+#[test]
+fn equal_count_replacement_of_handwritten_headings_is_also_recoverable() {
+    let f = Fixture::new();
+    f.write("a.org", "* TODO Original\nOld description\n");
+    f.edit("a.org", "* TODO Replacement\nNew description\n");
+    let entry = f.entries().remove(0);
+    f.restore(&entry.id).unwrap();
+    let text = fs::read_to_string(f.path("a.org")).unwrap();
+    assert!(text.contains("Old description"));
+    assert!(text.contains("New description"));
+}
+
+#[test]
+fn undo_redo_creation_recovers_attachments_and_only_shows_the_latest_deletion() {
+    let f = Fixture::new();
+    let content = "Created\n[[file:.attachments/x.png]]\n";
+    let path = f.write("a.org", content);
+    f.write(".attachments/x.png", [255, 7]);
+    let conn = f.db.lock().unwrap();
+    history::record(
+        &conn,
+        HistoryEntryKind::FileCreated { filename: "a.org".into() },
+        false,
+        vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: None, after: Some(content.into()) }],
+    )
+    .unwrap();
+    history::undo(&conn, &f.index).unwrap();
+    assert!(!path.exists());
+    assert!(!f.path(".attachments/x.png").exists());
+    assert_eq!(list(&conn, f.dir.path()).unwrap().len(), 1);
+    history::redo(&conn, &f.index).unwrap();
+    assert_eq!(fs::read_to_string(&path).unwrap(), content);
+    assert_eq!(fs::read(f.path(".attachments/x.png")).unwrap(), [255, 7]);
+    assert!(list(&conn, f.dir.path()).unwrap().is_empty());
+    history::undo(&conn, &f.index).unwrap();
+    let entries = list(&conn, f.dir.path()).unwrap();
+    assert_eq!(entries.len(), 1);
+    history::store::prune(&conn, 0, 0).unwrap();
+    restore(&conn, f.dir.path(), &entries[0].id, &f.index).unwrap();
+    assert_eq!(fs::read_to_string(path).unwrap(), content);
+    assert_eq!(fs::read(f.path(".attachments/x.png")).unwrap(), [255, 7]);
+}
+
+#[test]
+fn existing_trash_databases_migrate_history_direction_without_losing_backups() {
+    let conn = Connection::open_in_memory().unwrap();
+    conn.execute_batch(
+        "CREATE TABLE trash_entries (
+        id TEXT PRIMARY KEY, root TEXT NOT NULL, label TEXT NOT NULL, deleted_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL, pending INTEGER NOT NULL DEFAULT 1, restored INTEGER NOT NULL DEFAULT 0,
+        history_id INTEGER, attachments_dir TEXT NOT NULL);
+        INSERT INTO trash_entries VALUES ('old', '/', 'kept', 0, 1, 0, 0, NULL, '.attachments');",
+    )
+    .unwrap();
+    init_schema(&conn).unwrap();
+    init_schema(&conn).unwrap();
+    assert_eq!(conn.query_row("SELECT history_reversed FROM trash_entries WHERE id = 'old'", [], |r| r.get::<_, i64>(0)).unwrap(), 0);
 }

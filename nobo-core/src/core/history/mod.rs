@@ -53,6 +53,45 @@ pub fn record(conn: &Connection, kind: HistoryEntryKind, is_draft: bool, snapsho
     store::prune(conn, MAX_ENTRIES, MAX_HISTORY_BYTES).to_cmd()
 }
 
+/// Check every target before touching any of them. History is a snapshot,
+/// not permission to overwrite edits made since the action was recorded.
+fn preflight_restore(entry: &HistoryEntry, is_undo: bool) -> Result<(), String> {
+    for snap in &entry.snapshots {
+        let expected = if is_undo { &snap.after } else { &snap.before };
+        let desired = if is_undo { &snap.before } else { &snap.after };
+        let target = if entry.is_draft { temp_file_utils::temp_path_for(&snap.path) } else { snap.path.clone() };
+        let current = read_optional(Path::new(&target))?;
+        let expected = expected.as_deref().map(str::as_bytes);
+        let desired = desired.as_deref().map(str::as_bytes);
+        if current.as_deref() != expected && current.as_deref() != desired {
+            return Err(restore_conflict(&target));
+        }
+        if !entry.is_draft {
+            let draft = temp_file_utils::temp_path_for(&snap.path);
+            if read_optional(Path::new(&draft))?.as_deref().is_some_and(|bytes| Some(bytes) != expected && Some(bytes) != desired) {
+                return Err(restore_conflict(&draft));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn restore_conflict(path: &str) -> String {
+    crate::t!(
+        "Die Datei wurde inzwischen geändert; Wiederherstellen würde Änderungen überschreiben: {}",
+        "The file has changed; restoring would overwrite edits: {}",
+        path
+    )
+}
+
+fn read_optional(path: &Path) -> Result<Option<Vec<u8>>, String> {
+    match std::fs::read(path) {
+        Ok(bytes) => Ok(Some(bytes)),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(format!("{}: {e}", path.display())),
+    }
+}
+
 fn apply_restore(entry: &Option<HistoryEntry>, index_manager: &IndexManager, is_undo: bool) -> Result<(), String> {
     let Some(entry) = entry else { return Ok(()) };
 
@@ -68,9 +107,11 @@ fn apply_restore(entry: &Option<HistoryEntry>, index_manager: &IndexManager, is_
             Some(c) => {
                 fs_utils::write_atomic(Path::new(&target), c).to_cmd()?;
             }
-            None => {
-                let _ = std::fs::remove_file(&target);
-            }
+            None => match std::fs::remove_file(&target) {
+                Ok(()) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(e) => return Err(format!("{target}: {e}")),
+            },
         }
 
         if !entry.is_draft {
@@ -78,7 +119,7 @@ fn apply_restore(entry: &Option<HistoryEntry>, index_manager: &IndexManager, is_
             // content just restored here the next time this note is
             // opened (see temp_file_utils::load_with_temp_check) --
             // undo/redo would look like it silently did nothing.
-            let _ = temp_file_utils::remove_temp_if_exists(&snap.path);
+            temp_file_utils::remove_temp_if_exists(&snap.path)?;
 
             let p = Path::new(&snap.path);
             match content {
@@ -94,10 +135,15 @@ pub fn undo(conn: &Connection, index_manager: &IndexManager) -> Result<Option<Hi
     super::trash::maintain(conn, chrono::Utc::now().timestamp())?;
     let entry = store::undo_toggle(conn).to_cmd()?;
     let restored = (|| {
-        if let Some(entry) = &entry {
-            super::trash::restore_history_files(conn, entry.id, index_manager, true)?;
+        if let Some(action) = &entry {
+            preflight_restore(action, true)?;
+            super::trash::protect_undo(conn, index_manager, action, || {
+                super::trash::restore_history_files(conn, action.id, index_manager, true)?;
+                apply_restore(&entry, index_manager, true)
+            })?;
+            super::trash::mark_history_restored(conn, action.id, true)?;
         }
-        apply_restore(&entry, index_manager, true)
+        Ok::<_, String>(())
     })();
     if restored.is_err() {
         if let Some(entry) = &entry {
@@ -113,10 +159,12 @@ pub fn redo(conn: &Connection, index_manager: &IndexManager) -> Result<Option<Hi
     let entry = store::redo_toggle(conn).to_cmd()?;
     let restored = (|| {
         if let Some(action) = &entry {
+            preflight_restore(action, false)?;
             super::trash::protect_redo(conn, index_manager, action, || apply_restore(&entry, index_manager, false))?;
         }
         if let Some(entry) = &entry {
             super::trash::restore_history_files(conn, entry.id, index_manager, false)?;
+            super::trash::mark_history_restored(conn, entry.id, false)?;
         }
         Ok::<_, String>(())
     })();
@@ -276,6 +324,7 @@ mod tests {
         )
         .unwrap();
 
+        temp_file_utils::write_temp(&path_str, "draft v2").unwrap();
         undo(&conn, &index).unwrap();
 
         assert_eq!(std::fs::read_to_string(&real_path).unwrap(), "on disk, untouched", "real file must never be touched for a draft entry");
@@ -331,6 +380,7 @@ mod tests {
         )
         .unwrap();
 
+        std::fs::write(&path, "v3").unwrap();
         let touched = jump_to(&conn, &index, target_id).unwrap();
         assert_eq!(touched.len(), 2, "undid the v2->v3 and v1->v2 actions");
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "v1");
@@ -361,6 +411,7 @@ mod tests {
         .unwrap();
         let target_id = list(&conn, 1).unwrap()[0].id;
 
+        std::fs::write(&path, "v2").unwrap();
         undo(&conn, &index).unwrap();
         undo(&conn, &index).unwrap();
         assert!(!path.exists());
@@ -407,5 +458,73 @@ mod tests {
         let entries = list_for_path(&conn, "/a.org", 10).unwrap();
         assert_eq!(entries.len(), 1);
         assert!(matches!(&entries[0].kind, HistoryEntryKind::FileEdited { filename } if filename == "a.org"));
+    }
+    #[test]
+    fn undo_preflights_all_files_and_preserves_external_edits_and_history_state() {
+        let dir = TempDir::new().unwrap();
+        let a = dir.path().join("a.org");
+        let b = dir.path().join("b.org");
+        std::fs::write(&a, "after").unwrap();
+        std::fs::write(&b, "external edit").unwrap();
+        let conn = conn();
+        record(
+            &conn,
+            HistoryEntryKind::HeadingsBulkDeleted { count: 2, filename: "a.org".into() },
+            false,
+            [&a, &b]
+                .into_iter()
+                .map(|path| FileSnapshot {
+                    path: path.to_string_lossy().into_owned(),
+                    before: Some("before".into()),
+                    after: Some("after".into()),
+                })
+                .collect(),
+        )
+        .unwrap();
+        assert!(undo(&conn, &IndexManager::new()).is_err());
+        assert_eq!(std::fs::read_to_string(a).unwrap(), "after");
+        assert_eq!(std::fs::read_to_string(b).unwrap(), "external edit");
+        assert!(!list(&conn, 1).unwrap()[0].undone);
+    }
+
+    #[test]
+    fn undo_preserves_a_newer_autosaved_draft() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("a.org");
+        std::fs::write(&path, "after").unwrap();
+        let path = path.to_string_lossy().into_owned();
+        temp_file_utils::write_temp(&path, "unsaved new work").unwrap();
+        let conn = conn();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: path.clone(), before: Some("before".into()), after: Some("after".into()) }],
+        )
+        .unwrap();
+        assert!(undo(&conn, &IndexManager::new()).is_err());
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "after");
+        assert_eq!(std::fs::read_to_string(temp_file_utils::temp_path_for(&path)).unwrap(), "unsaved new work");
+    }
+
+    #[test]
+    fn redo_refuses_a_file_replaced_since_undo() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("a.org");
+        std::fs::write(&path, "after").unwrap();
+        let conn = conn();
+        let index = IndexManager::new();
+        record(
+            &conn,
+            HistoryEntryKind::FileEdited { filename: "a.org".into() },
+            false,
+            vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before: Some("before".into()), after: Some("after".into()) }],
+        )
+        .unwrap();
+        undo(&conn, &index).unwrap();
+        std::fs::write(&path, [255, 254]).unwrap();
+        assert!(redo(&conn, &index).is_err());
+        assert_eq!(std::fs::read(&path).unwrap(), [255, 254]);
+        assert!(list(&conn, 1).unwrap()[0].undone);
     }
 }

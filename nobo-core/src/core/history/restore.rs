@@ -199,12 +199,37 @@ enum HeadingRestoreOutcome {
     NotFeasible { reason: String },
 }
 
+fn resolve_unique<'a>(flat: &'a [Heading], identity: &HeadingIdentity) -> Option<&'a Heading> {
+    let mut matches = flat.iter().filter(|heading| match identity {
+        HeadingIdentity::CustomId(id) => heading_identity::custom_id_of(heading) == Some(id.as_str()),
+        HeadingIdentity::Title(title) => &heading.title == title,
+    });
+    let found = matches.next()?;
+    matches.next().is_none().then_some(found)
+}
+
 fn resolve_restore_delete(removed: RemovedHeading, current_flat: &[Heading]) -> HeadingRestoreOutcome {
+    // Never duplicate an identity that is already in the current file,
+    // including descendants of a removed subtree.
+    let removed_flat = org_parser::parse_headings_from_lines(std::path::Path::new("restore.org"), &removed.raw_lines);
+    if removed_flat.iter().any(|removed| {
+        current_flat.iter().any(|current| match heading_identity::capture_identity(removed) {
+            HeadingIdentity::CustomId(id) => heading_identity::custom_id_of(current) == Some(id.as_str()),
+            HeadingIdentity::Title(_) => false,
+        })
+    }) {
+        return HeadingRestoreOutcome::NotFeasible {
+            reason: crate::t!(
+                "Eine wiederherzustellende Überschrift existiert bereits in der Datei.",
+                "A heading being restored already exists in the file."
+            ),
+        };
+    }
     // `Some(None)` = top-level (no parent to resolve at all), `Some(Some(line_no))` =
     // parent still exists at `line_no`, `None` = had a parent but it's gone.
     let resolved_parent: Option<Option<usize>> = match &removed.parent_identity {
         None => Some(None),
-        Some(identity) => heading_identity::resolve(current_flat, identity).map(|h| Some(h.line_no)),
+        Some(identity) => resolve_unique(current_flat, identity).map(|h| Some(h.line_no)),
     };
 
     // The next-sibling anchor is only trusted if it resolves to a heading
@@ -214,7 +239,7 @@ fn resolve_restore_delete(removed: RemovedHeading, current_flat: &[Heading]) -> 
     // project, even if it happens to still exist somewhere.
     if let Some(expected_parent) = resolved_parent {
         if let Some(sibling_identity) = &removed.next_sibling_identity {
-            if let Some(sibling) = heading_identity::resolve(current_flat, sibling_identity) {
+            if let Some(sibling) = resolve_unique(current_flat, sibling_identity) {
                 let sibling_idx = current_flat.iter().position(|h| h.line_no == sibling.line_no).unwrap();
                 let sibling_parent = heading_utils::ancestors_of(current_flat, sibling_idx).into_iter().next().map(|p| p.line_no);
                 if sibling_parent == expected_parent {
@@ -244,7 +269,7 @@ fn resolve_restore_delete(removed: RemovedHeading, current_flat: &[Heading]) -> 
 }
 
 fn resolve_restore_update(revert: UpdateRevert, current_flat: &[Heading]) -> HeadingRestoreOutcome {
-    match heading_identity::resolve(current_flat, &revert.identity) {
+    match resolve_unique(current_flat, &revert.identity) {
         Some(h) => {
             let target_line_no = h.line_no;
             HeadingRestoreOutcome::Feasible(RestoreAction::PatchFields { target_line_no, payload: revert.payload })
@@ -409,9 +434,9 @@ fn check_bulk(entry: &crate::core::models::HistoryEntry) -> HeadingRestoreCheck 
 /// `before` text, recreating it if missing and removing it if `before` is
 /// `None`.
 ///
-/// Stops on the first failure rather than leaving partial state, with a
-/// message naming which file -- `io::Error`'s own Display never includes
-/// the path, which is why every write is wrapped here.
+/// Preflights conflicts for all files before writing. A later I/O failure
+/// keeps the original action and its backups available for a retry; it
+/// never marks a partial restore as completed.
 fn apply_bulk(conn: &Connection, index_manager: &IndexManager, entry: &crate::core::models::HistoryEntry) -> Result<(), String> {
     if entry.snapshots.is_empty() {
         return Err(crate::t!("Kein Inhalt gespeichert -- nicht wiederherstellbar.", "No content was recorded -- nothing to restore."));
@@ -438,9 +463,29 @@ fn apply_bulk(conn: &Connection, index_manager: &IndexManager, entry: &crate::co
         }
     }
 
+    let current: Vec<_> = entry
+        .snapshots
+        .iter()
+        .map(|snap| {
+            let bytes = history::read_optional(std::path::Path::new(&snap.path))?;
+            let text = bytes.map(String::from_utf8).transpose().map_err(|e| format!("{}: {e}", snap.path))?;
+            // Missing files can be explicitly recreated. Existing files
+            // must still be the recorded result or already restored.
+            if text.is_some() && text != snap.after && text != snap.before {
+                return Err(history::restore_conflict(&snap.path));
+            }
+            let draft = crate::utils::temp_file_utils::temp_path_for(&snap.path);
+            if history::read_optional(std::path::Path::new(&draft))?.as_deref().is_some_and(|bytes| {
+                Some(bytes) != snap.after.as_deref().map(str::as_bytes) && Some(bytes) != snap.before.as_deref().map(str::as_bytes)
+            }) {
+                return Err(history::restore_conflict(&draft));
+            }
+            Ok(text)
+        })
+        .collect::<Result<_, String>>()?;
     super::super::trash::restore_history_files(conn, entry.id, index_manager, true)?;
     let mut restored_snapshots = Vec::with_capacity(entry.snapshots.len());
-    for snap in &entry.snapshots {
+    for (snap, current) in entry.snapshots.iter().zip(current) {
         let path = PathBuf::from(&snap.path);
         match &snap.before {
             Some(content) => {
@@ -454,16 +499,21 @@ fn apply_bulk(conn: &Connection, index_manager: &IndexManager, entry: &crate::co
                 index_manager.update_file(&path);
             }
             None => {
-                let _ = std::fs::remove_file(&path);
+                match std::fs::remove_file(&path) {
+                    Ok(()) => {}
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(e) => return Err(format!("{}: {e}", path.display())),
+                }
                 index_manager.remove_file(&path);
             }
         }
-        // Swapped before/after -- undoing THIS new entry (via the normal
-        // global undo stack) re-applies the original bulk action, same
-        // convention Reinsert/PatchFields already use below.
-        restored_snapshots.push(FileSnapshot { path: snap.path.clone(), before: snap.after.clone(), after: snap.before.clone() });
+        crate::utils::temp_file_utils::remove_temp_if_exists(&snap.path)?;
+        // Record the real pre-restore state, including a file which was
+        // missing, so undo of this restore never invents prior content.
+        restored_snapshots.push(FileSnapshot { path: snap.path.clone(), before: current, after: snap.before.clone() });
     }
 
+    super::super::trash::mark_history_restored(conn, entry.id, true)?;
     let primary_filename =
         PathBuf::from(&entry.snapshots[0].path).file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
     let _ = history::record(
@@ -539,7 +589,7 @@ fn compute(entry: &crate::core::models::HistoryEntry) -> Result<Computation, Str
             // update_heading_in_file itself uses for its own HeadingUpdated
             // entries, so a revert's own history label reads the same way
             // any other edit's does.
-            let title = heading_identity::resolve(&current_flat, &revert.identity).map(|h| h.title.clone()).unwrap_or_default();
+            let title = resolve_unique(&current_flat, &revert.identity).map(|h| h.title.clone()).unwrap_or_default();
             (resolve_restore_update(revert, &current_flat), title)
         }
     };
@@ -644,7 +694,7 @@ pub fn apply(conn: &Connection, index_manager: &IndexManager, entry_id: i64) -> 
 
     super::super::trash::restore_history_files(conn, entry_id, index_manager, true)?;
 
-    match action {
+    let result = match action {
         RestoreAction::Reinsert { anchor, raw_lines } => {
             let (before, result, after) = history::snapshot_around(&path, || {
                 match anchor {
@@ -707,7 +757,9 @@ pub fn apply(conn: &Connection, index_manager: &IndexManager, entry_id: i64) -> 
             }
             result
         }
-    }
+    };
+    result?;
+    super::super::trash::mark_history_restored(conn, entry_id, true)
 }
 
 #[cfg(test)]
@@ -1199,13 +1251,13 @@ mod tests {
     }
 
     #[test]
-    fn restore_picks_the_first_matching_parent_when_titles_are_duplicated() {
+    fn restore_refuses_to_guess_a_parent_when_titles_are_duplicated() {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("projects.org");
         let before = "* Project A                                                        :project:\n** TODO Subtask One\n";
         let after = "* Project A                                                        :project:\n";
-        // The CURRENT file has two headings sharing the exact same title --
-        // resolve_restore_delete's documented "first match wins" behavior.
+        // The current file has two possible parents and no stable IDs.
+        // Picking the first one would silently put the item in an arbitrary project.
         std::fs::write(
             &path,
             concat!(
@@ -1218,14 +1270,10 @@ mod tests {
         let index = IndexManager::new();
         let id = record_delete(&conn, &path, before, after, "Subtask One");
 
-        apply(&conn, &index, id).unwrap();
-        let result = std::fs::read_to_string(&path).unwrap();
-        let lines: Vec<&str> = result.lines().collect();
-        // Restored right after the FIRST "Project A" line, before the second one.
-        let first_project = lines.iter().position(|l| l.contains("Project A")).unwrap();
-        let subtask = lines.iter().position(|l| l.contains("Subtask One")).unwrap();
-        let second_project = lines.iter().rposition(|l| l.contains("Project A")).unwrap();
-        assert!(first_project < subtask && subtask < second_project, "restored under the first occurrence: {result}");
+        let original = std::fs::read_to_string(&path).unwrap();
+        assert!(!check(&conn, id).unwrap().feasible);
+        assert!(apply(&conn, &index, id).is_err());
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), original);
     }
 
     #[test]
@@ -1693,7 +1741,7 @@ mod tests {
     /// per source file, not one for the whole multi-file selection).
     /// Restoring the OLDER one must not require or disturb the newer one.
     #[test]
-    fn two_separate_bulk_refiles_out_of_the_same_project_restore_independently() {
+    fn an_older_bulk_restore_refuses_to_discard_a_later_refile() {
         let dir = TempDir::new().unwrap();
         let src_path = dir.path().join("actions.org");
         let tgt_path = dir.path().join("projects.org");
@@ -1731,14 +1779,11 @@ mod tests {
             "projects.org",
         );
 
-        // Restoring the OLDER entry directly (not via the linear stack) --
-        // brings the files back to right after the FIRST refile, i.e. Task
-        // B still shows up in the target (from the second refile, which
-        // this restore neither knows nor needs to know about) alongside
-        // Task A moving back to the source.
-        apply(&conn, &index, older_id).unwrap();
-        assert_eq!(std::fs::read_to_string(&tgt_path).unwrap(), tgt_v1, "reverts the WHOLE file to the older entry's own before state (see this module's own whole-file-restore doc comment) -- including undoing the second refile's contribution too, since there's no per-heading tracking to separate them");
-        assert_eq!(std::fs::read_to_string(&src_path).unwrap(), src_v1, "source likewise reverted all the way back");
+        // The older snapshot cannot distinguish B's later move from
+        // unrelated edits. Refuse rather than silently discarding it.
+        assert!(apply(&conn, &index, older_id).is_err());
+        assert_eq!(std::fs::read_to_string(&tgt_path).unwrap(), tgt_v3);
+        assert_eq!(std::fs::read_to_string(&src_path).unwrap(), src_v3);
     }
 
     /// "mehrere dateien aus mehreren projekten refiled" -- bulk refiles out

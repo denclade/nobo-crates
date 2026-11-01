@@ -9,12 +9,12 @@ mod reinsert;
 #[cfg(test)]
 mod tests;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension, Transaction};
 use serde::Serialize;
 
 use super::attachments;
@@ -43,7 +43,8 @@ pub fn init_schema(conn: &Connection) -> rusqlite::Result<()> {
             id TEXT PRIMARY KEY, root TEXT NOT NULL, label TEXT NOT NULL,
             deleted_at INTEGER NOT NULL, expires_at INTEGER NOT NULL,
             pending INTEGER NOT NULL DEFAULT 1, restored INTEGER NOT NULL DEFAULT 0,
-            history_id INTEGER, attachments_dir TEXT NOT NULL
+            history_id INTEGER, attachments_dir TEXT NOT NULL,
+            history_reversed INTEGER NOT NULL DEFAULT 0
          );
          CREATE TABLE IF NOT EXISTS trash_files (
             entry_id TEXT NOT NULL REFERENCES trash_entries(id) ON DELETE CASCADE,
@@ -52,7 +53,15 @@ pub fn init_schema(conn: &Connection) -> rusqlite::Result<()> {
          );
          CREATE INDEX IF NOT EXISTS idx_trash_expiry ON trash_entries(expires_at);
          CREATE INDEX IF NOT EXISTS idx_trash_file_path ON trash_files(path);",
-    )
+    )?;
+    let has_direction: bool =
+        conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('trash_entries') WHERE name = 'history_reversed')", [], |r| {
+            r.get(0)
+        })?;
+    if !has_direction {
+        conn.execute_batch("ALTER TABLE trash_entries ADD COLUMN history_reversed INTEGER NOT NULL DEFAULT 0")?;
+    }
+    Ok(())
 }
 
 #[derive(Clone)]
@@ -86,6 +95,30 @@ impl Policy {
     }
 }
 
+/// A backup must reach stable storage before the filesystem mutation.
+/// The app normally uses WAL/NORMAL; that only promises durability after
+/// a checkpoint. FULL syncs this commit's WAL before we unlink any bytes.
+fn durable_transaction<T>(conn: &Connection, work: impl FnOnce(&Transaction<'_>) -> Result<T, String>) -> Result<T, String> {
+    if !conn.is_autocommit() {
+        return Err("A recycle-bin backup requires its own durable transaction".to_string());
+    }
+    let previous: i64 = conn.pragma_query_value(None, "synchronous", |row| row.get(0)).to_cmd()?;
+    struct RestoreSync<'a>(&'a Connection, i64);
+    impl Drop for RestoreSync<'_> {
+        fn drop(&mut self) {
+            if let Err(e) = self.0.pragma_update(None, "synchronous", self.1) {
+                log::warn!("Could not restore SQLite synchronous setting: {e}");
+            }
+        }
+    }
+    conn.pragma_update(None, "synchronous", previous.max(2)).to_cmd()?;
+    let _restore = RestoreSync(conn, previous);
+    let tx = conn.unchecked_transaction().to_cmd()?;
+    let result = work(&tx)?;
+    tx.commit().to_cmd()?;
+    Ok(result)
+}
+
 /// Kept on disk even if the process dies between the write and finish.
 /// On the next list/maintenance pass pending entries are reconciled with
 /// the real files. Unchanged files are discarded, actual deletions retained.
@@ -117,48 +150,49 @@ impl Protection {
         let protection = Self { id: id.clone(), policy: policy.clone() };
         active().lock().unwrap_or_else(|e| e.into_inner()).insert(id.clone());
         let now = chrono::Utc::now().timestamp();
-        let tx = conn.unchecked_transaction().to_cmd()?;
-        tx.execute(
-            "INSERT INTO trash_entries(id, root, label, deleted_at, expires_at, attachments_dir) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![
-                id,
-                policy.root.to_string_lossy(),
-                paths.first().map_or_else(String::new, fs_utils::filename_of),
-                now,
-                now + i64::from(policy.retention_days) * 86400,
-                policy.attachments_dir
-            ],
-        )
-        .to_cmd()?;
-        let mut protected: Vec<(PathBuf, &str)> = paths.iter().map(|path| (path.to_path_buf(), "owner")).collect();
-        for path in paths {
-            if path.extension().is_some_and(|ext| ext == "org") {
-                let draft = PathBuf::from(crate::utils::temp_file_utils::temp_path_for(&path.to_string_lossy()));
-                if draft.is_file() {
-                    protected.push((draft, "draft"));
-                }
-            }
-        }
-        for (path, role) in &protected {
-            require_safe_path(&policy.root, path)?;
-            let bytes = match fs::read(path) {
-                Ok(bytes) => bytes,
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
-                Err(e) => return Err(e.to_string()),
-            };
+        durable_transaction(conn, |tx| {
             tx.execute(
-                "INSERT INTO trash_files(entry_id, path, before_bytes, role) VALUES (?1, ?2, ?3, ?4)",
-                params![id, path.to_string_lossy(), bytes, role],
+                "INSERT INTO trash_entries(id, root, label, deleted_at, expires_at, attachments_dir) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                params![
+                    id,
+                    policy.root.to_string_lossy(),
+                    paths.first().map_or_else(String::new, fs_utils::filename_of),
+                    now,
+                    now + i64::from(policy.retention_days) * 86400,
+                    policy.attachments_dir
+                ],
             )
             .to_cmd()?;
-        }
-        tx.commit().to_cmd()?;
+            let mut protected: Vec<(PathBuf, &str)> = paths.iter().map(|path| (path.to_path_buf(), "owner")).collect();
+            for path in paths {
+                if !crate::utils::temp_file_utils::is_temp_file(&path.file_name().unwrap_or_default().to_string_lossy()) {
+                    let draft = PathBuf::from(crate::utils::temp_file_utils::temp_path_for(&path.to_string_lossy()));
+                    if draft.is_file() {
+                        protected.push((draft, "draft"));
+                    }
+                }
+            }
+            for (path, role) in &protected {
+                require_safe_path(&policy.root, path)?;
+                let bytes = match fs::read(path) {
+                    Ok(bytes) => bytes,
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+                    Err(e) => return Err(e.to_string()),
+                };
+                tx.execute(
+                    "INSERT INTO trash_files(entry_id, path, before_bytes, role) VALUES (?1, ?2, ?3, ?4)",
+                    params![id, path.to_string_lossy(), bytes, role],
+                )
+                .to_cmd()?;
+            }
+            Ok(())
+        })?;
         Ok(protection)
     }
 
     pub fn finish(self, kind: Option<&HistoryEntryKind>, index: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
         let conn = db.lock().map_err(|e| e.to_string())?;
-        finish(&conn, &self.id, &self.policy, kind, Some(index))
+        finish(&conn, &self.id, &self.policy, kind, Some(index), true)
     }
 }
 
@@ -201,6 +235,7 @@ fn finish(
     policy: &Policy,
     kind: Option<&HistoryEntryKind>,
     index: Option<&IndexManager>,
+    mutate_files: bool,
 ) -> Result<(), String> {
     let stored = files(conn, id)?;
     let mut snapshots = Vec::new();
@@ -236,40 +271,80 @@ fn finish(
     if !changed {
         return remove_entry(conn, id);
     }
-    recover_references(conn, &policy.root, &snapshots, index)?;
+    if mutate_files {
+        recover_references(conn, &policy.root, &snapshots, index)?;
+    }
     if let Some(HistoryEntryKind::HeadingDeleted { title, .. }) = kind {
         label = Some(title.clone());
     }
-    // Refiles/moves must never turn into deletions just because the source
-    // has fewer headings. Across multiple files compare the total as well.
-    if snapshots.len() > 1
-        && snapshots.iter().map(|s| heading_count(s.before.as_deref().unwrap_or(""))).sum::<usize>()
-            <= snapshots.iter().map(|s| heading_count(s.after.as_deref().unwrap_or(""))).sum::<usize>()
-    {
-        structural = stored.iter().any(|f| f.role == "owner" && !f.path.exists());
-    }
-    let candidates = attachments::orphaned(&policy.root, &policy.attachments_dir, &snapshots).unwrap_or_else(|e| {
-        log::warn!("Attachment reference scan failed; keeping files: {e}");
-        Vec::new()
+    let owners: Vec<_> =
+        snapshots.iter().filter(|snap| stored.iter().any(|f| f.role == "owner" && f.path == Path::new(&snap.path))).collect();
+    let headings = |after: bool| {
+        owners
+            .iter()
+            .flat_map(|snap| {
+                let text = if after { &snap.after } else { &snap.before };
+                super::org_parser::parse_headings_from_lines(Path::new(&snap.path), text.as_deref().unwrap_or("").lines())
+            })
+            .collect::<Vec<_>>()
+    };
+    let old_headings = headings(false);
+    let new_headings = headings(true);
+    // App headings carry stable IDs. Handwritten headings fall back to
+    // their title; renaming one conservatively retains the old pre-image.
+    let new_ids: HashSet<_> = new_headings.iter().filter_map(super::heading_identity::custom_id_of).collect();
+    let title_counts = |headings: &[super::models::Heading]| {
+        let mut counts = HashMap::new();
+        for heading in headings {
+            *counts.entry(heading.title.clone()).or_insert(0usize) += 1;
+        }
+        counts
+    };
+    let old_titles = title_counts(&old_headings);
+    let new_titles = title_counts(&new_headings);
+    let missing_identity = old_headings.iter().any(|old| {
+        if let Some(id) = super::heading_identity::custom_id_of(old) {
+            !new_ids.contains(id)
+        } else {
+            old_titles.get(&old.title).copied().unwrap_or_default() > new_titles.get(&old.title).copied().unwrap_or_default()
+        }
     });
+    if owners.len() > 1 {
+        structural = owners.iter().any(|s| s.after.is_none())
+            || owners.iter().map(|s| heading_count(s.before.as_deref().unwrap_or(""))).sum::<usize>()
+                > owners.iter().map(|s| heading_count(s.after.as_deref().unwrap_or(""))).sum::<usize>();
+    }
+    structural |= missing_identity;
+    // Reconciliation runs with a database connection, without the vault
+    // writer lock. It may retain pre-images but must not mutate files or
+    // collect attachments based on a concurrently changing reference scan.
+    let candidates = if mutate_files {
+        attachments::orphaned(&policy.root, &policy.attachments_dir, &snapshots).unwrap_or_else(|e| {
+            log::warn!("Attachment reference scan failed; keeping files: {e}");
+            Vec::new()
+        })
+    } else {
+        Vec::new()
+    };
     // Save every candidate before deleting any. A backup failure leaves
     // attachments in place and the pre-image recoverable in the bin.
-    let tx = conn.unchecked_transaction().to_cmd()?;
-    for path in &candidates {
-        let bytes = fs::read(path).map_err(|e| e.to_string())?;
-        tx.execute(
-            "INSERT OR IGNORE INTO trash_files(entry_id, path, before_bytes, role) VALUES (?1, ?2, ?3, 'attachment')",
-            params![id, path.to_string_lossy(), bytes],
-        )
-        .to_cmd()?;
-        share_retained_attachment(&tx, &policy.root, path, &bytes)?;
-    }
-    tx.execute("UPDATE trash_entries SET pending = 0, label = COALESCE(?1, label) WHERE id = ?2", params![label, id]).to_cmd()?;
-    if !structural {
-        tx.execute("UPDATE trash_files SET role = 'context' WHERE entry_id = ?1 AND role = 'owner'", [id]).to_cmd()?;
-        tx.execute("UPDATE trash_files SET role = 'draft_context' WHERE entry_id = ?1 AND role = 'draft'", [id]).to_cmd()?;
-    }
-    tx.commit().to_cmd()?;
+    durable_transaction(conn, |tx| {
+        for path in &candidates {
+            let bytes = fs::read(path).map_err(|e| e.to_string())?;
+            tx.execute(
+                "INSERT OR IGNORE INTO trash_files(entry_id, path, before_bytes, role) VALUES (?1, ?2, ?3, 'attachment')",
+                params![id, path.to_string_lossy(), bytes],
+            )
+            .to_cmd()?;
+            share_retained_attachment(tx, &policy.root, path, &bytes)?;
+        }
+        tx.execute("UPDATE trash_entries SET pending = 0, label = COALESCE(?1, label) WHERE id = ?2", params![label, id]).to_cmd()?;
+        if !structural {
+            tx.execute("UPDATE trash_files SET role = 'context' WHERE entry_id = ?1 AND role = 'owner'", [id]).to_cmd()?;
+            tx.execute("UPDATE trash_files SET role = 'draft_context' WHERE entry_id = ?1 AND role = 'draft'", [id]).to_cmd()?;
+        }
+        Ok(())
+    })?;
     for path in candidates {
         match fs::remove_file(&path) {
             Ok(()) => {
@@ -320,9 +395,7 @@ pub(crate) fn retain_attachment_for_deleted_entries(policy: &Policy, path: &Path
     let conn = db.lock().map_err(|e| e.to_string())?;
     init_schema(&conn).to_cmd()?;
     let bytes = fs::read(path).to_cmd()?;
-    let tx = conn.unchecked_transaction().to_cmd()?;
-    share_retained_attachment(&tx, &policy.root, path, &bytes)?;
-    tx.commit().to_cmd()
+    durable_transaction(&conn, |tx| share_retained_attachment(tx, &policy.root, path, &bytes))
 }
 
 fn remove_entry(conn: &Connection, id: &str) -> Result<(), String> {
@@ -389,13 +462,13 @@ pub fn maintain(conn: &Connection, now: i64) -> Result<(), String> {
         }
         // An unavailable/removable vault is not evidence of deletion.
         if Path::new(&root).is_dir() {
-            if let Err(e) = finish(conn, &id, &Policy::new(Path::new(&root), &dir, DEFAULT_RETENTION_DAYS), None, None) {
+            if let Err(e) = finish(conn, &id, &Policy::new(Path::new(&root), &dir, DEFAULT_RETENTION_DAYS), None, None, false) {
                 log::warn!("Could not reconcile pending recycle-bin entry {id}: {e}");
             }
         }
     }
     let expired: Vec<String> = {
-        let mut stmt = conn.prepare("SELECT id FROM trash_entries WHERE expires_at <= ?1").to_cmd()?;
+        let mut stmt = conn.prepare("SELECT id FROM trash_entries WHERE expires_at <= ?1 AND pending = 0").to_cmd()?;
         let rows = stmt.query_map([now], |r| r.get(0)).to_cmd()?.collect::<rusqlite::Result<_>>().to_cmd()?;
         rows
     };
@@ -476,9 +549,6 @@ pub(crate) fn recover_references(
                 .optional()
                 .to_cmd()?;
             if let Some(bytes) = bytes {
-                if let Some(parent) = path.parent() {
-                    fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-                }
                 fs_utils::write_atomic_bytes(&path, &bytes).to_cmd()?;
                 if let Some(index) = index {
                     index.update_file(&path);
@@ -500,7 +570,7 @@ pub(crate) fn protect_redo<T>(
 ) -> Result<T, String> {
     let existing: bool = conn
         .query_row(
-            "SELECT EXISTS(SELECT 1 FROM trash_entries WHERE history_id = ?1 AND expires_at > ?2)",
+            "SELECT EXISTS(SELECT 1 FROM trash_entries WHERE history_id = ?1 AND history_reversed = 0 AND expires_at > ?2)",
             params![entry.id, chrono::Utc::now().timestamp()],
             |r| r.get(0),
         )
@@ -515,8 +585,34 @@ pub(crate) fn protect_redo<T>(
     }
     let protection = Protection::prepare_with_connection(&policy, &paths, conn)?;
     let result = work();
-    finish(conn, &protection.id, &policy, Some(&entry.kind), Some(index))?;
+    finish(conn, &protection.id, &policy, Some(&entry.kind), Some(index), true)?;
     associate(conn, entry.id, &entry.snapshots)?;
+    result
+}
+
+/// Undoing file creation/duplication is itself a deletion. Keep that
+/// file in the independent bin even when its redo history is later pruned.
+/// Reverse-direction entries belong to the same action but their files
+/// need restoration on redo, rather than on undo.
+pub(crate) fn protect_undo<T>(
+    conn: &Connection,
+    index: &IndexManager,
+    entry: &HistoryEntry,
+    work: impl FnOnce() -> Result<T, String>,
+) -> Result<T, String> {
+    if entry.is_draft {
+        return work();
+    }
+    let paths: Vec<_> = entry.snapshots.iter().filter(|s| s.before.is_none() && s.after.is_some()).map(|s| Path::new(&s.path)).collect();
+    let Some(policy) = Policy::configured(index) else { return work() };
+    if paths.is_empty() || paths.iter().any(|p| !p.starts_with(&policy.root)) {
+        return work();
+    }
+    let protection = Protection::prepare_with_connection(&policy, &paths, conn)?;
+    let result = work();
+    finish(conn, &protection.id, &policy, None, Some(index), true)?;
+    conn.execute("UPDATE trash_entries SET history_id = ?1, history_reversed = 1 WHERE id = ?2", params![entry.id, protection.id])
+        .to_cmd()?;
     result
 }
 
@@ -560,7 +656,12 @@ pub fn restore(conn: &Connection, root: &Path, id: &str, index: &IndexManager) -
         } else {
             let before = std::str::from_utf8(&file.before).map_err(|e| e.to_string())?;
             let after = std::str::from_utf8(file.after.as_deref().unwrap()).map_err(|e| e.to_string())?;
-            let current = current.as_deref().and_then(|b| std::str::from_utf8(b).ok()).unwrap_or("");
+            let current = current.as_deref().and_then(|b| std::str::from_utf8(b).ok()).ok_or_else(|| {
+                crate::t!(
+                    "Die ursprüngliche Notiz fehlt oder ist keine Textdatei. Bitte zuerst wiederherstellen.",
+                    "The original note is missing or is not a text file. Restore it first."
+                )
+            })?;
             if current == before {
                 continue;
             }
@@ -586,9 +687,6 @@ pub fn restore(conn: &Connection, root: &Path, id: &str, index: &IndexManager) -
     // All conflicts checked before changing any file; attachment bytes are
     // restored first so newly reinserted descriptions immediately work.
     for (path, bytes) in writes {
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-        }
         fs_utils::write_atomic_bytes(&path, &bytes).to_cmd()?;
         index.update_file(&path);
     }
@@ -607,7 +705,7 @@ pub(crate) fn associate(conn: &Connection, history_id: i64, snapshots: &[FileSna
     init_schema(conn).to_cmd()?;
     for snapshot in snapshots {
         conn.execute(
-            "UPDATE trash_entries SET history_id = ?1 WHERE history_id IS NULL AND pending = 0 AND id IN
+            "UPDATE trash_entries SET history_id = ?1 WHERE history_id IS NULL AND history_reversed = 0 AND pending = 0 AND id IN
             (SELECT entry_id FROM trash_files WHERE path = ?2 AND
                 (role IN ('context', 'draft_context') OR after_bytes IS ?3))",
             params![history_id, snapshot.path, snapshot.after.as_deref().map(str::as_bytes)],
@@ -644,48 +742,84 @@ pub fn start_maintenance(conn: &Connection) {
 /// attachment bytes if no live Org document/draft still references them.
 pub(crate) fn restore_history_files(conn: &Connection, action_id: i64, index: &IndexManager, undo: bool) -> Result<(), String> {
     init_schema(conn).to_cmd()?;
-    let mut stmt = conn.prepare("SELECT id, root FROM trash_entries WHERE history_id = ?1 AND expires_at > ?2").to_cmd()?;
-    let entries: Vec<(String, String)> = stmt
-        .query_map(params![action_id, chrono::Utc::now().timestamp()], |r| Ok((r.get(0)?, r.get(1)?)))
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, root, history_reversed FROM trash_entries WHERE history_id = ?1 AND expires_at > ?2
+        AND (history_reversed = 0 OR rowid = (SELECT MAX(rowid) FROM trash_entries
+            WHERE history_id = ?1 AND history_reversed = 1 AND expires_at > ?2))",
+        )
+        .to_cmd()?;
+    let entries: Vec<(String, String, bool)> = stmt
+        .query_map(params![action_id, chrono::Utc::now().timestamp()], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
         .to_cmd()?
         .collect::<rusqlite::Result<_>>()
         .to_cmd()?;
-    for (id, root) in entries {
+    let mut writes = Vec::new();
+    let mut removals = HashMap::new();
+    for (id, root, reversed) in entries {
+        let undo = undo != reversed;
         let root = Path::new(&root);
         let live = if undo { None } else { Some(attachments::live_references(root).map_err(|e| e.to_string())?) };
         for file in files(conn, &id)? {
-            if file.role == "context" || file.role == "draft_context" {
-                continue;
-            }
-            if file.role != "attachment" && file.after.is_some() {
+            if file.role == "context" || file.role == "draft_context" || (file.role != "attachment" && file.after.is_some()) {
                 continue;
             }
             require_safe_path(root, &file.path)?;
+            let current = match fs::read(&file.path) {
+                Ok(bytes) => Some(bytes),
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+                Err(e) => return Err(e.to_string()),
+            };
             if undo {
-                if let Ok(current) = fs::read(&file.path) {
-                    if current != file.before {
-                        return Err(crate::t!(
-                            "Wiederherstellen würde eine Datei überschreiben: {}",
-                            "Restoring would overwrite a file: {}",
-                            file.path.display()
-                        ));
-                    }
-                } else {
-                    if let Some(parent) = file.path.parent() {
-                        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-                    }
-                    fs_utils::write_atomic_bytes(&file.path, &file.before).to_cmd()?;
-                    index.update_file(&file.path);
+                if current.as_deref().is_some_and(|bytes| bytes != file.before)
+                    || writes.iter().any(|(p, bytes)| p == &file.path && bytes != &file.before)
+                {
+                    return Err(crate::t!(
+                        "Wiederherstellen würde eine Datei überschreiben: {}",
+                        "Restoring would overwrite a file: {}",
+                        file.path.display()
+                    ));
+                }
+                if current.is_none() {
+                    writes.push((file.path, file.before));
                 }
             } else if file.role == "attachment"
                 && !live.as_ref().unwrap().contains(&file.path)
-                && fs::read(&file.path).ok().as_deref() == Some(file.before.as_slice())
+                && current.as_deref() == Some(file.before.as_slice())
             {
-                fs::remove_file(&file.path).to_cmd()?;
-                index.remove_file(&file.path);
+                removals.insert(file.path, root.to_path_buf());
             }
         }
-        conn.execute("UPDATE trash_entries SET restored = ?1 WHERE id = ?2", params![undo, id]).to_cmd()?;
     }
+    for (path, bytes) in writes {
+        fs_utils::write_atomic_bytes(&path, &bytes).to_cmd()?;
+        index.update_file(&path);
+    }
+    // Restoring a forward entry can publish a reference needed by an
+    // inverse entry. Recheck after all staged writes before collecting.
+    let mut live_after_writes = HashMap::new();
+    for (path, root) in removals {
+        if !live_after_writes.contains_key(&root) {
+            live_after_writes.insert(root.clone(), attachments::live_references(&root).to_cmd()?);
+        }
+        if !live_after_writes[&root].contains(&path) {
+            fs::remove_file(&path).to_cmd()?;
+            index.remove_file(&path);
+        }
+    }
+    Ok(())
+}
+
+/// Mark completion only after BOTH the history snapshots and their
+/// retained binary files have been restored successfully by the caller.
+pub(crate) fn mark_history_restored(conn: &Connection, action_id: i64, restored: bool) -> Result<(), String> {
+    // Undo creates a fresh reverse-direction entry. Older reverse entries
+    // remain hidden after an earlier redo; only the new deletion is shown.
+    conn.execute(
+        "UPDATE trash_entries SET restored = CASE WHEN history_reversed = 1 THEN 1 ELSE ?1 END
+        WHERE history_id = ?2 AND (history_reversed = 0 OR ?1 = 0)",
+        params![restored, action_id],
+    )
+    .to_cmd()?;
     Ok(())
 }

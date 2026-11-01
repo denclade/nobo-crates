@@ -192,3 +192,83 @@ fn symlinks_are_not_candidates_and_alias_references_protect_real_attachments() {
     write(dir.path(), "note.org", "[[file:alias.png]]");
     assert!(find_orphaned(&policy).unwrap().is_empty());
 }
+
+#[test]
+fn literal_percent_paths_encoded_paths_and_implicit_org_links_all_protect_files() {
+    let (dir, policy, _, _) = setup();
+    for rel in [".attachments/a%20b.png", ".attachments/a b.png", ".attachments/%ff.png", ".attachments/name.png"] {
+        write(dir.path(), rel, b"image");
+    }
+    write(dir.path(), "note.org", "[[file:.attachments/a%20b.png]]\n[[file:.attachments/%ff.png]]\n");
+    // A basename link in a document in the attachment directory is valid
+    // Org too; its source document must itself never be collected.
+    write(dir.path(), ".attachments/note.org", "[[name.png]]\n");
+    assert!(find_orphaned(&policy).unwrap().is_empty());
+}
+
+#[test]
+fn markdown_destinations_definitions_escapes_and_fragments_protect_files() {
+    let (dir, policy, _, _) = setup();
+    for rel in [
+        ".attachments/inline.png",
+        ".attachments/space name.png",
+        ".attachments/ref.png",
+        ".attachments/a(b).png",
+        ".attachments/escaped).png",
+        ".attachments/encoded name.pdf",
+        ".attachments/multiline.png",
+        ".attachments/whitespace.png",
+    ] {
+        write(dir.path(), rel, b"image");
+    }
+    write(
+        dir.path(),
+        "note.md",
+        concat!(
+            "![inline](.attachments/inline.png)\n",
+            "[space](<.attachments/space name.png> \"title\")\n",
+            "[reference][ref]\n[ref]: .attachments/ref.png 'title'\n",
+            "[balanced](.attachments/a(b).png)\n",
+            "[escaped](.attachments/escaped\\).png)\n",
+            "[fragment](.attachments/encoded%20name.pdf#page=1)\n",
+            "[multiline]:\n  .attachments/multiline.png\n",
+            "[whitespace](  .attachments/whitespace.png)\n",
+        ),
+    );
+    assert!(find_orphaned(&policy).unwrap().is_empty());
+}
+
+#[test]
+fn broad_directory_settings_do_not_transfer_ownership_of_notes_or_app_state() {
+    let (dir, _, _, _) = setup();
+    write(dir.path(), "notes/manual.pdf", b"private");
+    write(dir.path(), ".nobo/state.db", b"state");
+    write(dir.path(), "assets/notebook.org", "* data\n");
+    write(dir.path(), "assets/notebook.org_archive", "* data\n");
+    write(dir.path(), "assets/notebook.md", "data\n");
+    write(dir.path(), "assets/notebook.txt", "data\n");
+    for setting in [".", "..", "assets/..", ""] {
+        assert!(find_orphaned(&Policy::new(dir.path(), setting, 31)).unwrap().is_empty(), "{setting}");
+    }
+    assert!(find_orphaned(&Policy::new(dir.path(), "assets", 31)).unwrap().is_empty());
+    assert!(find_orphaned(&Policy::new(dir.path(), ".nobo", 31)).unwrap().is_empty());
+
+    // The same ownership rule protects automatic collection, not just the
+    // explicit maintenance preview.
+    let snapshots = vec![FileSnapshot {
+        path: dir.path().join("notes/note.org").to_string_lossy().into_owned(),
+        before: Some("[[file:manual.pdf]]".into()),
+        after: None,
+    }];
+    assert!(orphaned(dir.path(), ".", &snapshots).unwrap().is_empty());
+}
+
+#[test]
+fn app_tasks_can_still_own_attachments_in_their_dedicated_subfolder() {
+    let (dir, policy, _, _) = setup();
+    write(dir.path(), ".nobo/.attachments/unused.png", b"image");
+    write(dir.path(), ".nobo/.attachments/import.org", "* imported note\n");
+    let found = find_orphaned(&policy).unwrap();
+    assert_eq!(found.len(), 1);
+    assert!(found[0].path.ends_with("unused.png"));
+}

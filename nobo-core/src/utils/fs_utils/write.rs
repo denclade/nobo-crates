@@ -153,11 +153,24 @@ pub fn write_atomic_bytes(path: &Path, content: &[u8]) -> io::Result<()> {
     // A path that does not resolve is a file that does not exist yet --
     // then there is no link to preserve and the path IS the target.
     let target = canonicalize_or_self(path);
-    if let Some(parent) = target.parent() {
-        if !parent.as_os_str().is_empty() {
-            fs::create_dir_all(parent)?;
+    let parent = target.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+    // Sync the rename's directory entry too. If restoration recreates
+    // folders, their entries in each parent must reach stable storage
+    // before its recycle-bin entry can be marked restored.
+    #[cfg(unix)]
+    let sync_dirs = {
+        let mut dirs = Vec::new();
+        let mut cursor = parent;
+        loop {
+            dirs.push(cursor.to_path_buf());
+            if cursor.exists() {
+                break;
+            }
+            cursor = cursor.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
         }
-    }
+        dirs
+    };
+    fs::create_dir_all(parent)?;
 
     let (temp_path, mut file) = create_temp_beside(&target)?;
 
@@ -178,6 +191,10 @@ pub fn write_atomic_bytes(path: &Path, content: &[u8]) -> io::Result<()> {
     if let Err(e) = result {
         let _ = fs::remove_file(&temp_path);
         return Err(e);
+    }
+    #[cfg(unix)]
+    for dir in sync_dirs {
+        fs::File::open(dir)?.sync_all()?;
     }
     Ok(())
 }

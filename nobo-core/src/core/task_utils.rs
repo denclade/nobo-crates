@@ -26,8 +26,23 @@ use std::sync::Mutex;
 /// LINES and RANGES must come from the same read (`read_and_parse`): the
 /// ranges are line numbers, and re-reading the file here would let them
 /// point into a version that has moved on -- archiving whatever happens
-/// to occupy those lines now.
+/// to occupy those lines now. The captured lines are checked again under
+/// the vault lock before either write; a concurrent edit must be retried.
 pub fn archive_ranges(
+    target_path: &Path,
+    lines: &[String],
+    ranges: Vec<(usize, usize)>,
+    index_manager: &IndexManager,
+    db: &Mutex<Connection>,
+) -> Result<usize, String> {
+    let work = || archive_ranges_locked(target_path, lines, ranges, index_manager, db);
+    match super::trash::Policy::for_path(index_manager, target_path) {
+        Some(policy) => super::vault_write::with_vault_lock(&policy.root, work),
+        None => work(),
+    }
+}
+
+fn archive_ranges_locked(
     target_path: &Path,
     lines: &[String],
     ranges: Vec<(usize, usize)>,
@@ -37,6 +52,14 @@ pub fn archive_ranges(
     if ranges.is_empty() {
         return Ok(0);
     }
+    // Callers parse before entering this function. Refuse a stale capture
+    // rather than shortening a source that gained edits in the meantime.
+    if fs_utils::read_lines(target_path).to_cmd()? != lines {
+        return Err(crate::t!(
+            "Die Datei wurde inzwischen geändert; bitte vor dem Archivieren neu laden.",
+            "The file has changed; reload before archiving."
+        ));
+    }
 
     // The same lines the ranges were computed from, so the undo snapshot
     // describes exactly what this write replaced. Reconstructed rather
@@ -45,7 +68,11 @@ pub fn archive_ranges(
     // churn the file by one byte.
     let before_target = Some(fs_utils::lines_to_content(lines));
     let archive_file_path = PathBuf::from(format!("{}_archive", target_path.display()));
-    let before_archive = std::fs::read_to_string(&archive_file_path).ok();
+    let before_archive = match std::fs::read_to_string(&archive_file_path) {
+        Ok(text) => Some(text),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+        Err(e) => return Err(e.to_string()),
+    };
 
     let (keep_content, archived_content) = fs_utils::extract_line_ranges(lines, &ranges);
 
@@ -448,6 +475,26 @@ mod tests {
             original,
             "the source file must still hold the task the archive never received"
         );
+    }
+
+    #[test]
+    fn archiving_a_stale_capture_refuses_to_overwrite_newer_source_edits() {
+        let dir = TempDir::new().unwrap();
+        let index = IndexManager::new();
+        index.scan_directory(dir.path());
+        let conn = Connection::open_in_memory().unwrap();
+        history::store::init_schema(&conn).unwrap();
+        let db = Mutex::new(conn);
+        let path = dir.path().join("actions.org");
+        std::fs::write(&path, "* DONE Archive me\n* TODO Keep me\n").unwrap();
+        let (lines, flat) = heading_utils::read_and_parse(&path).unwrap();
+        let range = heading_utils::subtree_line_range(&flat, 0);
+        let newer = "* DONE Archive me\n* TODO Keep me\nNewer description\n";
+        std::fs::write(&path, newer).unwrap();
+
+        assert!(archive_ranges(&path, &lines, vec![range], &index, &db).is_err());
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), newer);
+        assert!(!PathBuf::from(format!("{}_archive", path.display())).exists());
     }
 
     /// Baut ein minimales Heading für Tests, mit sinnvollen Defaults für

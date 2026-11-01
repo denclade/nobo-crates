@@ -319,6 +319,29 @@ pub(crate) fn recorded_with_policy<T>(
     result
 }
 
+/// Persist an editor draft under the same vault lock as attachment GC.
+/// A queued autosave may link bytes just recycled by another deletion;
+/// recover them from the retained backup before publishing that draft.
+pub fn save_draft(path: &Path, content: &str, index: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
+    let policy = Policy::for_path(index, path);
+    let draft = PathBuf::from(crate::utils::temp_file_utils::temp_path_for(&path.to_string_lossy()));
+    let mut locked_paths = vec![path, draft.as_path()];
+    if let Some(policy) = &policy {
+        locked_paths.push(&policy.root);
+    }
+    let _locks = lock_all(&locked_paths);
+    if let Some(policy) = &policy {
+        let conn = db.lock().map_err(|e| e.to_string())?;
+        crate::core::trash::recover_references(
+            &conn,
+            &policy.root,
+            &[FileSnapshot { path: draft.to_string_lossy().into_owned(), before: None, after: Some(content.to_string()) }],
+            Some(index),
+        )?;
+    }
+    crate::utils::temp_file_utils::write_temp(&path.to_string_lossy(), content)
+}
+
 /// Editor save: history sessions are coalesced by the caller, but recycle
 /// bin protection and orphan attachment collection happen on every save.
 pub fn save_note(path: &Path, content: &str, index: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {

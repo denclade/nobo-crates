@@ -91,8 +91,8 @@ pub fn open_note(path: String) -> Result<NoteLoadResult, String> {
     temp_file_utils::load_with_temp_check(&path)
 }
 
-pub fn autosave_note_temp(path: String, content: String) -> Result<(), String> {
-    temp_file_utils::write_temp(&path, &content)
+pub fn autosave_note_temp(path: String, content: String, index_state: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
+    vault_write::save_draft(Path::new(&path), &content, index_state, db)
 }
 
 /// The editor's own save.
@@ -330,18 +330,24 @@ pub fn copy_attachment_file(
     index_state: &IndexManager,
     db: &Mutex<Connection>,
 ) -> Result<String, String> {
-    let saved_path =
-        fs_utils::place_attachment(Path::new(&target_dir), &filename, |dest| std::fs::copy(&source_path, dest).map(|_| ())).to_cmd()?;
-    index_state.update_file(Path::new(&saved_path));
+    let write = || {
+        let saved_path =
+            fs_utils::place_attachment(Path::new(&target_dir), &filename, |dest| std::fs::copy(&source_path, dest).map(|_| ())).to_cmd()?;
+        index_state.update_file(Path::new(&saved_path));
 
-    // Informational only -- binary content, no before/after text snapshot
-    // (see HistoryEntryKind::AttachmentAdded's doc comment). An empty
-    // snapshot list is what makes undo/redo treat this as "shown in the
-    // list, not restorable" rather than misreading a missing snapshot as
-    // "this file didn't exist".
-    record_best_effort(&db, HistoryEntryKind::AttachmentAdded { filename: filename_of(&saved_path) }, false, vec![]);
+        // Informational only -- binary content, no before/after text snapshot
+        // (see HistoryEntryKind::AttachmentAdded's doc comment). An empty
+        // snapshot list is what makes undo/redo treat this as "shown in the
+        // list, not restorable" rather than misreading a missing snapshot as
+        // "this file didn't exist".
+        record_best_effort(&db, HistoryEntryKind::AttachmentAdded { filename: filename_of(&saved_path) }, false, vec![]);
 
-    Ok(saved_path)
+        Ok(saved_path)
+    };
+    match nobo_core::core::trash::Policy::for_path(index_state, Path::new(&target_dir)) {
+        Some(policy) => vault_write::with_vault_lock(&policy.root, write),
+        None => write(),
+    }
 }
 
 /// Writes BYTES (e.g. a pasted clipboard image) into TARGET_DIR under
@@ -355,12 +361,18 @@ pub fn save_attachment_bytes(
     index_state: &IndexManager,
     db: &Mutex<Connection>,
 ) -> Result<String, String> {
-    let saved_path = fs_utils::place_attachment(Path::new(&target_dir), &filename, |dest| std::fs::write(dest, &bytes)).to_cmd()?;
-    index_state.update_file(Path::new(&saved_path));
+    let write = || {
+        let saved_path = fs_utils::place_attachment(Path::new(&target_dir), &filename, |dest| std::fs::write(dest, &bytes)).to_cmd()?;
+        index_state.update_file(Path::new(&saved_path));
 
-    record_best_effort(&db, HistoryEntryKind::AttachmentAdded { filename: filename_of(&saved_path) }, false, vec![]);
+        record_best_effort(&db, HistoryEntryKind::AttachmentAdded { filename: filename_of(&saved_path) }, false, vec![]);
 
-    Ok(saved_path)
+        Ok(saved_path)
+    };
+    match nobo_core::core::trash::Policy::for_path(index_state, Path::new(&target_dir)) {
+        Some(policy) => vault_write::with_vault_lock(&policy.root, write),
+        None => write(),
+    }
 }
 
 /// Copies SOURCE_PATH to DEST_PATH verbatim -- the editor's image context
