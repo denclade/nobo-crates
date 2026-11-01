@@ -53,6 +53,36 @@ fn scans_configured_and_default_folders_and_keeps_hidden_archived_draft_referenc
 }
 
 #[test]
+fn org_archive_references_protect_attachments_during_deletion_and_maintenance() {
+    let (dir, policy, index, db) = setup();
+    let note = write(dir.path(), "tasks.org", "* TODO Task\n[[file:.attachments/shared.png]]\n");
+    write(dir.path(), ".attachments/shared.png", b"image");
+    write(dir.path(), "tasks.org_archive", "* DONE Archived\n[[file:.attachments/shared.png]]\n");
+    let preview = find_orphaned(&policy).unwrap();
+    assert!(preview.is_empty());
+    vault_write::recorded_with_policy(
+        &note,
+        Some(policy.clone()),
+        |_| HistoryEntryKind::FileDeleted { filename: "tasks.org".into() },
+        &index,
+        &db,
+        || fs::remove_file(&note).to_cmd(),
+    )
+    .unwrap();
+    assert!(dir.path().join(".attachments/shared.png").exists());
+    assert!(find_orphaned(&policy).unwrap().is_empty());
+
+    // An archive created after a maintenance preview must protect its file too.
+    write(dir.path(), ".attachments/new.png", b"new");
+    let preview = find_orphaned(&policy).unwrap();
+    assert_eq!(preview.len(), 1);
+    write(dir.path(), "#draft.org_archive#", "[[file:.attachments/new.png]]\n");
+    let result = recycle_orphaned(&policy, &preview, &index, &db).unwrap();
+    assert_eq!((result.removed, result.skipped), (0, 1));
+    assert!(dir.path().join(".attachments/new.png").exists());
+}
+
+#[test]
 fn absolute_configured_folder_must_remain_inside_the_vault() {
     let (dir, _, _, _) = setup();
     let external = TempDir::new().unwrap();

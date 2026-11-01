@@ -132,7 +132,10 @@ pub(crate) fn live_references(root: &Path) -> io::Result<HashSet<PathBuf>> {
                 dirs.push(path);
             } else if meta.is_file() {
                 let name = path.file_name().unwrap_or_default().to_string_lossy().to_lowercase();
-                if [".org", ".org#", ".md", ".md#", ".txt", ".txt#"].iter().any(|ext| name.ends_with(ext)) {
+                if [".org", ".org#", ".org_archive", ".org_archive#", ".md", ".md#", ".txt", ".txt#"]
+                    .iter()
+                    .any(|ext| name.ends_with(ext))
+                {
                     let text = fs::read_to_string(&path)?;
                     found.extend(references(&path, &text));
                 }
