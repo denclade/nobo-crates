@@ -20,6 +20,7 @@ pub mod agenda;
 pub mod filter;
 // The org grammar the frontend used to keep to itself (see org_ast).
 pub mod app_files;
+pub mod attachments;
 pub mod clock;
 pub mod completion;
 pub mod cost;
@@ -41,5 +42,6 @@ pub mod org_insert;
 pub mod org_sort;
 pub mod org_table;
 pub mod secrets;
+pub mod trash;
 pub mod vault;
 pub mod vault_write;

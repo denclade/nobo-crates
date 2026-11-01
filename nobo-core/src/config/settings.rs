@@ -24,6 +24,10 @@ fn default_attachments_dir() -> String {
     String::from(".attachments")
 }
 
+fn default_trash_retention_days() -> u32 {
+    crate::core::trash::DEFAULT_RETENTION_DAYS
+}
+
 /// Editor Tab/Shift-Tab block-indent width (see orgIndentActions.ts) --
 /// 4 spaces matches this app's own org files' existing convention (list
 /// nesting is already 2 spaces per level, headings/tables aren't affected
@@ -168,6 +172,10 @@ pub struct Config {
     /// Either way the resolved path must stay inside `notes_path`.
     #[serde(default = "default_attachments_dir")]
     pub attachments_dir: String,
+
+    /// How long deleted content remains recoverable in the local recycle bin.
+    #[serde(default = "default_trash_retention_days")]
+    pub trash_retention_days: u32,
 
     /// "Show all" toggles for the Actions list and the Projects sidebar
     /// (both hide DONE items by default) -- persisted rather than a local
@@ -399,6 +407,7 @@ impl Default for Config {
             actions_sort_mode: NotesSortMode::DateDesc,
             projects_sort_mode: NotesSortMode::DateDesc,
             attachments_dir: default_attachments_dir(),
+            trash_retention_days: default_trash_retention_days(),
             show_done_actions: false,
             show_done_projects: false,
             hide_done_subtasks: false,

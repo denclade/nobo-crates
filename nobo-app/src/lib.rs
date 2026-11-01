@@ -29,6 +29,7 @@ pub mod commands_history;
 pub mod commands_notes;
 pub mod commands_org;
 pub mod commands_search;
+pub mod commands_trash;
 pub mod features;
 
 /// What a host has to do before a new vault directory is read from.

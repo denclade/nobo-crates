@@ -438,6 +438,7 @@ fn apply_bulk(conn: &Connection, index_manager: &IndexManager, entry: &crate::co
         }
     }
 
+    super::super::trash::restore_history_files(conn, entry.id, index_manager, true)?;
     let mut restored_snapshots = Vec::with_capacity(entry.snapshots.len());
     for snap in &entry.snapshots {
         let path = PathBuf::from(&snap.path);
@@ -618,6 +619,7 @@ pub fn check(conn: &Connection, entry_id: i64) -> Result<HeadingRestoreCheck, St
 /// failed recording is swallowed either way, so it never fails an
 /// otherwise-successful restore.
 pub fn apply(conn: &Connection, index_manager: &IndexManager, entry_id: i64) -> Result<(), String> {
+    super::super::trash::maintain(conn, chrono::Utc::now().timestamp())?;
     let entry =
         store::get(conn, entry_id).to_cmd()?.ok_or_else(|| crate::t!("History-Eintrag nicht gefunden.", "History entry not found."))?;
     if !matches!(entry.kind, HistoryEntryKind::HeadingDeleted { .. } | HistoryEntryKind::HeadingUpdated { .. }) {
@@ -639,6 +641,8 @@ pub fn apply(conn: &Connection, index_manager: &IndexManager, entry_id: i64) -> 
     let path = computation.path;
     let title = computation.title;
     let filename = path.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
+
+    super::super::trash::restore_history_files(conn, entry_id, index_manager, true)?;
 
     match action {
         RestoreAction::Reinsert { anchor, raw_lines } => {

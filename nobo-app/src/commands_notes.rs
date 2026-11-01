@@ -107,14 +107,22 @@ pub fn autosave_note_temp(path: String, content: String) -> Result<(), String> {
 /// - Even where it does exist it now waits for the write burst to settle
 ///   (see core::indexer's SETTLE), and it would re-read the file to learn
 ///   what this command already has in hand.
-pub fn save_note_final(path: String, content: String, index_state: &IndexManager) -> Result<(), String> {
-    temp_file_utils::save_final(&path, &content)?;
-    index_state.update_file_with(Path::new(&path), &content);
-    Ok(())
+pub fn save_note_final(path: String, content: String, index_state: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
+    vault_write::save_note(Path::new(&path), &content, index_state, db)
 }
 
-pub fn discard_note_temp(path: String) -> Result<(), String> {
-    temp_file_utils::remove_temp_if_exists(&path)
+pub fn discard_note_temp(path: String, index_state: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
+    let draft = PathBuf::from(temp_file_utils::temp_path_for(&path));
+    if !draft.exists() {
+        return Ok(());
+    }
+    vault_write::recorded(
+        &draft,
+        |_| HistoryEntryKind::FileDeleted { filename: filename_of(&draft) },
+        index_state,
+        db,
+        || temp_file_utils::remove_temp_if_exists(&path),
+    )
 }
 
 pub fn compute_diff(original: &str, temp: &str) -> Vec<DiffChunk> {

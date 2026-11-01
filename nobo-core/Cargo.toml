@@ -55,6 +55,7 @@ tokio = { workspace = true, features = ["sync", "time", "rt"] }
 uuid = { workspace = true }
 inventory = { workspace = true }
 async-trait = { workspace = true }
+blake3 = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

@@ -51,7 +51,7 @@ fn decompress(bytes: &[u8]) -> String {
 /// Appends one action + its snapshots, first discarding any currently
 /// "undone" (redo-able) tail -- starting a new action after an undo clears
 /// the redo branch, same as any standard undo manager.
-pub fn record(conn: &Connection, kind: &HistoryEntryKind, is_draft: bool, snapshots: &[FileSnapshot]) -> rusqlite::Result<()> {
+pub fn record(conn: &Connection, kind: &HistoryEntryKind, is_draft: bool, snapshots: &[FileSnapshot]) -> rusqlite::Result<i64> {
     // All of it or none of it.
     //
     // Every statement below used to commit on its own, so an interruption
@@ -89,7 +89,8 @@ pub fn record(conn: &Connection, kind: &HistoryEntryKind, is_draft: bool, snapsh
     }
     // `prune` stays outside, in the caller: a prune that fails must not
     // roll back an action that was recorded correctly.
-    tx.commit()
+    tx.commit()?;
+    Ok(action_id)
 }
 
 /// Deletes the oldest actions beyond MAX_ENTRIES (FIFO), and then the

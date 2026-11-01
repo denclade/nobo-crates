@@ -157,6 +157,11 @@ pub struct IndexManager {
 }
 
 impl IndexManager {
+    /// The vault this index currently serves, including on hosts without a watcher.
+    pub fn vault_root(&self) -> Option<PathBuf> {
+        self.root.read().ok().and_then(|root| root.clone())
+    }
+
     pub fn new() -> Self {
         Self {
             index: Arc::new(RwLock::new(AppIndex::default())),

@@ -46,7 +46,10 @@ pub fn record(conn: &Connection, kind: HistoryEntryKind, is_draft: bool, snapsho
     // list is the same "shown, not restorable" shape AttachmentAdded uses.
     let to_store: Vec<FileSnapshot> = if total_bytes > MAX_SNAPSHOT_BYTES { Vec::new() } else { snapshots };
 
-    store::record(conn, &kind, is_draft, &to_store).to_cmd()?;
+    let action_id = store::record(conn, &kind, is_draft, &to_store).to_cmd()?;
+    if !is_draft {
+        super::trash::associate(conn, action_id, &to_store)?;
+    }
     store::prune(conn, MAX_ENTRIES, MAX_HISTORY_BYTES).to_cmd()
 }
 
@@ -88,14 +91,41 @@ fn apply_restore(entry: &Option<HistoryEntry>, index_manager: &IndexManager, is_
 }
 
 pub fn undo(conn: &Connection, index_manager: &IndexManager) -> Result<Option<HistoryEntry>, String> {
+    super::trash::maintain(conn, chrono::Utc::now().timestamp())?;
     let entry = store::undo_toggle(conn).to_cmd()?;
-    apply_restore(&entry, index_manager, true)?;
+    let restored = (|| {
+        if let Some(entry) = &entry {
+            super::trash::restore_history_files(conn, entry.id, index_manager, true)?;
+        }
+        apply_restore(&entry, index_manager, true)
+    })();
+    if restored.is_err() {
+        if let Some(entry) = &entry {
+            let _ = conn.execute("UPDATE history_actions SET undone = 0 WHERE id = ?1", [entry.id]);
+        }
+    }
+    restored?;
     Ok(entry)
 }
 
 pub fn redo(conn: &Connection, index_manager: &IndexManager) -> Result<Option<HistoryEntry>, String> {
+    super::trash::maintain(conn, chrono::Utc::now().timestamp())?;
     let entry = store::redo_toggle(conn).to_cmd()?;
-    apply_restore(&entry, index_manager, false)?;
+    let restored = (|| {
+        if let Some(action) = &entry {
+            super::trash::protect_redo(conn, index_manager, action, || apply_restore(&entry, index_manager, false))?;
+        }
+        if let Some(entry) = &entry {
+            super::trash::restore_history_files(conn, entry.id, index_manager, false)?;
+        }
+        Ok::<_, String>(())
+    })();
+    if restored.is_err() {
+        if let Some(entry) = &entry {
+            let _ = conn.execute("UPDATE history_actions SET undone = 1 WHERE id = ?1", [entry.id]);
+        }
+    }
+    restored?;
     Ok(entry)
 }
 

@@ -53,6 +53,7 @@ use crate::core::file_kind::{self, FileKind};
 use crate::core::history::{self, record_best_effort};
 use crate::core::indexer::IndexManager;
 use crate::core::models::{FileSnapshot, HistoryEntryKind};
+use crate::core::trash::{Policy, Protection};
 use crate::utils::fs_utils;
 
 /// The app's own folder in a vault: GTD lists, mirrors, bookmarks files.
@@ -105,7 +106,9 @@ pub fn edit_files_in<T>(
     for path in paths {
         require_in_vault(root, path)?;
     }
-    let _locks = lock_all(paths);
+    let mut locked_paths = paths.to_vec();
+    locked_paths.push(root);
+    let _locks = lock_all(&locked_paths);
 
     let mut texts = Vec::with_capacity(paths.len());
     for path in paths {
@@ -117,6 +120,14 @@ pub fn edit_files_in<T>(
     if updated.len() != paths.len() {
         return Err(format!("edit_files: {} texts for {} files", updated.len(), paths.len()));
     }
+
+    let configured = Policy::configured(index);
+    let policy = Policy::new(
+        root,
+        configured.as_ref().map_or(".attachments", |p| p.attachments_dir.as_str()),
+        configured.as_ref().map_or(crate::core::trash::DEFAULT_RETENTION_DAYS, |p| p.retention_days),
+    );
+    let protection = Protection::prepare(&policy, paths, db)?;
 
     let mut snapshots = Vec::new();
     let mut failed = None;
@@ -137,6 +148,7 @@ pub fn edit_files_in<T>(
             }
         }
     }
+    protection.finish(None, index, db)?;
     if let Some(first) = snapshots.first() {
         let filename = fs_utils::filename_of(&first.path);
         record_best_effort(db, HistoryEntryKind::FileEdited { filename }, false, snapshots);
@@ -232,6 +244,14 @@ fn lock_all(paths: &[&Path]) -> Locks {
     Locks(keys)
 }
 
+/// A vault mutation may collect attachments shared by different files.
+/// Serialize those writes across files as well. Hosts take this BEFORE
+/// locking their database for restore/undo operations.
+pub fn with_vault_lock<T>(root: &Path, work: impl FnOnce() -> T) -> T {
+    let _locks = lock_all(&[root]);
+    work()
+}
+
 impl Drop for Locks {
     fn drop(&mut self) {
         let busy = busy();
@@ -262,17 +282,59 @@ pub fn recorded<T>(
     db: &Mutex<Connection>,
     write: impl FnOnce() -> Result<T, String>,
 ) -> Result<T, String> {
-    let _locks = lock_all(&[path]);
+    recorded_with_policy(path, Policy::for_path(index, path), entry, index, db, write)
+}
+
+/// Same mutation frame for core maintenance jobs with an explicit policy.
+pub(crate) fn recorded_with_policy<T>(
+    path: &Path,
+    policy: Option<Policy>,
+    entry: impl FnOnce(&Result<T, String>) -> HistoryEntryKind,
+    index: &IndexManager,
+    db: &Mutex<Connection>,
+    write: impl FnOnce() -> Result<T, String>,
+) -> Result<T, String> {
+    let mut locked_paths = vec![path];
+    if let Some(policy) = &policy {
+        locked_paths.push(&policy.root);
+    }
+    let _locks = lock_all(&locked_paths);
+    let protection = policy.as_ref().map(|policy| Protection::prepare(policy, &[path], db)).transpose()?;
     let (before, result, after) = history::snapshot_around(path, write);
+    let entry = entry(&result);
+    if let Some(protection) = protection {
+        protection.finish(Some(&entry), index, db)?;
+    }
     if before != after {
         match &after {
             Some(text) => index.update_file_with(path, text),
             None => index.remove_file(path),
         }
-        let entry = entry(&result);
         record_best_effort(db, entry, false, vec![FileSnapshot { path: path.to_string_lossy().into_owned(), before, after }]);
+    } else if !path.exists() {
+        // Binary files have no text snapshots, but their deletion must
+        // still leave the mobile index immediately consistent.
+        index.remove_file(path);
     }
     result
+}
+
+/// Editor save: history sessions are coalesced by the caller, but recycle
+/// bin protection and orphan attachment collection happen on every save.
+pub fn save_note(path: &Path, content: &str, index: &IndexManager, db: &Mutex<Connection>) -> Result<(), String> {
+    let policy = Policy::for_path(index, path);
+    let mut locked_paths = vec![path];
+    if let Some(policy) = &policy {
+        locked_paths.push(&policy.root);
+    }
+    let _locks = lock_all(&locked_paths);
+    let protection = policy.as_ref().map(|policy| Protection::prepare(policy, &[path], db)).transpose()?;
+    crate::utils::temp_file_utils::save_final(&path.to_string_lossy(), content)?;
+    index.update_file_with(path, content);
+    if let Some(protection) = protection {
+        protection.finish(None, index, db)?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

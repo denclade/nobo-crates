@@ -8,6 +8,7 @@ use std::sync::Mutex;
 use nobo_core::core::history;
 use nobo_core::core::indexer::IndexManager;
 use nobo_core::core::models::{FileSnapshot, HeadingRestoreCheck, HistoryEntry, HistoryEntryKind};
+use nobo_core::core::vault_write;
 
 pub fn history_list(limit: u32, db: &Mutex<Connection>) -> Result<Vec<HistoryEntry>, String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
@@ -43,18 +44,15 @@ pub fn history_entry(
 /// for why this can take several undo/redo steps and may touch files beyond
 /// the one the modal is scoped to.
 pub fn history_jump_to(id: u32, db: &Mutex<Connection>, index_manager: &IndexManager) -> Result<Vec<HistoryEntry>, String> {
-    let conn = db.lock().map_err(|e| e.to_string())?;
-    history::jump_to(&conn, &index_manager, id as i64)
+    with_history_write(db, index_manager, |conn| history::jump_to(conn, &index_manager, id as i64))
 }
 
 pub fn history_undo(db: &Mutex<Connection>, index_manager: &IndexManager) -> Result<Option<HistoryEntry>, String> {
-    let conn = db.lock().map_err(|e| e.to_string())?;
-    history::undo(&conn, &index_manager)
+    with_history_write(db, index_manager, |conn| history::undo(conn, &index_manager))
 }
 
 pub fn history_redo(db: &Mutex<Connection>, index_manager: &IndexManager) -> Result<Option<HistoryEntry>, String> {
-    let conn = db.lock().map_err(|e| e.to_string())?;
-    history::redo(&conn, &index_manager)
+    with_history_write(db, index_manager, |conn| history::redo(conn, &index_manager))
 }
 
 /// Checks whether ONE specific (arbitrary, not necessarily the most recent)
@@ -72,8 +70,23 @@ pub fn history_check_heading_restore(id: u32, db: &Mutex<Connection>) -> Result<
 /// above -- reruns the same feasibility computation rather than trusting a
 /// possibly-stale earlier check (the file may have changed since).
 pub fn history_apply_heading_restore(id: u32, db: &Mutex<Connection>, index_manager: &IndexManager) -> Result<(), String> {
-    let conn = db.lock().map_err(|e| e.to_string())?;
-    history::restore::apply(&conn, &index_manager, id as i64)
+    with_history_write(db, index_manager, |conn| history::restore::apply(conn, &index_manager, id as i64))
+}
+
+fn with_history_write<T>(
+    db: &Mutex<Connection>,
+    index: &IndexManager,
+    work: impl FnOnce(&Connection) -> Result<T, String>,
+) -> Result<T, String> {
+    let run = || {
+        let conn = db.lock().map_err(|e| e.to_string())?;
+        work(&conn)
+    };
+    let root = index.vault_root().or_else(|| nobo_core::config::settings::Config::require_vault_root().ok());
+    match root {
+        Some(root) => vault_write::with_vault_lock(&root, run),
+        None => run(),
+    }
 }
 
 /// Records a coalesced editing-session snapshot (real save or draft-only
