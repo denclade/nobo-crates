@@ -534,10 +534,12 @@ pub(crate) fn recover_references(
 ) -> Result<(), String> {
     for snapshot in snapshots {
         for path in attachments::references(Path::new(&snapshot.path), snapshot.after.as_deref().unwrap_or("")) {
-            if path.exists() || !path.starts_with(root) {
+            // A link through a symlink out of the vault (or into .git) has
+            // no backup to recover. Skip it: refusing would block saving
+            // any text that merely mentions such a missing file.
+            if path.exists() || !path.starts_with(root) || require_safe_path(root, &path).is_err() {
                 continue;
             }
-            require_safe_path(root, &path)?;
             let bytes: Option<Vec<u8>> = conn
                 .query_row(
                     "SELECT f.before_bytes FROM trash_files f JOIN trash_entries e ON e.id = f.entry_id

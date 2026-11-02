@@ -519,6 +519,37 @@ fn a_queued_autosave_recovers_recycled_bytes_and_its_draft_protects_them_from_gc
     assert_eq!(fs::read_to_string(f.path("b.org")).unwrap(), "Saved note\n");
 }
 
+#[cfg(unix)]
+#[test]
+fn an_autosave_or_save_mentioning_a_missing_file_behind_an_unsafe_path_still_persists() {
+    let f = Fixture::new();
+    let external = TempDir::new().unwrap();
+    std::os::unix::fs::symlink(external.path(), f.path("Bilder")).unwrap();
+    let path = f.write("a.org", "Saved note\n");
+    let text = "[[file:Bilder/missing.jpg]]\n[[file:.git/missing]]\n";
+    vault_write::save_draft(&path, text, &f.index, &f.db).unwrap();
+    assert_eq!(fs::read_to_string(f.path("#a.org#")).unwrap(), text);
+    vault_write::save_note(&path, text, &f.index, &f.db).unwrap();
+    assert_eq!(fs::read_to_string(&path).unwrap(), text);
+    assert!(!external.path().join("missing.jpg").exists());
+}
+
+#[test]
+fn a_failing_attachment_recovery_never_drops_the_draft() {
+    let f = Fixture::new();
+    let path = f.write("a.org", "Saved note\n");
+    let _ = std::thread::scope(|s| {
+        s.spawn(|| {
+            let _conn = f.db.lock().unwrap();
+            panic!("poison the database lock");
+        })
+        .join()
+    });
+    assert!(f.db.is_poisoned());
+    vault_write::save_draft(&path, "Typed\n[[file:.attachments/x.png]]\n", &f.index, &f.db).unwrap();
+    assert_eq!(fs::read_to_string(f.path("#a.org#")).unwrap(), "Typed\n[[file:.attachments/x.png]]\n");
+}
+
 #[test]
 fn reconciling_interrupted_writes_never_collects_files_without_the_vault_lock() {
     let f = Fixture::new();
