@@ -45,9 +45,25 @@ inventory::submit! {
 /// not just a connect timeout. With no timeout, an unreachable server
 /// hangs forever with no error reaching the frontend, leaving the login
 /// button permanently disabled.
+///
+/// It names app and system: the server's login alert tells devices apart
+/// by them and ignores the version (docs/login-benachrichtigung.md). Every
+/// login, including the silent one at each start, goes through here.
 #[cfg(feature = "pocketbase")]
 fn short_lived_client() -> Result<reqwest::Client, String> {
-    nobo_http::builder().timeout(nobo_http::SOMEBODY_IS_WAITING).build().map_err(|e| nobo_http::describe_error(&e))
+    let system = match std::env::consts::OS {
+        "android" => "Android",
+        "ios" => "iOS",
+        "macos" => "macOS",
+        "windows" => "Windows",
+        "linux" => "Linux",
+        other => other,
+    };
+    nobo_http::builder()
+        .timeout(nobo_http::SOMEBODY_IS_WAITING)
+        .user_agent(format!("nobo/{} ({system})", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|e| nobo_http::describe_error(&e))
 }
 
 /// What a host does when the server says the vault changed elsewhere.
