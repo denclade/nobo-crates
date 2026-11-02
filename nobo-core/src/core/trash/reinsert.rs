@@ -135,6 +135,21 @@ pub(super) fn reinsert(path: &Path, before: &str, after: &str, current: &str) ->
             }
             continue;
         }
+        // The root is missing, so the whole block is inserted. Its
+        // descendants must not duplicate an identity that lives on today --
+        // a child restored or moved separately in the meantime, or one of
+        // the blocks restored before this one (already part of LINES).
+        for descendant in old.iter().filter(|d| d.line_no > h.line_no && d.line_no <= end) {
+            let Some(id) = heading_identity::custom_id_of(descendant) else { continue };
+            let same_id = |candidate: &&Heading| heading_identity::custom_id_of(candidate) == Some(id);
+            if old.iter().filter(same_id).count() > 1 || flat.iter().any(|c| same_id(&c)) {
+                return Err(crate::t!(
+                    "Die Überschrift „{}“ existiert bereits; Wiederherstellen wurde abgebrochen.",
+                    "The heading “{}” already exists; restoring was aborted.",
+                    descendant.title
+                ));
+            }
+        }
         let parent = heading_utils::ancestors_of(&old, idx).into_iter().next();
         let current_parent = parent
             .as_ref()
@@ -198,6 +213,25 @@ mod tests {
     fn an_already_restored_identical_subtree_is_idempotent() {
         let before = "* TODO Original\n:PROPERTIES:\n:CUSTOM_ID: same-id\n:END:\nOriginal description\n* TODO Keep\n";
         assert_eq!(reinsert(Path::new("a.org"), before, "* TODO Keep\n", before).unwrap().unwrap(), before);
+    }
+
+    #[test]
+    fn a_descendant_id_living_on_elsewhere_is_a_conflict() {
+        let before = "* Parent\n:PROPERTIES:\n:CUSTOM_ID: parent\n:END:\n** Child\n:PROPERTIES:\n:CUSTOM_ID: child\n:END:\n* TODO Keep\n";
+        let current = "* TODO Keep\n* Moved child\n:PROPERTIES:\n:CUSTOM_ID: child\n:END:\nNew description\n";
+        assert!(reinsert(Path::new("a.org"), before, "* TODO Keep\n", current).is_err());
+    }
+
+    #[test]
+    fn a_descendant_id_duplicated_in_the_deleted_text_is_a_conflict() {
+        let before = "* TODO A\n** X\n:PROPERTIES:\n:CUSTOM_ID: same\n:END:\n* TODO B\n** Y\n:PROPERTIES:\n:CUSTOM_ID: same\n:END:\n";
+        assert!(reinsert(Path::new("a.org"), before, "", "").is_err());
+    }
+
+    #[test]
+    fn a_deleted_parent_with_identified_children_is_restored() {
+        let before = "* Parent\n:PROPERTIES:\n:CUSTOM_ID: parent\n:END:\n** Child\n:PROPERTIES:\n:CUSTOM_ID: child\n:END:\n* TODO Keep\n";
+        assert_eq!(reinsert(Path::new("a.org"), before, "* TODO Keep\n", "* TODO Keep\n").unwrap().unwrap(), before);
     }
 
     #[test]

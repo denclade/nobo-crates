@@ -330,14 +330,20 @@ pub fn save_draft(path: &Path, content: &str, index: &IndexManager, db: &Mutex<C
         locked_paths.push(&policy.root);
     }
     let _locks = lock_all(&locked_paths);
+    // Best effort: the draft is the crash backup of what the user typed and
+    // must be written even when recovery fails. The next autosave retries.
     if let Some(policy) = &policy {
-        let conn = db.lock().map_err(|e| e.to_string())?;
-        crate::core::trash::recover_references(
-            &conn,
-            &policy.root,
-            &[FileSnapshot { path: draft.to_string_lossy().into_owned(), before: None, after: Some(content.to_string()) }],
-            Some(index),
-        )?;
+        let recovered = db.lock().map_err(|e| e.to_string()).and_then(|conn| {
+            crate::core::trash::recover_references(
+                &conn,
+                &policy.root,
+                &[FileSnapshot { path: draft.to_string_lossy().into_owned(), before: None, after: Some(content.to_string()) }],
+                Some(index),
+            )
+        });
+        if let Err(e) = recovered {
+            log::warn!("could not recover attachments for draft {}: {e}", draft.display());
+        }
     }
     crate::utils::temp_file_utils::write_temp(&path.to_string_lossy(), content)
 }
