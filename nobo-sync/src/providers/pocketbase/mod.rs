@@ -470,7 +470,7 @@ mod tests {
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     fn session(user_id: &str) -> AuthSession {
-        AuthSession { token: "test-token".into(), user_id: user_id.into(), verified: true }
+        AuthSession { token: "test-token".into(), user_id: user_id.into(), verified: true, login_device: None }
     }
 
     #[tokio::test]

@@ -14,7 +14,14 @@ pub struct AuthSession {
     pub token: String,
     pub user_id: String,
     pub verified: bool,
+    /// A device token the server just issued, to bring to every later login
+    /// to this account from this device. `None` when the one brought along
+    /// was accepted (see `login` and docs/login-benachrichtigung.md).
+    pub login_device: Option<String>,
 }
+
+/// The header that carries the device token to the server's login alert.
+pub const LOGIN_DEVICE_HEADER: &str = "X-Nobo-Device";
 
 #[derive(Serialize)]
 struct RegisterBody<'a> {
@@ -34,6 +41,14 @@ struct AuthBody<'a> {
 struct AuthResponse {
     token: String,
     record: AuthRecord,
+    #[serde(default)]
+    meta: Option<AuthMeta>,
+}
+
+#[derive(Deserialize)]
+struct AuthMeta {
+    #[serde(rename = "loginDevice", default)]
+    login_device: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -101,9 +116,15 @@ pub async fn request_verification(client: &Client, base_url: &str, email: &str) 
     }
 }
 
-pub async fn login(client: &Client, base_url: &str, email: &str, auth_secret: &str) -> Result<AuthSession, String> {
+/// Signs in. `device` is the token the server issued this device for this
+/// account at an earlier login, if there is one: without it the server
+/// mails the account owner about a sign-in from an unknown device. The
+/// server answers with a fresh one in `AuthSession::login_device` whenever
+/// it did not accept the one sent -- the caller keeps it for next time.
+pub async fn login(client: &Client, base_url: &str, email: &str, auth_secret: &str, device: Option<&str>) -> Result<AuthSession, String> {
     let resp = client
         .post(format!("{base_url}/api/collections/users/auth-with-password"))
+        .header(LOGIN_DEVICE_HEADER, device.filter(|token| !token.is_empty()).unwrap_or("new"))
         .json(&AuthBody { identity: email, password: auth_secret })
         .send()
         .await
@@ -141,13 +162,18 @@ pub async fn login(client: &Client, base_url: &str, email: &str, auth_secret: &s
     }
 
     let parsed: AuthResponse = resp.json().await.map_err(|e| format!("unexpected login response: {e}"))?;
-    Ok(AuthSession { token: parsed.token, user_id: parsed.record.id, verified: parsed.record.verified })
+    Ok(AuthSession {
+        token: parsed.token,
+        user_id: parsed.record.id,
+        verified: parsed.record.verified,
+        login_device: parsed.meta.and_then(|meta| meta.login_device).filter(|token| !token.is_empty()),
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wiremock::matchers::{body_json, method, path};
+    use wiremock::matchers::{body_json, header, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[tokio::test]
@@ -192,10 +218,41 @@ mod tests {
             .mount(&server)
             .await;
 
-        let session = login(&Client::new(), &server.uri(), "alice@example.com", "deadbeef").await.unwrap();
+        let session = login(&Client::new(), &server.uri(), "alice@example.com", "deadbeef", None).await.unwrap();
         assert_eq!(session.token, "eyJ.fake.token");
         assert_eq!(session.user_id, "user123");
         assert!(!session.verified);
+    }
+
+    /// The device token goes out as a header, "new" when there is none, and a
+    /// freshly issued one comes back in the response's `meta`.
+    #[tokio::test]
+    async fn login_sends_the_device_token_and_takes_a_new_one() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/collections/users/auth-with-password"))
+            .and(header(LOGIN_DEVICE_HEADER, "new"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "token": "eyJ.fake.token",
+                "meta": { "loginDevice": "issued" },
+                "record": { "id": "user123", "verified": true }
+            })))
+            .mount(&server)
+            .await;
+        Mock::given(method("POST"))
+            .and(path("/api/collections/users/auth-with-password"))
+            .and(header(LOGIN_DEVICE_HEADER, "issued"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "token": "eyJ.fake.token",
+                "record": { "id": "user123", "verified": true }
+            })))
+            .mount(&server)
+            .await;
+
+        let first = login(&Client::new(), &server.uri(), "alice@example.com", "deadbeef", None).await.unwrap();
+        assert_eq!(first.login_device.as_deref(), Some("issued"));
+        let again = login(&Client::new(), &server.uri(), "alice@example.com", "deadbeef", Some("issued")).await.unwrap();
+        assert_eq!(again.login_device, None);
     }
 
     #[tokio::test]
@@ -207,7 +264,7 @@ mod tests {
             .mount(&server)
             .await;
 
-        let err = login(&Client::new(), &server.uri(), "alice@example.com", "deadbeef").await.unwrap_err();
+        let err = login(&Client::new(), &server.uri(), "alice@example.com", "deadbeef", None).await.unwrap_err();
         assert!(err.contains("rate-limited"), "got: {err}");
     }
 
@@ -227,7 +284,7 @@ mod tests {
             .mount(&server)
             .await;
 
-        let err = login(&Client::new(), &server.uri(), "alice@example.com", "deadbeef").await.unwrap_err();
+        let err = login(&Client::new(), &server.uri(), "alice@example.com", "deadbeef", None).await.unwrap_err();
         assert!(err.contains("bestätigt"), "got: {err}");
     }
 }

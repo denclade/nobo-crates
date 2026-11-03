@@ -195,6 +195,69 @@ fn set_sync_remembered(remembered: bool) {
     }
 }
 
+/// Which account a login-alert token belongs to, as the key in
+/// `session::LOGIN_DEVICES_NAME`.
+#[cfg(feature = "pocketbase")]
+fn login_device_key(base_url: &str, email: &str) -> String {
+    format!("{}|{}", base_url.trim().trim_end_matches('/'), email.trim().to_lowercase())
+}
+
+/// The tokens of all accounts, or why there are none to read.
+#[cfg(feature = "pocketbase")]
+async fn load_login_devices(intent: Intent) -> Result<std::collections::BTreeMap<String, String>, String> {
+    match super::SESSION.load_as(session::LOGIN_DEVICES_NAME, intent).await? {
+        // A corrupt entry is as good as none: the next login writes a sound one.
+        Some(json) => Ok(serde_json::from_str(&json).unwrap_or_default()),
+        None => Ok(Default::default()),
+    }
+}
+
+/// The token to bring to a login to this account, if this device has one.
+/// Without it the login still works; the server only mails the account
+/// owner about an unknown device.
+#[cfg(feature = "pocketbase")]
+async fn login_device(base_url: &str, email: &str, intent: Intent) -> Option<String> {
+    match load_login_devices(intent).await {
+        Ok(mut devices) => devices.remove(&login_device_key(base_url, email)),
+        Err(e) => {
+            log::warn!("login device token unreadable, the server will see an unknown device: {e}");
+            None
+        }
+    }
+}
+
+/// Keeps a token the server just issued. Best effort and detached, like
+/// `persist_or_forget_session`: the login already succeeded, and a token
+/// lost here costs one alert mail at the next login, nothing more.
+#[cfg(feature = "pocketbase")]
+fn remember_login_device(base_url: &str, email: &str, token: Option<String>, intent: Intent) {
+    let Some(token) = token else { return };
+    let key = login_device_key(base_url, email);
+    spawn(async move {
+        // Unreadable is not empty: writing anyway would drop the tokens of
+        // every other account on this device.
+        let mut devices = match load_login_devices(intent).await {
+            Ok(devices) => devices,
+            Err(e) => {
+                log::warn!("login device token not kept, the entry is unreadable: {e}");
+                return;
+            }
+        };
+        devices.insert(key, token);
+        let json = match serde_json::to_string(&devices) {
+            Ok(json) => json,
+            Err(e) => return log::warn!("login device tokens not serializable: {e}"),
+        };
+        let saved = match intent {
+            Intent::Interactive => super::SESSION.save_interactive(session::LOGIN_DEVICES_NAME, &json).await,
+            Intent::Background => super::SESSION.save(session::LOGIN_DEVICES_NAME, &json).await,
+        };
+        if let Err(e) = saved {
+            log::warn!("login device token not kept: {e}");
+        }
+    });
+}
+
 /// Not full RFC 5322 validation -- the server (via its own verification
 /// email) is the real authority on whether an address is genuine. This
 /// only catches obvious garbage before it costs a network round trip and
@@ -328,12 +391,14 @@ pub async fn sync_login_pocketbase(
         log::info!("sync_login_pocketbase: master key derived, calling pb_auth::login");
 
         let client = short_lived_client()?;
-        let auth = pb_auth::login(&client, &base_url, &email, &auth_secret).await;
+        let device = login_device(&base_url, &email, Intent::Interactive).await;
+        let auth = pb_auth::login(&client, &base_url, &email, &auth_secret, device.as_deref()).await;
         log::info!(
             "sync_login_pocketbase: pb_auth::login returned: {}",
             if auth.is_ok() { "Ok".to_string() } else { format!("Err({:?})", auth.as_ref().err()) }
         );
         let auth = auth?;
+        remember_login_device(&base_url, &email, auth.login_device.clone(), Intent::Interactive);
         let verified = auth.verified;
         let provider = PocketBaseProvider::new(base_url.clone(), &auth)?.with_email(email.clone());
 
@@ -522,8 +587,12 @@ async fn restore_session_from_keychain(
             // gap on this). If the auth_secret itself was revoked
             // server-side, this simply fails and falls through to "show
             // the login form" below, same as any other restore failure.
-            let auth = match pb_auth::login(&client, &base_url, &email, &auth_secret).await {
-                Ok(a) => a,
+            let device = login_device(&base_url, &email, intent).await;
+            let auth = match pb_auth::login(&client, &base_url, &email, &auth_secret, device.as_deref()).await {
+                Ok(a) => {
+                    remember_login_device(&base_url, &email, a.login_device.clone(), intent);
+                    a
+                }
                 Err(e) => {
                     log::warn!("restore_session_from_keychain: silent re-login against {base_url} failed: {e}");
                     return Ok(false);

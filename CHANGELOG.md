@@ -16,6 +16,15 @@ die dritte bleibt für Korrekturen.
 
 ## [Unreleased]
 
+### Geändert
+
+- Sync: Der PocketBase-Login schickt die Gerätekennung des Kontos im Header
+  `X-Nobo-Device` mit (sonst `new`) und legt eine neu ausgestellte aus
+  `meta.loginDevice` im Schlüsselbund ab (`sync:login_devices`, je Konto,
+  bleibt über Logout hinaus). Der Server mailt dann nur bei unbekannten
+  Geräten. `providers::pocketbase::auth::login` nimmt dafür das Token als
+  neues Argument; `AuthSession` trägt `login_device`.
+
 ### Behoben
 
 - Sync: Eine Inbox, die auf einem Gerät abgearbeitet (Einträge erledigt

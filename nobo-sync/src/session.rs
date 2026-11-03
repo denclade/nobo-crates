@@ -38,6 +38,16 @@ pub struct SyncSession {
 /// core::secrets on why that string is not free to change.
 pub const STORED_SESSION_NAME: &str = "session";
 
+/// The entry holding this device's login-alert tokens, one per PocketBase
+/// account: `{"<base url>|<email>": "<token>"}`.
+///
+/// Apart from `STORED_SESSION_NAME` on purpose. The token says "this
+/// device has signed in to this account before", so the server sends no
+/// alert mail (see docs/login-benachrichtigung.md in the app repo). That
+/// stays true after a logout and without "remember me" -- forgetting it
+/// there would only buy the user a mail at the next login.
+pub const LOGIN_DEVICES_NAME: &str = "login_devices";
+
 /// What is written to the OS keychain -- never the vault password itself,
 /// keeping the one-way derivation property crypto.rs maintains.
 ///
